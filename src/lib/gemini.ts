@@ -35,7 +35,9 @@ export async function generateInteriorDesign(
           },
         },
         {
-          text: `Se dovessi arredare questa stanza con uno stile ${style} per una stanza ${roomType}, cosa metteresti? Descrivilo e genera un'immagine.`,
+          text: `If you were to furnish this room with a ${style} style for a ${roomType}, what would you include?
+Describe it in detail using markdown format with headings, bullet points, and well-formatted paragraphs.
+Then generate an image that represents your idea. Try to respect the walls and windows of the attached room.`,
         },
       ],
     },
