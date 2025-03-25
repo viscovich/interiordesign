@@ -54,15 +54,15 @@ export function ImageUploader({ onImageUpload, onReset }: ImageUploaderProps) {
       {!previewUrl ? (
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
+          className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors
             ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'}`}
         >
           <input {...getInputProps()} />
-          <Upload className="mx-auto h-12 w-12 text-gray-400" />
-          <p className="mt-4 text-lg font-medium text-gray-900">
+          <Upload className="mx-auto h-8 w-8 text-gray-400" />
+          <p className="mt-2 text-base font-medium text-gray-900">
             {isDragActive ? 'Drop the image here' : 'Drag & drop an image here'}
           </p>
-          <p className="mt-2 text-sm text-gray-500">or click to select a file</p>
+          <p className="mt-1 text-sm text-gray-500">or click to select a file</p>
           <p className="mt-1 text-xs text-gray-400">
             Supported formats: JPEG, PNG
           </p>
@@ -73,7 +73,7 @@ export function ImageUploader({ onImageUpload, onReset }: ImageUploaderProps) {
             <img 
               src={previewUrl} 
               alt="Uploaded room" 
-              className="w-full h-auto max-h-[400px] object-contain"
+              className="w-full h-auto max-h-[250px] object-contain"
             />
             <button
               onClick={handleReplace}

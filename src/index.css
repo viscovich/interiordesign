@@ -1,3 +1,30 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom styles for slick slider */
+.style-slider-container .slick-prev,
+.style-slider-container .slick-next,
+.room-type-slider-container .slick-prev,
+.room-type-slider-container .slick-next {
+  z-index: 10;
+  width: 30px;
+  height: 30px;
+}
+
+.style-slider-container .slick-prev,
+.room-type-slider-container .slick-prev {
+  left: -10px;
+}
+
+.style-slider-container .slick-next,
+.room-type-slider-container .slick-next {
+  right: -10px;
+}
+
+.style-slider-container .slick-prev:before,
+.style-slider-container .slick-next:before,
+.room-type-slider-container .slick-prev:before,
+.room-type-slider-container .slick-next:before {
+  color: #666;
+}

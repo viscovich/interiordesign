@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { ImageUploader } from './components/ImageUploader';
 import { StyleSelector, Style } from './components/StyleSelector';
+import { RoomTypeSelector, RoomType } from './components/RoomTypeSelector';
+import { TransformationModeSelector, TransformationMode } from './components/TransformationModeSelector';
 import { ImageComparison } from './components/ImageComparison';
 import { AuthModal } from './components/AuthModal';
 import { useAuth } from './lib/auth';
@@ -16,7 +18,9 @@ function App() {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [designDescription, setDesignDescription] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<string | null>('design');
+  const [selectedRoomType, setSelectedRoomType] = useState<RoomType | null>(null);
+  const [selectedTransformationMode, setSelectedTransformationMode] = useState<TransformationMode | null>(null);
 
   const handleImageUpload = async (file: File) => {
     if (!user) {
@@ -28,13 +32,18 @@ function App() {
     setUploadedImage(imageUrl);
     setGeneratedImage(null);
     setDesignDescription(null);
-    setSelectedStyle(null);
-    setActiveSection('styles');
   };
 
   const resetUpload = () => {
     setUploadedImage(null);
-    setActiveSection(null);
+  };
+
+  const handleRoomTypeSelect = (roomType: RoomType) => {
+    setSelectedRoomType(roomType);
+  };
+
+  const handleTransformationModeSelect = (mode: TransformationMode) => {
+    setSelectedTransformationMode(mode);
   };
 
   const handleStyleSelect = (style: Style) => {
@@ -42,16 +51,20 @@ function App() {
   };
 
   const handleGenerate = async () => {
-    if (!uploadedImage || !selectedStyle || !user) return;
+    if (!uploadedImage || !selectedStyle || !selectedRoomType || !selectedTransformationMode || !user) return;
 
     setIsGenerating(true);
     try {
+      console.log(`[handleGenerate] Starting generation with: style=${selectedStyle.name}, roomType=${selectedRoomType.name}, mode=${selectedTransformationMode.id}`);
+      
       const result = await generateInteriorDesign(
         uploadedImage,
         selectedStyle.name,
-        selectedStyle.rooms[0] // Using the first room type as default
+        selectedRoomType.name,
+        selectedTransformationMode.id
       );
       
+      console.log(`[handleGenerate] Generation successful, received description and image data`);
       setGeneratedImage(result.imageData);
       setDesignDescription(result.description);
       setActiveSection('results');
@@ -59,13 +72,18 @@ function App() {
       
       // Scroll to results section after setting the active section
       setTimeout(() => {
-        const resultsSection = document.querySelector('section:has(h2:contains("Your Transformed Space"))');
+        const resultsSection = document.getElementById('results-section');
         if (resultsSection) {
           resultsSection.scrollIntoView({ behavior: 'smooth' });
         }
       }, 100);
     } catch (error) {
-      toast.error('Failed to generate design. Please try again.');
+      console.error('[handleGenerate] Generation failed:', error);
+      // Display the specific error message to the user
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to generate design. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setIsGenerating(false);
     }
@@ -78,8 +96,8 @@ function App() {
         <nav className="container max-w-8xl mx-auto px-4">
           <div className="flex items-center justify-between h-20">
             <div className="flex items-center">
-              <img src="/src/images/Dreamcasa3-removebg-preview.png" alt="DreamCasa Logo" className="h-10" />
-              <span className="ml-2 text-xl font-bold text-custom">DreamCasa</span>
+              <img src="/src/images/Dreamcasa3-removebg-preview.png" alt="DreamCasa AI Logo" className="h-10" />
+              <span className="ml-2 text-xl font-bold text-custom">DreamCasa AI</span>
             </div>
             <div className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-gray-600 hover:text-custom">Features</a>
@@ -127,11 +145,11 @@ function App() {
           <div className="container max-w-8xl mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
               <div>
-                <h1 className="text-5xl font-bold mb-6">DreamCasa: Transform Your Space with AI</h1>
+                <h1 className="text-5xl font-bold mb-6">DreamCasa AI: Transform Your Space with AI</h1>
                 <p className="text-xl text-gray-600 mb-8">Upload a photo of your room and let AI transform it according to your preferred style. Professional results in seconds.</p>
                 <div className="flex gap-4">
                   <button 
-                    onClick={() => document.getElementById('upload-section')?.scrollIntoView({ behavior: 'smooth' })}
+                    onClick={() => document.getElementById('design-section')?.scrollIntoView({ behavior: 'smooth' })}
                     className="!rounded-button px-8 py-4 bg-custom text-white hover:bg-custom/90 transition flex items-center"
                   >
                     <i className="fas fa-upload mr-2"></i>
@@ -148,7 +166,7 @@ function App() {
               <div className="relative">
                 <img 
                   src="https://creatie.ai/ai/api/search-image?query=A 3D vector-style image showing a modern living room transformation, with a clean, minimalist design. The scene features a before/after split view demonstrating AI-powered interior design changes. The background is a solid light color&width=600&height=400&orientation=landscape&removebg=true&flag=5b95a6e3-e05c-4e24-bd6b-141ab90fd7bb" 
-                  alt="DreamCasa Transform" 
+                  alt="DreamCasa AI Transform" 
                   className="rounded-lg shadow-lg"
                 />
               </div>
@@ -156,60 +174,87 @@ function App() {
           </div>
         </section>
 
-        {/* Upload Section */}
-        <section id="upload-section" className="py-20">
+        {/* Design Section */}
+        <section id="design-section" className="py-20">
           <div className="container max-w-8xl mx-auto px-4">
-            <div className="text-center mb-16">
+            <div className="text-center mb-12">
               <h2 className="text-4xl font-bold mb-4">Transform Your Space</h2>
-              <p className="text-xl text-gray-600">Upload a photo and let AI do the magic</p>
+              <p className="text-xl text-gray-600">Upload a photo and customize your design</p>
             </div>
-            <div className="max-w-3xl mx-auto">
-              <ImageUploader 
-                onImageUpload={handleImageUpload} 
-                onReset={resetUpload}
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* Style Selection Section */}
-        {uploadedImage && activeSection === 'styles' && (
-          <section className="py-20 bg-gray-50">
-            <div className="container max-w-8xl mx-auto px-4">
-              <div className="text-center mb-16">
-                <h2 className="text-4xl font-bold mb-4">Choose Your Style</h2>
-                <p className="text-xl text-gray-600">Select a design style for your space</p>
+            
+            <div className="max-w-5xl mx-auto">
+              {/* Image Upload */}
+              <div className="mb-8">
+                <h3 className="text-xl font-semibold mb-4">Upload Your Photo</h3>
+                <ImageUploader 
+                  onImageUpload={handleImageUpload} 
+                  onReset={resetUpload}
+                />
               </div>
-              <div className="max-w-6xl mx-auto">
+              
+              {/* Transformation Mode Selector */}
+              <div className="mb-8">
+                <h3 className="text-xl font-semibold mb-4">Choose Transformation Mode</h3>
+                <TransformationModeSelector
+                  onModeSelect={handleTransformationModeSelect}
+                  selectedModeId={selectedTransformationMode?.id}
+                />
+              </div>
+              
+              {/* Style Selector */}
+              <div className="mb-8">
+                <h3 className="text-xl font-semibold mb-4">Choose Your Style</h3>
                 <StyleSelector
                   onStyleSelect={handleStyleSelect}
                   selectedStyleId={selectedStyle?.id}
                 />
               </div>
-              {selectedStyle && (
-                <div className="text-center mt-12">
-                  <button
-                    onClick={handleGenerate}
-                    disabled={isGenerating}
-                    className={`
-                      !rounded-button px-8 py-4 text-white transition
-                      ${isGenerating
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-custom hover:bg-custom/90'
-                      }
-                    `}
-                  >
-                    {isGenerating ? 'Generating...' : 'Generate Design'}
-                  </button>
-                </div>
-              )}
+              
+              {/* Room Type Selector */}
+              <div className="mb-8">
+                <h3 className="text-xl font-semibold mb-4">Choose Room Type</h3>
+                <RoomTypeSelector
+                  onRoomTypeSelect={handleRoomTypeSelect}
+                  selectedRoomTypeId={selectedRoomType?.id}
+                />
+              </div>
+              
+              {/* Generate Button */}
+              <div className="mt-8 max-w-md mx-auto">
+                <button
+                  onClick={handleGenerate}
+                  disabled={isGenerating || !uploadedImage || !selectedStyle || !selectedRoomType || !selectedTransformationMode}
+                  className={`
+                    !rounded-button w-full py-4 text-white transition
+                    ${isGenerating || !uploadedImage || !selectedStyle || !selectedRoomType || !selectedTransformationMode
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-custom hover:bg-custom/90'
+                    }
+                  `}
+                >
+                  {isGenerating ? 'Generating...' : 'Generate Design'}
+                </button>
+                
+                {!uploadedImage && (
+                  <p className="text-sm text-gray-500 mt-2">Please upload an image to continue</p>
+                )}
+                {uploadedImage && !selectedStyle && (
+                  <p className="text-sm text-gray-500 mt-2">Please select a style to continue</p>
+                )}
+                {uploadedImage && selectedStyle && !selectedRoomType && (
+                  <p className="text-sm text-gray-500 mt-2">Please select a room type to continue</p>
+                )}
+                {uploadedImage && selectedStyle && selectedRoomType && !selectedTransformationMode && (
+                  <p className="text-sm text-gray-500 mt-2">Please select a transformation mode to continue</p>
+                )}
+              </div>
             </div>
-          </section>
-        )}
+          </div>
+        </section>
 
         {/* Results Section */}
         {generatedImage && activeSection === 'results' && (
-          <section className="py-20">
+          <section id="results-section" className="py-20">
             <div className="container max-w-8xl mx-auto px-4">
               <div className="text-center mb-16">
                 <h2 className="text-4xl font-bold mb-4">Your Transformed Space</h2>
@@ -241,7 +286,7 @@ function App() {
                     setGeneratedImage(null);
                     setDesignDescription(null);
                     setActiveSection(null);
-                    document.getElementById('upload-section')?.scrollIntoView({ behavior: 'smooth' });
+                    document.getElementById('design-section')?.scrollIntoView({ behavior: 'smooth' });
                   }}
                   className="!rounded-button px-8 py-4 bg-custom text-white hover:bg-custom/90 transition"
                 >
@@ -410,8 +455,8 @@ function App() {
         <div className="container max-w-8xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <img src="/src/images/Dreamcasa3-removebg-preview.png" alt="DreamCasa Logo" className="h-8 mb-4 brightness-0 invert" />
-              <span className="text-white text-lg font-bold block mb-2">DreamCasa</span>
+              <img src="/src/images/Dreamcasa3-removebg-preview.png" alt="DreamCasa AI Logo" className="h-8 mb-4 brightness-0 invert" />
+              <span className="text-white text-lg font-bold block mb-2">DreamCasa AI</span>
               <p className="text-gray-400">Transform your spaces with artificial intelligence</p>
             </div>
             <div>
@@ -440,7 +485,7 @@ function App() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 DreamCasa. All rights reserved.</p>
+            <p>&copy; 2025 DreamCasa AI. All rights reserved.</p>
           </div>
         </div>
       </footer>
