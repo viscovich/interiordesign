@@ -6,8 +6,15 @@ import { RoomTypeSelector, RoomType } from './components/RoomTypeSelector';
 import { TransformationModeSelector, TransformationMode } from './components/TransformationModeSelector';
 import { ImageComparison } from './components/ImageComparison';
 import { AuthModal } from './components/AuthModal';
+import { ProjectsList } from './components/ProjectsList';
+import { ProjectDetails } from './components/ProjectDetails';
+import { UserCredits } from './components/UserCredits';
 import { useAuth } from './lib/auth';
 import { generateInteriorDesign } from './lib/gemini';
+import { uploadImage } from './lib/storage';
+import { createProject, Project } from './lib/projectsService';
+import { hasEnoughCredits, useCredit, getUserProfile } from './lib/userService';
+import type { UserProfile } from './lib/userService.d';
 import toast from 'react-hot-toast';
 
 function App() {
@@ -21,13 +28,10 @@ function App() {
   const [activeSection, setActiveSection] = useState<string | null>('design');
   const [selectedRoomType, setSelectedRoomType] = useState<RoomType | null>(null);
   const [selectedTransformationMode, setSelectedTransformationMode] = useState<TransformationMode | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [pendingGenerate, setPendingGenerate] = useState(false);
 
   const handleImageUpload = async (file: File) => {
-    if (!user) {
-      setIsAuthModalOpen(true);
-      return;
-    }
-
     const imageUrl = URL.createObjectURL(file);
     setUploadedImage(imageUrl);
     setGeneratedImage(null);
@@ -51,12 +55,16 @@ function App() {
   };
 
   const handleGenerate = async () => {
-    if (!uploadedImage || !selectedStyle || !selectedRoomType || !selectedTransformationMode || !user) return;
+    if (!uploadedImage || !selectedStyle || !selectedRoomType || !selectedTransformationMode) return;
+    if (!user) {
+      setIsAuthModalOpen(true);
+      setPendingGenerate(true);
+      return;
+    }
+    setPendingGenerate(false);
 
     setIsGenerating(true);
     try {
-      console.log(`[handleGenerate] Starting generation with: style=${selectedStyle.name}, roomType=${selectedRoomType.name}, mode=${selectedTransformationMode.id}`);
-      
       const result = await generateInteriorDesign(
         uploadedImage,
         selectedStyle.name,
@@ -64,13 +72,28 @@ function App() {
         selectedTransformationMode.id
       );
       
-      console.log(`[handleGenerate] Generation successful, received description and image data`);
+      // First upload the generated image to storage
+      const generatedImageUrl = await uploadImage(
+        result.imageData, 
+        `generated/${Date.now()}.jpg`
+      );
+      
+      // Then create the project in database
+      if (user) {
+        await createProject(
+          user.id,
+          uploadedImage,
+          generatedImageUrl,
+          selectedStyle.name,
+          selectedRoomType.name
+        );
+      }
+
       setGeneratedImage(result.imageData);
       setDesignDescription(result.description);
       setActiveSection('results');
-      toast.success('Design generated successfully!');
+      toast.success('Design generated and saved successfully!');
       
-      // Scroll to results section after setting the active section
       setTimeout(() => {
         const resultsSection = document.getElementById('results-section');
         if (resultsSection) {
@@ -79,7 +102,6 @@ function App() {
       }, 100);
     } catch (error) {
       console.error('[handleGenerate] Generation failed:', error);
-      // Display the specific error message to the user
       const errorMessage = error instanceof Error 
         ? error.message 
         : 'Failed to generate design. Please try again.';
@@ -88,6 +110,12 @@ function App() {
       setIsGenerating(false);
     }
   };
+
+  React.useEffect(() => {
+    if (user && pendingGenerate) {
+      handleGenerate();
+    }
+  }, [user, pendingGenerate]);
 
   return (
     <>
@@ -107,7 +135,7 @@ function App() {
               {!authLoading && (
                 user ? (
                   <div className="flex items-center gap-4">
-                    <span className="text-sm text-gray-600">{user.email}</span>
+                    <UserCredits user={user} />
                     <button
                       onClick={() => signOut()}
                       className="!rounded-button px-6 py-2 text-custom border border-custom hover:bg-custom hover:text-white transition"
@@ -124,9 +152,7 @@ function App() {
                       Sign In
                     </button>
                     <button 
-                      onClick={() => {
-                        setIsAuthModalOpen(true);
-                      }} 
+                      onClick={() => setIsAuthModalOpen(true)} 
                       className="!rounded-button px-6 py-2 bg-custom text-white hover:bg-custom/90 transition"
                     >
                       Register
@@ -183,71 +209,41 @@ function App() {
             </div>
             
             <div className="max-w-5xl mx-auto">
-              {/* Image Upload */}
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-4">Upload Your Photo</h3>
-                <ImageUploader 
-                  onImageUpload={handleImageUpload} 
-                  onReset={resetUpload}
-                />
-              </div>
+              <ImageUploader 
+                onImageUpload={handleImageUpload} 
+                onReset={resetUpload}
+              />
               
-              {/* Transformation Mode Selector */}
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-4">Choose Transformation Mode</h3>
-                <TransformationModeSelector
-                  onModeSelect={handleTransformationModeSelect}
-                  selectedModeId={selectedTransformationMode?.id}
-                />
-              </div>
-              
-              {/* Style Selector */}
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-4">Choose Your Style</h3>
-                <StyleSelector
-                  onStyleSelect={handleStyleSelect}
-                  selectedStyleId={selectedStyle?.id}
-                />
-              </div>
-              
-              {/* Room Type Selector */}
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-4">Choose Room Type</h3>
-                <RoomTypeSelector
-                  onRoomTypeSelect={handleRoomTypeSelect}
-                  selectedRoomTypeId={selectedRoomType?.id}
-                />
-              </div>
-              
-              {/* Generate Button */}
-              <div className="mt-8 max-w-md mx-auto">
-                <button
-                  onClick={handleGenerate}
-                  disabled={isGenerating || !uploadedImage || !selectedStyle || !selectedRoomType || !selectedTransformationMode}
-                  className={`
-                    !rounded-button w-full py-4 text-white transition
-                    ${isGenerating || !uploadedImage || !selectedStyle || !selectedRoomType || !selectedTransformationMode
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-custom hover:bg-custom/90'
-                    }
-                  `}
-                >
-                  {isGenerating ? 'Generating...' : 'Generate Design'}
-                </button>
-                
-                {!uploadedImage && (
-                  <p className="text-sm text-gray-500 mt-2">Please upload an image to continue</p>
-                )}
-                {uploadedImage && !selectedStyle && (
-                  <p className="text-sm text-gray-500 mt-2">Please select a style to continue</p>
-                )}
-                {uploadedImage && selectedStyle && !selectedRoomType && (
-                  <p className="text-sm text-gray-500 mt-2">Please select a room type to continue</p>
-                )}
-                {uploadedImage && selectedStyle && selectedRoomType && !selectedTransformationMode && (
-                  <p className="text-sm text-gray-500 mt-2">Please select a transformation mode to continue</p>
-                )}
-              </div>
+              {uploadedImage && (
+                <div className="space-y-8 mt-8">
+                  <TransformationModeSelector
+                    onModeSelect={handleTransformationModeSelect}
+                    selectedModeId={selectedTransformationMode?.id}
+                  />
+                  <StyleSelector
+                    onStyleSelect={handleStyleSelect}
+                    selectedStyleId={selectedStyle?.id}
+                  />
+                  <RoomTypeSelector
+                    onRoomTypeSelect={handleRoomTypeSelect}
+                    selectedRoomTypeId={selectedRoomType?.id}
+                  />
+                  
+                  <button
+                    onClick={handleGenerate}
+                    disabled={isGenerating || !uploadedImage || !selectedStyle || !selectedRoomType || !selectedTransformationMode}
+                    className={`
+                      !rounded-button w-full py-4 text-white transition
+                      ${isGenerating || !uploadedImage || !selectedStyle || !selectedRoomType || !selectedTransformationMode
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-custom hover:bg-custom/90'
+                      }
+                    `}
+                  >
+                    {isGenerating ? 'Generating...' : 'Generate Design'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -295,6 +291,25 @@ function App() {
               </div>
             </div>
           </section>
+        )}
+
+        {/* Projects Section */}
+        {activeSection === 'projects' && (
+          <section className="py-20">
+            <div className="container max-w-8xl mx-auto px-4">
+              <ProjectsList 
+                user={user}
+                onProjectSelect={setSelectedProject}
+              />
+            </div>
+          </section>
+        )}
+
+        {selectedProject && (
+          <ProjectDetails 
+            project={selectedProject}
+            onBack={() => setSelectedProject(null)}
+          />
         )}
 
         {/* Features Section */}

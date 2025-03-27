@@ -18,7 +18,10 @@ export async function signIn(email: string, password: string) {
     password,
   });
   
-  if (error) throw error;
+  if (error) {
+    console.error('Sign in error:', error);
+    throw error;
+  }
   return data;
 }
 
