@@ -30,6 +30,30 @@ export async function signOut() {
   if (error) throw error;
 }
 
+export async function signInWithGoogle() {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function signInWithFacebook() {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'facebook',
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function signInWithOAuth(provider: 'google' | 'facebook' | 'github' | 'azure' | 'gitlab' | 'bitbucket' | 'discord') {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider,
+  });
+  if (error) throw error;
+  return data;
+}
+
 export function useAuth() {
   const [user, setUser] = React.useState<User | null>(null);
   const [loading, setLoading] = React.useState(true);

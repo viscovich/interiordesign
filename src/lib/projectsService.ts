@@ -10,6 +10,17 @@ export async function getProjects() {
   return data;
 }
 
+export async function getProjectsByUser(userId: string) {
+  const { data, error } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data;
+}
+
 export async function createProject(
   userId: string,
   originalImageUrl: string,

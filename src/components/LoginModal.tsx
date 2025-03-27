@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { signIn, signUp, signInWithGoogle, signInWithFacebook } from '../lib/auth';
+import { signIn, signInWithGoogle, signInWithFacebook } from '../lib/auth';
 import toast from 'react-hot-toast';
 
-interface AuthModalProps {
+interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialMode?: 'login' | 'register';
+  onSwitchToRegister: () => void;
 }
 
-export function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalProps) {
-  const [isSignUp, setIsSignUp] = useState(initialMode === 'register');
+export function LoginModal({ isOpen, onClose, onSwitchToRegister }: LoginModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,15 +21,9 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalP
     setLoading(true);
 
     try {
-      if (isSignUp) {
-        await signUp(email, password);
-        toast.success('Account created! Please check your email to verify your account.');
-        onClose();
-      } else {
-        await signIn(email, password);
-        toast.success('Welcome back!');
-        onClose();
-      }
+      await signIn(email, password);
+      toast.success('Welcome back!');
+      onClose();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Authentication failed');
     } finally {
@@ -48,9 +41,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalP
           <X className="h-6 w-6" />
         </button>
 
-        <h2 className="text-2xl font-bold text-center mb-6">
-          {isSignUp ? 'Create an Account' : 'Welcome Back'}
-        </h2>
+        <h2 className="text-2xl font-bold text-center mb-6">Welcome Back</h2>
 
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-2">
@@ -82,57 +73,53 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalP
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              required
-            />
-          </div>
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                required
+              />
+            </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              required
-            />
-          </div>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                required
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
-              ${loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
-          >
-            {loading ? 'Processing...' : isSignUp ? 'Sign Up' : 'Sign In'}
-          </button>
-
-          <p className="text-sm text-center text-gray-600">
-            {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
             <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setEmail('');
-                setPassword('');
-              }}
-              className="text-blue-600 hover:text-blue-500"
+              type="submit"
+              disabled={loading}
+              className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
+                ${loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
             >
-              {isSignUp ? 'Sign In' : 'Sign Up'}
+              {loading ? 'Processing...' : 'Sign In'}
             </button>
-          </p>
+
+            <p className="text-sm text-center text-gray-600">
+              Don't have an account?{' '}
+              <button
+                type="button"
+                onClick={onSwitchToRegister}
+                className="text-blue-600 hover:text-blue-500"
+              >
+                Sign Up
+              </button>
+            </p>
           </form>
         </div>
       </div>

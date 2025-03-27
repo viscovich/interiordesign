@@ -5,21 +5,24 @@ import { StyleSelector, Style } from './components/StyleSelector';
 import { RoomTypeSelector, RoomType } from './components/RoomTypeSelector';
 import { TransformationModeSelector, TransformationMode } from './components/TransformationModeSelector';
 import { ImageComparison } from './components/ImageComparison';
-import { AuthModal } from './components/AuthModal';
+import { LoginModal } from './components/LoginModal';
+import { RegisterModal } from './components/RegisterModal';
 import { ProjectsList } from './components/ProjectsList';
 import { ProjectDetails } from './components/ProjectDetails';
 import { UserCredits } from './components/UserCredits';
 import { useAuth } from './lib/auth';
 import { generateInteriorDesign } from './lib/gemini';
 import { uploadImage } from './lib/storage';
-import { createProject, Project } from './lib/projectsService';
+import { createProject } from './lib/projectsService';
+import type { Project } from './lib/projectsService.d';
 import { hasEnoughCredits, useCredit, getUserProfile } from './lib/userService';
 import type { UserProfile } from './lib/userService.d';
 import toast from 'react-hot-toast';
 
 function App() {
   const { user, loading: authLoading, signOut } = useAuth();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<Style | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
@@ -57,7 +60,7 @@ function App() {
   const handleGenerate = async () => {
     if (!uploadedImage || !selectedStyle || !selectedRoomType || !selectedTransformationMode) return;
     if (!user) {
-      setIsAuthModalOpen(true);
+      setIsLoginModalOpen(true);
       setPendingGenerate(true);
       return;
     }
@@ -146,13 +149,13 @@ function App() {
                 ) : (
                   <>
                     <button 
-                      onClick={() => setIsAuthModalOpen(true)} 
+                      onClick={() => setIsLoginModalOpen(true)} 
                       className="!rounded-button px-6 py-2 text-custom border border-custom hover:bg-custom hover:text-white transition"
                     >
                       Sign In
                     </button>
                     <button 
-                      onClick={() => setIsAuthModalOpen(true)} 
+                      onClick={() => setIsRegisterModalOpen(true)} 
                       className="!rounded-button px-6 py-2 bg-custom text-white hover:bg-custom/90 transition"
                     >
                       Register
@@ -505,9 +508,21 @@ function App() {
         </div>
       </footer>
 
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onSwitchToRegister={() => {
+          setIsLoginModalOpen(false);
+          setIsRegisterModalOpen(true);
+        }}
+      />
+      <RegisterModal
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
+        onSwitchToLogin={() => {
+          setIsRegisterModalOpen(false);
+          setIsLoginModalOpen(true);
+        }}
       />
     </>
   );
