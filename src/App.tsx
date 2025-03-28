@@ -138,7 +138,7 @@ function App() {
               {!authLoading && (
                 user ? (
                   <div className="flex items-center gap-4">
-                    <UserCredits user={user} />
+                    <UserCredits />
                     <button
                       onClick={() => signOut()}
                       className="!rounded-button px-6 py-2 text-custom border border-custom hover:bg-custom hover:text-white transition"
@@ -245,6 +245,22 @@ function App() {
                   >
                     {isGenerating ? 'Generating...' : 'Generate Design'}
                   </button>
+                  
+                  {isGenerating && (
+                    <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2 relative overflow-hidden">
+                      <div 
+                        className="bg-custom h-1.5 rounded-full absolute top-0 left-0"
+                        style={{ 
+                          width: '0%',
+                          animation: 'progress 15s linear forwards',
+                          animationFillMode: 'forwards'
+                        }}
+                      />
+                      <div className="text-xs text-gray-500 text-center mt-1">
+                        Generating your design...
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -8,23 +8,45 @@
 .room-type-slider-container .slick-prev,
 .room-type-slider-container .slick-next {
   z-index: 10;
-  width: 30px;
-  height: 30px;
+  width: 45px;
+  height: 45px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease;
 }
 
 .style-slider-container .slick-prev,
 .room-type-slider-container .slick-prev {
-  left: -10px;
+  left: -25px;
 }
 
 .style-slider-container .slick-next,
 .room-type-slider-container .slick-next {
-  right: -10px;
+  right: -25px;
+}
+
+.style-slider-container .slick-prev:hover,
+.style-slider-container .slick-next:hover,
+.room-type-slider-container .slick-prev:hover,
+.room-type-slider-container .slick-next:hover {
+  transform: scale(1.1);
 }
 
 .style-slider-container .slick-prev:before,
 .style-slider-container .slick-next:before,
 .room-type-slider-container .slick-prev:before,
 .room-type-slider-container .slick-next:before {
-  color: #666;
+  color: #2563eb; /* blue-600 */
+  font-size: 20px;
+  opacity: 1;
+}
+
+@keyframes progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
 }
