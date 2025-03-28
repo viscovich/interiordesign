@@ -194,7 +194,7 @@ function App() {
               </div>
               <div className="relative">
                 <img 
-                  src="https://creatie.ai/ai/api/search-image?query=A 3D vector-style image showing a modern living room transformation, with a clean, minimalist design. The scene features a before/after split view demonstrating AI-powered interior design changes. The background is a solid light color&width=600&height=400&orientation=landscape&removebg=true&flag=5b95a6e3-e05c-4e24-bd6b-141ab90fd7bb" 
+                  src="/src/images/before_after.jpg"
                   alt="DreamCasa AI Transform" 
                   className="rounded-lg shadow-lg"
                 />
@@ -428,8 +428,14 @@ function App() {
               <p className="text-xl text-gray-600">See some of our transformations</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="rounded-lg overflow-hidden">
-                <img src="https://creatie.ai/ai/api/search-image?query=A modern minimalist living room with clean lines, neutral colors, and contemporary furniture. The scene features natural light, hardwood floors, and large windows. Professional interior design photography with high-end finishes and styling&width=400&height=300&orientation=landscape&flag=54f50f6b-f152-4847-ae4e-60c0786d7ef4" alt="Living Room Transform" className="w-full h-64 object-cover" />
+              <div className="rounded-lg overflow-hidden h-64 relative">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <ImageComparison
+                    originalImage="/src/images/Salotto_vecchio.png" 
+                    generatedImage="/src/images/Salotto_nuovo.png"
+                    className="h-full w-full object-contain"
+                  />
+                </div>
               </div>
               <div className="rounded-lg overflow-hidden">
                 <img src="https://creatie.ai/ai/api/search-image?query=A luxurious master bedroom with elegant furnishings, soft textiles, and a calming color palette. The scene includes a king-size bed, designer lighting, and tasteful artwork. Professional interior design photography with attention to detail&width=400&height=300&orientation=landscape&flag=683b4d05-6475-4e10-9998-0dc08f72955a" alt="Bedroom Transform" className="w-full h-64 object-cover" />
