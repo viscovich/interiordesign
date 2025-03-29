@@ -15,6 +15,7 @@ import { uploadImage } from './lib/storage';
 import { createProject } from './lib/projectsService';
 import type { Project } from './lib/projectsService.d';
 import { hasEnoughCredits, useCredit, getUserProfile } from './lib/userService';
+import { getStripe, startCheckout } from './lib/stripe';
 import type { UserProfile } from './lib/userService.d';
 import toast from 'react-hot-toast';
 
@@ -90,6 +91,7 @@ function App() {
         );
       }
 
+      console.log('Generated image data:', result.imageData);
       setGeneratedImage(result.imageData);
       setDesignDescription(result.description);
       setActiveSection('results');
@@ -125,7 +127,7 @@ function App() {
         <nav className="container max-w-8xl mx-auto px-4">
           <div className="flex items-center justify-between h-20">
             <div className="flex items-center">
-              <img src="/src/images/Dreamcasa3-removebg-preview.png" alt="DreamCasa AI Logo" className="h-10" />
+              <img src="/images/Dreamcasa3-removebg-preview.png" alt="DreamCasa AI Logo" className="h-10" />
               <span className="ml-2 text-xl font-bold text-custom">DreamCasa AI</span>
             </div>
             <div className="hidden md:flex items-center space-x-8">
@@ -200,7 +202,7 @@ function App() {
               </div>
               <div className="relative">
                 <img 
-                  src="/src/images/before_after.jpg"
+                  src="/images/before_after.jpg"
                   alt="DreamCasa AI Transform" 
                   className="rounded-lg shadow-lg"
                 />
@@ -446,8 +448,8 @@ function App() {
               <div className="rounded-lg overflow-hidden h-64 relative">
                 <div className="absolute inset-0 flex items-center justify-center">
                   <ImageComparison
-                    originalImage="/src/images/Salotto_vecchio.png" 
-                    generatedImage="/src/images/Salotto_nuovo.png"
+                    originalImage="/images/Salotto_vecchio.png" 
+                    generatedImage="/images/Salotto_nuovo.png"
                     className="h-full w-full object-contain"
                   />
                 </div>
@@ -494,7 +496,7 @@ function App() {
         <div className="container max-w-8xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <img src="/src/images/Dreamcasa3-removebg-preview.png" alt="DreamCasa AI Logo" className="h-8 mb-4 brightness-0 invert" />
+              <img src="/images/Dreamcasa3-removebg-preview.png" alt="DreamCasa AI Logo" className="h-8 mb-4 brightness-0 invert" />
               <span className="text-white text-lg font-bold block mb-2">DreamCasa AI</span>
               <p className="text-gray-400">Transform your spaces with artificial intelligence</p>
             </div>
