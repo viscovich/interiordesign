@@ -3,13 +3,14 @@ import type { Project } from '../lib/projectsService.d';
 import type { User } from '@supabase/supabase-js';
 import { getProjectsByUser } from '../lib/projectsService';
 import toast from 'react-hot-toast';
+import { ProjectModal } from './ProjectModal';
 
 interface ProjectsListProps {
   user: User | null;
-  onProjectSelect: (project: Project) => void;
 }
 
-export function ProjectsList({ user, onProjectSelect }: ProjectsListProps) {
+export function ProjectsList({ user }: ProjectsListProps) {
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -39,23 +40,39 @@ export function ProjectsList({ user, onProjectSelect }: ProjectsListProps) {
       {projects.length === 0 ? (
         <p>No projects found</p>
       ) : (
-        <ul className="space-y-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {projects.map((project) => (
-            <li 
+            <div
               key={project.id}
-              className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
-              onClick={() => onProjectSelect(project)}
+              className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+              onClick={() => setSelectedProject(project)}
             >
-              <div className="flex justify-between">
-                <span className="font-medium">{project.roomType} - {project.style}</span>
-                <span className="text-gray-500 text-sm">
-                  {new Date(project.createdAt).toLocaleDateString()}
-                </span>
+              <div className="flex flex-col space-y-2">
+                {project.generated_image_url && (
+                  <img 
+                    src={project.generated_image_url} 
+                    alt={`Generated ${project.room_type}`}
+                    className="w-full h-48 object-cover rounded-lg mb-2"
+                  />
+                )}
+                <div className="space-y-1">
+                  <h3 className="font-bold text-lg">{project.room_type}</h3>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-700">{project.style}</span>
+                    <span className="text-gray-500 text-sm">
+                      {project.created_at ? new Date(project.created_at).toLocaleDateString() : ''}
+                    </span>
+                  </div>
+                </div>
               </div>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
+      <ProjectModal 
+        project={selectedProject}
+        onClose={() => setSelectedProject(null)}
+      />
     </div>
   );
 }

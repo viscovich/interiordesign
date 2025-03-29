@@ -8,7 +8,6 @@ import { ImageComparison } from './components/ImageComparison';
 import { LoginModal } from './components/LoginModal';
 import { RegisterModal } from './components/RegisterModal';
 import { ProjectsList } from './components/ProjectsList';
-import { ProjectDetails } from './components/ProjectDetails';
 import { UserCredits } from './components/UserCredits';
 import { useAuth } from './lib/auth';
 import { generateInteriorDesign } from './lib/gemini';
@@ -31,7 +30,6 @@ function App() {
   const [activeSection, setActiveSection] = useState<string | null>('design');
   const [selectedRoomType, setSelectedRoomType] = useState<RoomType | null>(null);
   const [selectedTransformationMode, setSelectedTransformationMode] = useState<TransformationMode | null>(null);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [pendingGenerate, setPendingGenerate] = useState(false);
 
   const handleImageUpload = async (file: File) => {
@@ -135,6 +133,14 @@ function App() {
               <a href="#pricing" className="text-gray-600 hover:text-custom">Pricing</a>
               <a href="#portfolio" className="text-gray-600 hover:text-custom">Portfolio</a>
               <a href="#faq" className="text-gray-600 hover:text-custom">FAQ</a>
+              {user && (
+                <button 
+                  onClick={() => setActiveSection('projects')}
+                  className="text-gray-600 hover:text-custom"
+                >
+                  My Projects
+                </button>
+              )}
               {!authLoading && (
                 user ? (
                   <div className="flex items-center gap-4">
@@ -318,18 +324,11 @@ function App() {
             <div className="container max-w-8xl mx-auto px-4">
               <ProjectsList 
                 user={user}
-                onProjectSelect={setSelectedProject}
               />
             </div>
           </section>
         )}
 
-        {selectedProject && (
-          <ProjectDetails 
-            project={selectedProject}
-            onBack={() => setSelectedProject(null)}
-          />
-        )}
 
         {/* Features Section */}
         <section id="features" className="py-20">

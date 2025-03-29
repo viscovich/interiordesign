@@ -1,10 +1,10 @@
 export interface Project {
   id: string;
-  userId: string;
-  originalImageUrl: string;
-  generatedImageUrl: string;
+  user_id: string;
+  original_image_url: string;
+  generated_image_url: string | null;
   style: string;
-  roomType: string;
-  createdAt: string;
-  updatedAt: string;
+  room_type: string;
+  created_at: string;
+  updated_at: string;
 }
