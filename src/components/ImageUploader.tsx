@@ -1,4 +1,6 @@
 import React, { useCallback, useState, useEffect } from 'react';
+import { ViewTypeSelector } from './ViewTypeSelector';
+import { RenderingTypeSelector } from './RenderingTypeSelector';
 import { useDropzone } from 'react-dropzone';
 import { Upload } from 'lucide-react';
 
@@ -49,12 +51,16 @@ export function ImageUploader({ onImageUpload, onReset }: ImageUploaderProps) {
     maxFiles: 1
   });
 
+  const [viewType, setViewType] = useState('front');
+  const [renderingType, setRenderingType] = useState('3d');
+
   return (
-    <>
+    <div className="flex gap-4 h-[300px]">
+      <div className="w-2/4 h-full flex flex-col">
       {!previewUrl ? (
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors
+          className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors flex-grow flex flex-col items-center justify-center
             ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'}`}
         >
           <input {...getInputProps()} />
@@ -68,13 +74,15 @@ export function ImageUploader({ onImageUpload, onReset }: ImageUploaderProps) {
           </p>
         </div>
       ) : (
-        <div className="border rounded-lg overflow-hidden">
+        <div className="border rounded-lg overflow-hidden h-full flex flex-col">
           <div className="relative">
-            <img 
-              src={previewUrl} 
-              alt="Uploaded room" 
-              className="w-full h-auto max-h-[250px] object-contain"
-            />
+            <div className="flex-grow flex items-center justify-center bg-gray-50">
+              <img 
+                src={previewUrl} 
+                alt="Uploaded room" 
+                className="max-w-full max-h-full object-contain"
+              />
+            </div>
             <button
               onClick={handleReplace}
               className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 transition-colors"
@@ -98,6 +106,17 @@ export function ImageUploader({ onImageUpload, onReset }: ImageUploaderProps) {
           </div>
         </div>
       )}
-    </>
+      </div>
+      <div className="w-2/4 space-y-6 h-full flex flex-col justify-center pl-4">
+        <ViewTypeSelector 
+          value={viewType}
+          onChange={setViewType}
+        />
+        <RenderingTypeSelector
+          value={renderingType}
+          onChange={setRenderingType}
+        />
+      </div>
+    </div>
   );
 }
