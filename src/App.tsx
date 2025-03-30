@@ -34,8 +34,20 @@ function App() {
   const [pendingGenerate, setPendingGenerate] = useState(false);
 
   const handleImageUpload = async (file: File) => {
-    const imageUrl = URL.createObjectURL(file);
-    setUploadedImage(imageUrl);
+    // Convert file to data URL for upload
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    const dataUrl = await new Promise<string>((resolve) => {
+      reader.onload = () => resolve(reader.result as string);
+    });
+    
+    // Upload to storage
+    const originalImageUrl = await uploadImage(
+      dataUrl,
+      `original/${Date.now()}_${file.name}`
+    );
+    
+    setUploadedImage(originalImageUrl);
     setGeneratedImage(null);
     setDesignDescription(null);
   };
@@ -131,10 +143,14 @@ function App() {
               <span className="ml-2 text-xl font-bold text-custom">DreamCasa AI</span>
             </div>
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-custom">Features</a>
-              <a href="#pricing" className="text-gray-600 hover:text-custom">Pricing</a>
-              <a href="#portfolio" className="text-gray-600 hover:text-custom">Portfolio</a>
-              <a href="#faq" className="text-gray-600 hover:text-custom">FAQ</a>
+              {!user && (
+                <>
+                  <a href="#features" className="text-gray-600 hover:text-custom">Features</a>
+                  <a href="#pricing" className="text-gray-600 hover:text-custom">Pricing</a>
+                  <a href="#portfolio" className="text-gray-600 hover:text-custom">Portfolio</a>
+                  <a href="#faq" className="text-gray-600 hover:text-custom">FAQ</a>
+                </>
+              )}
               {user && (
                 <button 
                   onClick={() => setActiveSection('projects')}
@@ -177,39 +193,41 @@ function App() {
       </header>
 
       <main className="pt-20">
-        {/* Hero Section */}
-        <section className="relative bg-gray-50 py-20">
-          <div className="container max-w-8xl mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-              <div>
-                <h1 className="text-5xl font-bold mb-6">DreamCasa AI: Transform Your Space with AI</h1>
-                <p className="text-xl text-gray-600 mb-8">Upload a photo of your room and let AI transform it according to your preferred style. Professional results in seconds.</p>
-                <div className="flex gap-4">
-                  <button 
-                    onClick={() => document.getElementById('design-section')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="!rounded-button px-8 py-4 bg-custom text-white hover:bg-custom/90 transition flex items-center"
-                  >
-                    <i className="fas fa-upload mr-2"></i>
-                    Upload a photo
-                  </button>
-                  <button 
-                    onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="!rounded-button px-8 py-4 border border-custom text-custom hover:bg-custom hover:text-white transition"
-                  >
-                    Learn more
-                  </button>
+        {/* Hero Section - Only shown when not logged in */}
+        {!user && (
+          <section className="relative bg-gray-50 py-20">
+            <div className="container max-w-8xl mx-auto px-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                <div>
+                  <h1 className="text-5xl font-bold mb-6">DreamCasa AI: Transform Your Space with AI</h1>
+                  <p className="text-xl text-gray-600 mb-8">Upload a photo of your room and let AI transform it according to your preferred style. Professional results in seconds.</p>
+                  <div className="flex gap-4">
+                    <button 
+                      onClick={() => document.getElementById('design-section')?.scrollIntoView({ behavior: 'smooth' })}
+                      className="!rounded-button px-8 py-4 bg-custom text-white hover:bg-custom/90 transition flex items-center"
+                    >
+                      <i className="fas fa-upload mr-2"></i>
+                      Upload a photo
+                    </button>
+                    <button 
+                      onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+                      className="!rounded-button px-8 py-4 border border-custom text-custom hover:bg-custom hover:text-white transition"
+                    >
+                      Learn more
+                    </button>
+                  </div>
+                </div>
+                <div className="relative">
+                  <img 
+                    src="/images/before_after.jpg"
+                    alt="DreamCasa AI Transform" 
+                    className="rounded-lg shadow-lg"
+                  />
                 </div>
               </div>
-              <div className="relative">
-                <img 
-                  src="/images/before_after.jpg"
-                  alt="DreamCasa AI Transform" 
-                  className="rounded-lg shadow-lg"
-                />
-              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Design Section */}
         <section id="design-section" className="py-20">
@@ -331,164 +349,171 @@ function App() {
           </section>
         )}
 
+        {/* Features Section - Only shown when not logged in */}
+        {!user && (
+          <section id="features" className="py-20">
+            <div className="container max-w-8xl mx-auto px-4">
+              <div className="text-center mb-16">
+                <h2 className="text-4xl font-bold mb-4">Our Features</h2>
+                <p className="text-xl text-gray-600">Discover all the tools to transform your spaces</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="p-6 bg-white rounded-lg shadow-sm border border-gray-100">
+                  <div className="w-12 h-12 bg-custom/10 rounded-lg flex items-center justify-center mb-4">
+                    <i className="fas fa-couch text-custom text-xl"></i>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-3">Virtual Staging</h3>
+                  <p className="text-gray-600">Virtually furnish your empty rooms with photorealistic furniture.</p>
+                </div>
+                <div className="p-6 bg-white rounded-lg shadow-sm border border-gray-100">
+                  <div className="w-12 h-12 bg-custom/10 rounded-lg flex items-center justify-center mb-4">
+                    <i className="fas fa-eraser text-custom text-xl"></i>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-3">Empty Your Space</h3>
+                  <p className="text-gray-600">Remove furniture and objects to create a neutral environment.</p>
+                </div>
+                <div className="p-6 bg-white rounded-lg shadow-sm border border-gray-100">
+                  <div className="w-12 h-12 bg-custom/10 rounded-lg flex items-center justify-center mb-4">
+                    <i className="fas fa-paint-roller text-custom text-xl"></i>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-3">Redesign & Style</h3>
+                  <p className="text-gray-600">Renovate existing rooms with new design styles.</p>
+                  </div>
+              </div>
+            </div>
+          </section>
+        )}
 
-        {/* Features Section */}
-        <section id="features" className="py-20">
-          <div className="container max-w-8xl mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold mb-4">Our Features</h2>
-              <p className="text-xl text-gray-600">Discover all the tools to transform your spaces</p>
+        {/* Pricing Section - Only shown when not logged in */}
+        {!user && (
+          <section id="pricing" className="py-20 bg-gray-50">
+            <div className="container max-w-8xl mx-auto px-4">
+              <div className="text-center mb-16">
+                <h2 className="text-4xl font-bold mb-4">Plans and Pricing</h2>
+                <p className="text-xl text-gray-600">Choose the plan that best suits your needs</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
+                  <h3 className="text-2xl font-bold mb-4">Basic</h3>
+                  <div className="text-4xl font-bold mb-6">
+                    Free
+                  </div>
+                  <ul className="space-y-4 mb-8">
+                    <li className="flex items-center">
+                      <i className="fas fa-check text-custom mr-2"></i>
+                      3 generations per month
+                    </li>
+                    <li className="flex items-center">
+                      <i className="fas fa-check text-custom mr-2"></i>
+                      Standard resolution
+                    </li>
+                  </ul>
+                  <button className="!rounded-button w-full py-3 border border-custom text-custom hover:bg-custom hover:text-white transition">Start for free</button>
+                </div>
+                <div className="bg-white p-8 rounded-lg shadow-lg border-2 border-custom relative">
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-custom text-white px-4 py-1 rounded-full text-sm">Most popular</div>
+                  <h3 className="text-2xl font-bold mb-4">Pro</h3>
+                  <div className="text-4xl font-bold mb-6">
+                    $29<span className="text-xl font-normal">/month</span>
+                  </div>
+                  <ul className="space-y-4 mb-8">
+                    <li className="flex items-center">
+                      <i className="fas fa-check text-custom mr-2"></i>
+                      50 generations per month
+                    </li>
+                    <li className="flex items-center">
+                      <i className="fas fa-check text-custom mr-2"></i>
+                      High resolution
+                    </li>
+                    <li className="flex items-center">
+                      <i className="fas fa-check text-custom mr-2"></i>
+                      Priority support
+                    </li>
+                  </ul>
+                  <button className="!rounded-button w-full py-3 bg-custom text-white hover:bg-custom/90 transition">Start now</button>
+                </div>
+                <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
+                  <h3 className="text-2xl font-bold mb-4">Business</h3>
+                  <div className="text-4xl font-bold mb-6">
+                    $99<span className="text-xl font-normal">/month</span>
+                  </div>
+                  <ul className="space-y-4 mb-8">
+                    <li className="flex items-center">
+                      <i className="fas fa-check text-custom mr-2"></i>
+                      Unlimited generations
+                    </li>
+                    <li className="flex items-center">
+                      <i className="fas fa-check text-custom mr-2"></i>
+                      Maximum resolution
+                    </li>
+                    <li className="flex items-center">
+                      <i className="fas fa-check text-custom mr-2"></i>
+                      API access
+                    </li>
+                  </ul>
+                  <button className="!rounded-button w-full py-3 border border-custom text-custom hover:bg-custom hover:text-white transition">Contact us</button>
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="p-6 bg-white rounded-lg shadow-sm border border-gray-100">
-                <div className="w-12 h-12 bg-custom/10 rounded-lg flex items-center justify-center mb-4">
-                  <i className="fas fa-couch text-custom text-xl"></i>
-                </div>
-                <h3 className="text-xl font-semibold mb-3">Virtual Staging</h3>
-                <p className="text-gray-600">Virtually furnish your empty rooms with photorealistic furniture.</p>
-              </div>
-              <div className="p-6 bg-white rounded-lg shadow-sm border border-gray-100">
-                <div className="w-12 h-12 bg-custom/10 rounded-lg flex items-center justify-center mb-4">
-                  <i className="fas fa-eraser text-custom text-xl"></i>
-                </div>
-                <h3 className="text-xl font-semibold mb-3">Empty Your Space</h3>
-                <p className="text-gray-600">Remove furniture and objects to create a neutral environment.</p>
-              </div>
-              <div className="p-6 bg-white rounded-lg shadow-sm border border-gray-100">
-                <div className="w-12 h-12 bg-custom/10 rounded-lg flex items-center justify-center mb-4">
-                  <i className="fas fa-paint-roller text-custom text-xl"></i>
-                </div>
-                <h3 className="text-xl font-semibold mb-3">Redesign & Style</h3>
-                <p className="text-gray-600">Renovate existing rooms with new design styles.</p>
-              </div>
-            </div>
-          </div>
-        </section>
+          </section>
+        )}
 
-        {/* Pricing Section */}
-        <section id="pricing" className="py-20 bg-gray-50">
-          <div className="container max-w-8xl mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold mb-4">Plans and Pricing</h2>
-              <p className="text-xl text-gray-600">Choose the plan that best suits your needs</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
-                <h3 className="text-2xl font-bold mb-4">Basic</h3>
-                <div className="text-4xl font-bold mb-6">
-                  Free
-                </div>
-                <ul className="space-y-4 mb-8">
-                  <li className="flex items-center">
-                    <i className="fas fa-check text-custom mr-2"></i>
-                    3 generations per month
-                  </li>
-                  <li className="flex items-center">
-                    <i className="fas fa-check text-custom mr-2"></i>
-                    Standard resolution
-                  </li>
-                </ul>
-                <button className="!rounded-button w-full py-3 border border-custom text-custom hover:bg-custom hover:text-white transition">Start for free</button>
+        {/* Portfolio Section - Only shown when not logged in */}
+        {!user && (
+          <section id="portfolio" className="py-20">
+            <div className="container max-w-8xl mx-auto px-4">
+              <div className="text-center mb-16">
+                <h2 className="text-4xl font-bold mb-4">Our Results</h2>
+                <p className="text-xl text-gray-600">See some of our transformations</p>
               </div>
-              <div className="bg-white p-8 rounded-lg shadow-lg border-2 border-custom relative">
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-custom text-white px-4 py-1 rounded-full text-sm">Most popular</div>
-                <h3 className="text-2xl font-bold mb-4">Pro</h3>
-                <div className="text-4xl font-bold mb-6">
-                  $29<span className="text-xl font-normal">/month</span>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="rounded-lg overflow-hidden h-64 relative">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <ImageComparison
+                      originalImage="/images/Salotto_vecchio.png" 
+                      generatedImage="/images/Salotto_nuovo.png"
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
                 </div>
-                <ul className="space-y-4 mb-8">
-                  <li className="flex items-center">
-                    <i className="fas fa-check text-custom mr-2"></i>
-                    50 generations per month
-                  </li>
-                  <li className="flex items-center">
-                    <i className="fas fa-check text-custom mr-2"></i>
-                    High resolution
-                  </li>
-                  <li className="flex items-center">
-                    <i className="fas fa-check text-custom mr-2"></i>
-                    Priority support
-                  </li>
-                </ul>
-                <button className="!rounded-button w-full py-3 bg-custom text-white hover:bg-custom/90 transition">Start now</button>
-              </div>
-              <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
-                <h3 className="text-2xl font-bold mb-4">Business</h3>
-                <div className="text-4xl font-bold mb-6">
-                  $99<span className="text-xl font-normal">/month</span>
+                <div className="rounded-lg overflow-hidden">
+                  <img src="https://creatie.ai/ai/api/search-image?query=A luxurious master bedroom with elegant furnishings, soft textiles, and a calming color palette. The scene includes a king-size bed, designer lighting, and tasteful artwork. Professional interior design photography with attention to detail&width=400&height=300&orientation=landscape&flag=683b4d05-6475-4e10-9998-0dc08f72955a" alt="Bedroom Transform" className="w-full h-64 object-cover" />
                 </div>
-                <ul className="space-y-4 mb-8">
-                  <li className="flex items-center">
-                    <i className="fas fa-check text-custom mr-2"></i>
-                    Unlimited generations
-                  </li>
-                  <li className="flex items-center">
-                    <i className="fas fa-check text-custom mr-2"></i>
-                    Maximum resolution
-                  </li>
-                  <li className="flex items-center">
-                    <i className="fas fa-check text-custom mr-2"></i>
-                    API access
-                  </li>
-                </ul>
-                <button className="!rounded-button w-full py-3 border border-custom text-custom hover:bg-custom hover:text-white transition">Contact us</button>
+                <div className="rounded-lg overflow-hidden">
+                  <img src="https://creatie.ai/ai/api/search-image?query=A contemporary kitchen with sleek cabinetry, marble countertops, and high-end appliances. The space features excellent lighting, clean lines, and a sophisticated design aesthetic. Professional interior design photography showcasing modern luxury&width=400&height=300&orientation=landscape&flag=8f07e65d-12a6-4b1f-aa2c-f373726533d8" alt="Kitchen Transform" className="w-full h-64 object-cover" />
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
-        {/* Portfolio Section */}
-        <section id="portfolio" className="py-20">
-          <div className="container max-w-8xl mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold mb-4">Our Results</h2>
-              <p className="text-xl text-gray-600">See some of our transformations</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="rounded-lg overflow-hidden h-64 relative">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <ImageComparison
-                    originalImage="/images/Salotto_vecchio.png" 
-                    generatedImage="/images/Salotto_nuovo.png"
-                    className="h-full w-full object-contain"
-                  />
-                </div>
+        {/* FAQ Section - Only shown when not logged in */}
+        {!user && (
+          <section id="faq" className="py-20 bg-gray-50">
+            <div className="container max-w-8xl mx-auto px-4">
+              <div className="text-center mb-16">
+                <h2 className="text-4xl font-bold mb-4">Frequently Asked Questions</h2>
+                <p className="text-xl text-gray-600">Find answers to your questions</p>
               </div>
-              <div className="rounded-lg overflow-hidden">
-                <img src="https://creatie.ai/ai/api/search-image?query=A luxurious master bedroom with elegant furnishings, soft textiles, and a calming color palette. The scene includes a king-size bed, designer lighting, and tasteful artwork. Professional interior design photography with attention to detail&width=400&height=300&orientation=landscape&flag=683b4d05-6475-4e10-9998-0dc08f72955a" alt="Bedroom Transform" className="w-full h-64 object-cover" />
-              </div>
-              <div className="rounded-lg overflow-hidden">
-                <img src="https://creatie.ai/ai/api/search-image?query=A contemporary kitchen with sleek cabinetry, marble countertops, and high-end appliances. The space features excellent lighting, clean lines, and a sophisticated design aesthetic. Professional interior design photography showcasing modern luxury&width=400&height=300&orientation=landscape&flag=8f07e65d-12a6-4b1f-aa2c-f373726533d8" alt="Kitchen Transform" className="w-full h-64 object-cover" />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* FAQ Section */}
-        <section id="faq" className="py-20 bg-gray-50">
-          <div className="container max-w-8xl mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold mb-4">Frequently Asked Questions</h2>
-              <p className="text-xl text-gray-600">Find answers to your questions</p>
-            </div>
-            <div className="max-w-3xl mx-auto">
-              <div className="space-y-4">
-                <div className="bg-white p-6 rounded-lg shadow-sm">
-                  <h3 className="text-lg font-semibold mb-2">How does the transformation process work?</h3>
-                  <p className="text-gray-600">Upload a photo of your room, select the desired style, and let the AI do the rest. You'll receive the result in seconds.</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-sm">
-                  <h3 className="text-lg font-semibold mb-2">What type of photos can I upload?</h3>
-                  <p className="text-gray-600">We accept photos in JPG and PNG format. For best results, use well-lit, high-resolution images.</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-sm">
-                  <h3 className="text-lg font-semibold mb-2">Can I edit the result?</h3>
-                  <p className="text-gray-600">Yes, you can generate multiple variants and further customize the design according to your preferences.</p>
+              <div className="max-w-3xl mx-auto">
+                <div className="space-y-4">
+                  <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 className="text-lg font-semibold mb-2">How does the transformation process work?</h3>
+                    <p className="text-gray-600">Upload a photo of your room, select the desired style, and let the AI do the rest. You'll receive the result in seconds.</p>
+                  </div>
+                  <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 className="text-lg font-semibold mb-2">What type of photos can I upload?</h3>
+                    <p className="text-gray-600">We accept photos in JPG and PNG format. For best results, use well-lit, high-resolution images.</p>
+                  </div>
+                  <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 className="text-lg font-semibold mb-2">Can I edit the result?</h3>
+                    <p className="text-gray-600">Yes, you can generate multiple variants and further customize the design according to your preferences.</p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
       </main>
 
       {/* Footer */}
