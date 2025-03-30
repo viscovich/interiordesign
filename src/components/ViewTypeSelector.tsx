@@ -8,14 +8,14 @@ interface ViewTypeSelectorProps {
 
 export function ViewTypeSelector({ value, onChange }: ViewTypeSelectorProps) {
   const options = [
-    { value: 'front', label: 'Frontale', icon: Camera },
-    { value: 'side', label: 'Lato', icon: Box },
-    { value: 'top', label: 'Dall\'alto', icon: Map }
+    { value: 'front', label: 'Front', icon: Camera },
+    { value: 'side', label: 'Side', icon: Box },
+    { value: 'top', label: 'Top', icon: Map }
   ];
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-medium text-gray-700">Tipo di vista</h3>
+      <h3 className="text-sm font-medium text-gray-700">View type</h3>
       <div className="grid grid-cols-3 gap-2">
         {options.map((option) => (
           <button

@@ -10,12 +10,12 @@ export function RenderingTypeSelector({ value, onChange }: RenderingTypeSelector
   const options = [
     { value: '3d', label: '3D', icon: Box },
     { value: 'wireframe', label: 'Wireframe', icon: Grid3x3 },
-    { value: '2d', label: 'Piantina 2D', icon: MapIcon }
+    { value: '2d', label: '2D Plan', icon: MapIcon }
   ];
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-medium text-gray-700">Tipo di rendering</h3>
+      <h3 className="text-sm font-medium text-gray-700">Rendering type</h3>
       <div className="grid grid-cols-3 gap-2">
         {options.map((option) => (
           <button

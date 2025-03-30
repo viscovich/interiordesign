@@ -235,7 +235,8 @@ function App() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                 <div>
                   <h1 className="text-5xl font-bold mb-6">DreamCasa AI: Transform Your Space with AI</h1>
-                  <p className="text-xl text-gray-600 mb-8">Upload a photo of your room and let AI transform it according to your preferred style. Professional results in seconds.</p>
+                  <p className="text-xl text-gray-600 mb-8">Upload a photo or a full floor plan and let AI redesign your selected room in your preferred style.
+                  Get stunning, professional results in seconds.</p>
                   <div className="flex gap-4">
                     <button 
                       onClick={() => document.getElementById('design-section')?.scrollIntoView({ behavior: 'smooth' })}
@@ -535,7 +536,7 @@ function App() {
                 <div className="space-y-4">
                   <div className="bg-white p-6 rounded-lg shadow-sm">
                     <h3 className="text-lg font-semibold mb-2">How does the transformation process work?</h3>
-                    <p className="text-gray-600">Upload a photo of your room, select the desired style, and let the AI do the rest. You'll receive the result in seconds.</p>
+                    <p className="text-gray-600">Upload a photo of your room or floor plan, select the desired style, and let the AI do the rest. You'll receive the result in seconds.</p>
                   </div>
                   <div className="bg-white p-6 rounded-lg shadow-sm">
                     <h3 className="text-lg font-semibold mb-2">What type of photos can I upload?</h3>
