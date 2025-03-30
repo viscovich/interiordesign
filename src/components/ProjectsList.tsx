@@ -4,13 +4,14 @@ import type { User } from '@supabase/supabase-js';
 import { getProjectsByUser, deleteProject } from '../lib/projectsService';
 import toast from 'react-hot-toast';
 import { ProjectModal } from './ProjectModal';
-import { TrashIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 
 interface ProjectsListProps {
   user: User | null;
+  onModifyProject: (project: Project) => void;
 }
 
-export function ProjectsList({ user }: ProjectsListProps) {
+export function ProjectsList({ user, onModifyProject }: ProjectsListProps) {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
@@ -71,12 +72,24 @@ export function ProjectsList({ user }: ProjectsListProps) {
                   e.stopPropagation();
                   handleDeleteProject(project);
                 }}
-                className="absolute top-2 right-2 p-2 text-gray-500 hover:text-red-500 transition-colors"
+                className="absolute top-2 right-2 p-1 text-gray-400 hover:text-red-600 transition-colors z-10" // Adjusted padding/color
                 aria-label="Delete project"
               >
                 <TrashIcon className="w-5 h-5" />
               </button>
-              <div 
+              {/* Add Modify Button - Placed correctly as sibling */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onModifyProject(project);
+                }}
+                className="absolute top-2 right-10 p-1 text-gray-400 hover:text-blue-600 transition-colors z-10" // Adjusted padding/color
+                aria-label="Modify project"
+              >
+                <PencilSquareIcon className="w-5 h-5" />
+              </button>
+              {/* Main clickable area for viewing details */}
+              <div
                 className="cursor-pointer"
                 onClick={() => setSelectedProject(project)}
               >

@@ -8,6 +8,7 @@ import { ImageComparison } from './components/ImageComparison';
 import { LoginModal } from './components/LoginModal';
 import { RegisterModal } from './components/RegisterModal';
 import { ProjectsList } from './components/ProjectsList';
+import ImageModificationModal from './components/ImageModificationModal'; // Import the new modal
 import { UserCredits } from './components/UserCredits';
 import { useAuth } from './lib/auth';
 import { generateInteriorDesign } from './lib/gemini';
@@ -18,6 +19,7 @@ import { hasEnoughCredits, useCredit, getUserProfile } from './lib/userService';
 import { getStripe, startCheckout } from './lib/stripe';
 import type { UserProfile } from './lib/userService.d';
 import toast from 'react-hot-toast';
+// Removed duplicate import of Project type here, it's already imported on line 17
 
 function App() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -32,6 +34,10 @@ function App() {
   const [selectedRoomType, setSelectedRoomType] = useState<RoomType | null>(null);
   const [selectedTransformationMode, setSelectedTransformationMode] = useState<TransformationMode | null>(null);
   const [pendingGenerate, setPendingGenerate] = useState(false);
+  // State for the modification modal
+  const [isModificationModalOpen, setIsModificationModalOpen] = useState(false);
+  const [projectToModify, setProjectToModify] = useState<Project | null>(null);
+
 
   const handleImageUpload = async (file: File) => {
     // Convert file to data URL for upload
@@ -131,6 +137,19 @@ function App() {
       handleGenerate();
     }
   }, [user, pendingGenerate]);
+
+  // Function to open the modification modal
+  const handleOpenModificationModal = (project: Project) => {
+    setProjectToModify(project);
+    setIsModificationModalOpen(true);
+  };
+
+  // Function to close the modification modal
+  const handleCloseModificationModal = () => {
+    setIsModificationModalOpen(false);
+    setProjectToModify(null);
+  };
+
 
   return (
     <>
@@ -342,8 +361,9 @@ function App() {
         {activeSection === 'projects' && (
           <section className="py-20">
             <div className="container max-w-8xl mx-auto px-4">
-              <ProjectsList 
+              <ProjectsList
                 user={user}
+                onModifyProject={handleOpenModificationModal} // Pass the handler function
               />
             </div>
           </section>
@@ -571,6 +591,12 @@ function App() {
           setIsRegisterModalOpen(false);
           setIsLoginModalOpen(true);
         }}
+      />
+      {/* Render the Image Modification Modal */}
+      <ImageModificationModal
+        isOpen={isModificationModalOpen}
+        onClose={handleCloseModificationModal}
+        project={projectToModify}
       />
     </>
   );

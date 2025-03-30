@@ -8,3 +8,22 @@ export interface Project {
   created_at: string;
   updated_at: string;
 }
+
+export interface UserObject {
+  id: string; // Corresponds to UUID
+  user_id: string; // Corresponds to UUID
+  object_name: string; // Corresponds to TEXT
+  object_type: string; // Corresponds to TEXT (e.g., 'Refrigerator', 'Chair')
+  asset_url: string; // Corresponds to TEXT (URL)
+  thumbnail_url?: string | null; // Corresponds to TEXT (URL), optional
+  dimensions?: string | null; // Corresponds to TEXT, optional
+  created_at: string; // Corresponds to TIMESTAMPTZ
+}
+
+export interface ImageObject {
+  id: string; // Corresponds to UUID
+  project_id: string; // Corresponds to UUID
+  user_id: string; // Corresponds to UUID
+  object_name: string; // Corresponds to TEXT (Name from Gemini)
+  created_at: string; // Corresponds to TIMESTAMPTZ
+}
