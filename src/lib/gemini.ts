@@ -6,24 +6,44 @@ const genAI = new GoogleGenerativeAI(API_KEY);
 function getPromptForTransformationMode(mode: string, style: string, roomType: string): string {
   switch (mode) {
     case 'virtual-staging':
-      return `If you were to furnish this room with a ${style} style for a ${roomType}, what would you include?
-Describe it in detail using markdown format with headings, bullet points, and well-formatted paragraphs.
-Then generate an image that represents your idea. Try to respect the walls and windows of the attached room.`;
+      return `First, list all furniture and objects you detect in this image in the following format:
+      - [object name 1]
+      - [object name 2]
+      - etc.
+
+      Then, if you were to furnish this room with a ${style} style for a ${roomType}, what would you include?
+      Describe it in detail using markdown format with headings, bullet points, and well-formatted paragraphs.
+      Then generate an image that represents your idea. Try to respect the walls and windows of the attached room.`;
     
     case 'empty-space':
-      return `Remove all furniture and objects from this room to create an empty space.
-Describe the potential of this empty space using markdown format with headings, bullet points, and well-formatted paragraphs.
-Then generate an image that shows the room completely empty. Maintain the walls, windows, and architectural features.`;
+      return `First, list all furniture and objects you detect in this image in the following format:
+      - [object name 1]
+      - [object name 2]
+      - etc.
+
+      Then remove all furniture and objects from this room to create an empty space.
+      Describe the potential of this empty space using markdown format with headings, bullet points, and well-formatted paragraphs.
+      Then generate an image that shows the room completely empty. Maintain the walls, windows, and architectural features.`;
     
     case 'redesign':
-      return `Redesign this ${roomType} with a ${style} style, changing the layout, colors, and materials.
-Describe your redesign in detail using markdown format with headings, bullet points, and well-formatted paragraphs.
-Then generate an image that represents your redesign. You can modify walls, flooring, and fixtures while maintaining the basic room structure.`;
+      return `First, list all furniture and objects you detect in this image in the following format:
+      - [object name 1]
+      - [object name 2]
+      - etc.
+
+      Then redesign this ${roomType} with a ${style} style, changing the layout, colors, and materials.
+      Describe your redesign in detail using markdown format with headings, bullet points, and well-formatted paragraphs.
+      Then generate an image that represents your redesign. You can modify walls, flooring, and fixtures while maintaining the basic room structure.`;
     
     default:
-      return `If you were to furnish this room with a ${style} style for a ${roomType}, what would you include?
-Describe it in detail using markdown format with headings, bullet points, and well-formatted paragraphs.
-Then generate an image that represents your idea. Try to respect the walls and windows of the attached room.`;
+      return `First, list all furniture and objects you detect in this image in the following format:
+      - [object name 1]
+      - [object name 2]
+      - etc.
+
+      Then, if you were to furnish this room with a ${style} style for a ${roomType}, what would you include?
+      Describe it in detail using markdown format with headings, bullet points, and well-formatted paragraphs.
+      Then generate an image that represents your idea. Try to respect the walls and windows of the attached room.`;
   }
 }
 
@@ -80,9 +100,22 @@ export async function generateInteriorDesign(
 
     let description = '';
     let imageData = '';
+    const detectedObjects: string[] = [];
 
     for (const part of parts) {
       if (part.text) {
+        // Extract detected objects from the beginning of the response
+        const objectListMatch = part.text.match(/(- .+?)(?:\n\n|$)/g);
+        if (objectListMatch) {
+          objectListMatch.forEach(obj => {
+            const objectName = obj.replace(/^- /, '').trim();
+            if (objectName) {
+              detectedObjects.push(objectName);
+            }
+          });
+          console.log('[Object Detection] Found objects:', detectedObjects);
+        }
+
         description += part.text;
         console.log(`[generateInteriorDesign] Found text part of length: ${part.text.length}`);
       } else if (part.inlineData) {

@@ -13,7 +13,7 @@ import { UserCredits } from './components/UserCredits';
 import { useAuth } from './lib/auth';
 import { generateInteriorDesign } from './lib/gemini';
 import { uploadImage } from './lib/storage';
-import { createProject } from './lib/projectsService';
+import { createProject, recognizeAndSaveObjects } from './lib/projectsService'; // Import recognizeAndSaveObjects
 import type { Project } from './lib/projectsService.d';
 import { hasEnoughCredits, useCredit, getUserProfile } from './lib/userService';
 import { getStripe, startCheckout } from './lib/stripe';
@@ -99,18 +99,34 @@ function App() {
       );
       
       // Then create the project in database
+      let newProject: Project | null = null; // Variable to hold the created project
       if (user) {
-        await createProject(
+        newProject = await createProject( // Assign the result
           user.id,
           uploadedImage,
           generatedImageUrl,
           selectedStyle.name,
           selectedRoomType.name
         );
+
+        // --- New Step: Recognize and save objects ---
+        if (newProject && user) { // Check if project creation was successful
+          try {
+            console.log(`Recognizing objects for project ${newProject.id} using image ${generatedImageUrl}`);
+            // Call the imported function directly
+            await recognizeAndSaveObjects(newProject.id, user.id, generatedImageUrl);
+            console.log(`Objects recognized and saved for project ${newProject.id}`);
+          } catch (recognitionError) {
+            console.error('Failed to recognize or save objects after generation:', recognitionError);
+            // Decide if we should notify the user - maybe a soft error?
+            toast.error('Could not automatically identify objects in the generated image.');
+          }
+        }
+        // --- End New Step ---
       }
 
       console.log('Generated image data:', result.imageData);
-      setGeneratedImage(result.imageData);
+      setGeneratedImage(result.imageData); // Still use the base64 data for immediate display if needed
       setDesignDescription(result.description);
       setActiveSection('results');
       toast.success('Design generated and saved successfully!');

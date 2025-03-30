@@ -28,6 +28,18 @@ export async function uploadImage(
       base64Data = imageData.split(',')[1];
     }
 
+    // Calculate and log sizes
+    const base64SizeKB = (base64Data.length * 3/4) / 1024; // Approximate base64 size
+    const binarySize = base64Data.length * 3/4; // Approximate binary size
+    const binarySizeKB = binarySize / 1024;
+    const binarySizeMB = binarySizeKB / 1024;
+    
+    console.log('[Image Upload] Size metrics:', {
+      'Base64 (KB)': base64SizeKB.toFixed(2),
+      'Binary (KB)': binarySizeKB.toFixed(2), 
+      'Binary (MB)': binarySizeMB.toFixed(2)
+    });
+
     // Convert base64 to ArrayBuffer
     const binaryString = atob(base64Data);
     const len = binaryString.length;

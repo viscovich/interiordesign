@@ -13,20 +13,24 @@ const fileToBase64 = (file: File): Promise<string> => {
 };
 
 
-// Placeholder for Gemini service interaction
-// Replace with actual calls to your gemini.ts functions
+import { generateInteriorDesign } from './gemini';
+
 const geminiService = {
   recognizeObjects: async (imageUrl: string): Promise<string[]> => {
     console.log(`Calling Gemini to recognize objects in: ${imageUrl}`);
-    // Simulate API call delay and response
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    // Example response based on user prompt
-    // In reality, this would parse the JSON response from the prompt
-    // "give me the list of furniture or electric devices on this image in json format"
-    if (imageUrl.includes('kitchen')) { // Dummy check
-        return ["Refrigerator", "Kitchen island", "Range", "Sink", "Cabinet"];
-    }
-    return ["Chair", "Table", "Lamp"];
+    // This will now use the actual Gemini implementation which logs detected objects
+    const { description } = await generateInteriorDesign(
+      imageUrl,
+      'any', // style doesn't matter for object detection
+      'any', // roomType doesn't matter for object detection
+      'virtual-staging' // mode that includes object detection
+    );
+    
+    // Parse the detected objects from the description
+    const objectListMatch = description.match(/(- .+?)(?:\n\n|$)/g);
+    if (!objectListMatch) return [];
+    
+    return objectListMatch.map(obj => obj.replace(/^- /, '').trim());
   },
   regenerateWithSubstitution: async (
     originalImageUrl: string,
@@ -134,23 +138,29 @@ export async function saveImageObjects(projectId: string, userId: string, object
 
 // Function to trigger recognition and save results
 export async function recognizeAndSaveObjects(projectId: string, userId: string, imageUrl: string): Promise<ImageObject[]> {
-  // Clear existing objects for this project first? Or assume it's only called once?
-  // For simplicity, let's assume we clear existing ones first.
+  // Clear existing objects for this project first
   const { error: deleteError } = await supabase
     .from('image_objects')
     .delete()
     .eq('project_id', projectId);
 
-   if (deleteError) {
-     console.error('Error deleting old image objects:', deleteError);
-     // Decide if we should proceed or throw
-   }
-
-  const recognizedNames = await geminiService.recognizeObjects(imageUrl);
-  if (recognizedNames && recognizedNames.length > 0) {
-    return await saveImageObjects(projectId, userId, recognizedNames);
+  if (deleteError) {
+    console.error('Error deleting old image objects:', deleteError);
+    throw deleteError;
   }
-  return []; // Return empty if nothing was recognized
+
+  try {
+    const recognizedNames = await geminiService.recognizeObjects(imageUrl);
+    console.log('Recognized objects:', recognizedNames);
+    
+    if (recognizedNames && recognizedNames.length > 0) {
+      return await saveImageObjects(projectId, userId, recognizedNames);
+    }
+    return [];
+  } catch (error) {
+    console.error('Error recognizing objects:', error);
+    throw error;
+  }
 }
 
 

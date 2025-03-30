@@ -13,28 +13,21 @@ import { useAuth } from '../lib/auth'; // Correctly imported useAuth
 
 interface LibrarySidebarProps {
   recognizedObjects: ImageObject[];
-  onRecognize: () => void;
   onSelectObject: (objectName: string) => void;
-  isLoadingRecognition: boolean;
+  // Removed onRecognize and isLoadingRecognition props
   selectedObjectName: string | null;
 }
-// Updated LibrarySidebar to somewhat resemble the mockup's object list style
-const LibrarySidebar: React.FC<LibrarySidebarProps> = ({ recognizedObjects, onRecognize, onSelectObject, isLoadingRecognition, selectedObjectName }) => (
+// Updated LibrarySidebar: Removed Scan button and related logic
+const LibrarySidebar: React.FC<LibrarySidebarProps> = ({ recognizedObjects, onSelectObject, selectedObjectName }) => (
   <div className="w-64 p-4 border-r border-gray-200 bg-gray-50 overflow-y-auto flex-shrink-0"> {/* Fixed width */}
     {/* Placeholder for Photos section from mockup - not implemented */}
     {/* <h2 className="text-sm font-semibold mb-2 text-gray-600">Photos</h2> */}
     {/* ... list photos ... */}
 
-    <h2 className="text-sm font-semibold mb-3 text-gray-600 mt-4">OBJECTS IN IMAGE</h2>
-     <button
-      onClick={onRecognize}
-      disabled={isLoadingRecognition}
-      className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mb-4 disabled:opacity-50"
-    >
-      {isLoadingRecognition ? 'Recognizing...' : 'Scan Objects'}
-    </button>
-     {recognizedObjects.length === 0 && !isLoadingRecognition && (
-        <p className="text-xs text-gray-400 mt-2">Click "Scan Objects" to list replaceable items found in the image.</p>
+    <h2 className="text-sm font-semibold mb-3 text-gray-600 mt-4">REPLACEABLE OBJECTS</h2>
+    {/* Removed Scan Objects button */}
+    {recognizedObjects.length === 0 && (
+        <p className="text-xs text-gray-400 mt-2">No replaceable objects were identified in this image during generation.</p>
     )}
     <div className="space-y-2 mt-3">
       {recognizedObjects.map((obj) => (
@@ -141,7 +134,7 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
   const [userObjectLibrary, setUserObjectLibrary] = useState<UserObject[]>([]);
   const [selectedObjectName, setSelectedObjectName] = useState<string | null>(null);
   const [selectedReplacementObject, setSelectedReplacementObject] = useState<UserObject | null>(null);
-  const [isLoadingRecognition, setIsLoadingRecognition] = useState(false);
+  // Removed isLoadingRecognition state
   const [isLoadingGeneration, setIsLoadingGeneration] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null); // Holds original or newly generated URL
@@ -153,8 +146,9 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
       setSelectedObjectName(null);
       setSelectedReplacementObject(null);
       setError(null);
+      // Removed setIsLoadingRecognition(false);
       setIsLoadingGeneration(false);
-      // Fetch existing recognized objects for this project
+      // Fetch existing recognized objects for this project (populated during generation)
       fetchRecognizedObjects();
       // Fetch user's object library
       fetchUserLibrary();
@@ -186,22 +180,9 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
       console.error("Error fetching user library:", err);
       setError("Failed to load your object library.");
     }
-  }, [user]);
+  }, [project, user]);
 
-  const handleRecognizeObjects = async () => {
-    if (!project || !user || !currentImageUrl) return;
-    setIsLoadingRecognition(true);
-    setError(null);
-    try {
-      const objects = await recognizeAndSaveObjects(project.id, user.id, currentImageUrl);
-      setRecognizedObjects(objects);
-    } catch (err) {
-      console.error("Error recognizing objects:", err);
-      setError("Object recognition failed.");
-    } finally {
-      setIsLoadingRecognition(false);
-    }
-  };
+  // Removed handleRecognizeObjects function
 
   const handleSelectObject = (objectName: string) => {
     setSelectedObjectName(objectName);
@@ -262,9 +243,8 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
         <div className="flex flex-grow min-h-0"> {/* Use min-h-0 to allow flex items to shrink/scroll */}
           <LibrarySidebar
             recognizedObjects={recognizedObjects}
-            onRecognize={handleRecognizeObjects}
+            // Removed onRecognize and isLoadingRecognition props
             onSelectObject={handleSelectObject}
-            isLoadingRecognition={isLoadingRecognition}
             selectedObjectName={selectedObjectName}
           />
           <ImageEditor imageUrl={currentImageUrl} /> {/* Pass null if needed */}
@@ -286,7 +266,7 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
             </div>
              <button
                 onClick={handleGenerate}
-                disabled={!selectedObjectName || !selectedReplacementObject || isLoadingGeneration || isLoadingRecognition}
+                disabled={!selectedObjectName || !selectedReplacementObject || isLoadingGeneration} // Removed isLoadingRecognition from disabled check
                 className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-5 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
             >
                 {isLoadingGeneration ? (
