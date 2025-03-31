@@ -13,39 +13,7 @@ const fileToBase64 = (file: File): Promise<string> => {
 };
 
 
-import { generateInteriorDesign } from './gemini';
-
-const geminiService = {
-  recognizeObjects: async (imageUrl: string): Promise<string[]> => {
-    console.log(`Calling Gemini to recognize objects in: ${imageUrl}`);
-    // This will now use the actual Gemini implementation which logs detected objects
-    const { description } = await generateInteriorDesign(
-      imageUrl,
-      'any', // style doesn't matter for object detection
-      'any', // roomType doesn't matter for object detection
-      'virtual-staging' // mode that includes object detection
-    );
-    
-    // Parse the detected objects from the description
-    const objectListMatch = description.match(/(- .+?)(?:\n\n|$)/g);
-    if (!objectListMatch) return [];
-    
-    return objectListMatch.map(obj => obj.replace(/^- /, '').trim());
-  },
-  regenerateWithSubstitution: async (
-    originalImageUrl: string,
-    replacementObjectImageUrl: string,
-    objectNameToReplace: string
-  ): Promise<string> => {
-    console.log(`Calling Gemini to replace ${objectNameToReplace}`);
-    console.log(`Original: ${originalImageUrl}`);
-    console.log(`Replacement Object Image: ${replacementObjectImageUrl}`);
-    // Simulate API call delay and response
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    // Return a placeholder URL for the new image
-    return 'https://via.placeholder.com/1024x768.png?text=Generated+Image+Placeholder';
-  }
-};
+// Removed unused geminiService object
 
 export async function getProjects() {
   const { data, error } = await supabase
@@ -136,8 +104,8 @@ export async function saveImageObjects(projectId: string, userId: string, object
   return data || [];
 }
 
-// Function to trigger recognition and save results
-export async function recognizeAndSaveObjects(projectId: string, userId: string, imageUrl: string): Promise<ImageObject[]> {
+// Function to save recognized objects (modified from recognizeAndSaveObjects)
+export async function saveDetectedObjects(projectId: string, userId: string, detectedObjects: string[]): Promise<ImageObject[]> {
   // Clear existing objects for this project first
   const { error: deleteError } = await supabase
     .from('image_objects')
@@ -150,15 +118,17 @@ export async function recognizeAndSaveObjects(projectId: string, userId: string,
   }
 
   try {
-    const recognizedNames = await geminiService.recognizeObjects(imageUrl);
-    console.log('Recognized objects:', recognizedNames);
+    // Directly use the passed-in detectedObjects
+    console.log('Saving detected objects:', detectedObjects);
     
-    if (recognizedNames && recognizedNames.length > 0) {
-      return await saveImageObjects(projectId, userId, recognizedNames);
+    if (detectedObjects && detectedObjects.length > 0) {
+      // Call saveImageObjects with the provided list
+      return await saveImageObjects(projectId, userId, detectedObjects);
     }
-    return [];
+    console.log('No detected objects provided to save.');
+    return []; // Return empty array if no objects were detected/provided
   } catch (error) {
-    console.error('Error recognizing objects:', error);
+    console.error('Error saving detected objects:', error);
     throw error;
   }
 }
@@ -240,12 +210,12 @@ export async function regenerateImageWithSubstitution(
     throw new Error('Replacement object is missing asset URL.');
   }
 
-  // Call the Gemini service placeholder
-  const newImageUrl = await geminiService.regenerateWithSubstitution(
-    originalImageUrl,
-    replacementObject.asset_url, // Pass the URL of the replacement object's image
-    objectNameToReplace
-  );
+  // TODO: Implement actual regeneration logic, perhaps calling a modified gemini function
+  console.warn('Regeneration logic not implemented yet.');
+  // Placeholder call removed as geminiService is gone
+  // const newImageUrl = await geminiService.regenerateWithSubstitution(...) 
+  const newImageUrl = 'https://via.placeholder.com/1024x768.png?text=Regeneration+Not+Implemented';
+
 
   // Potentially save the new image URL back to the project?
   // This depends on how projects track their generated images.

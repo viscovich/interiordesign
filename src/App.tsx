@@ -16,7 +16,7 @@ import { UserCredits } from './components/UserCredits';
 import { useAuth } from './lib/auth';
 import { generateInteriorDesign } from './lib/gemini';
 import { uploadImage } from './lib/storage';
-import { createProject, recognizeAndSaveObjects } from './lib/projectsService'; // Import recognizeAndSaveObjects
+import { createProject, saveDetectedObjects } from './lib/projectsService'; // Import saveDetectedObjects instead
 import type { Project } from './lib/projectsService.d';
 import { hasEnoughCredits, useCredit, getUserProfile } from './lib/userService';
 import { getStripe, startCheckout } from './lib/stripe';
@@ -101,7 +101,8 @@ function App() {
 
     setIsGenerating(true);
     try {
-      const result = await generateInteriorDesign(
+      // Capture detectedObjects from the result
+      const { description, imageData, detectedObjects } = await generateInteriorDesign(
         uploadedImage,
         selectedStyle.name,
         selectedRoomType.name,
@@ -112,7 +113,7 @@ function App() {
 
       // First upload the generated image to storage
       const generatedImageUrl = await uploadImage(
-        result.imageData, 
+        imageData, // Use imageData from destructured result
         `generated/${Date.now()}.jpg`
       );
       
@@ -130,12 +131,12 @@ function App() {
         // --- New Step: Recognize and save objects ---
         if (newProject && user) { // Check if project creation was successful
           try {
-            console.log(`Recognizing objects for project ${newProject.id} using image ${generatedImageUrl}`);
-            // Call the imported function directly
-            await recognizeAndSaveObjects(newProject.id, user.id, generatedImageUrl);
-            console.log(`Objects recognized and saved for project ${newProject.id}`);
-          } catch (recognitionError) {
-            console.error('Failed to recognize or save objects after generation:', recognitionError);
+            // Call the updated function to save the detected objects
+            console.log(`Saving detected objects for project ${newProject.id}:`, detectedObjects);
+            await saveDetectedObjects(newProject.id, user.id, detectedObjects); 
+            console.log(`Detected objects saved for project ${newProject.id}`);
+          } catch (saveObjectsError) {
+            console.error('Failed to save detected objects after generation:', saveObjectsError);
             // Decide if we should notify the user - maybe a soft error?
             toast.error('Could not automatically identify objects in the generated image.');
           }
@@ -143,9 +144,9 @@ function App() {
         // --- End New Step ---
       }
 
-      console.log('Generated image data:', result.imageData);
-      setGeneratedImage(result.imageData); // Still use the base64 data for immediate display if needed
-      setDesignDescription(result.description);
+      console.log('Generated image data:', imageData); // Use imageData
+      setGeneratedImage(imageData); // Still use the base64 data for immediate display if needed
+      setDesignDescription(description); // Use description
       setActiveSection('results');
       toast.success('Design generated and saved successfully!');
       

@@ -14,12 +14,16 @@ function getGenerationPrompt(
   const colorPrompt = colorTone ? ` using a ${colorTone} color palette` : '';
   const viewPrompt = view ? ` Set the point of view to be ${view} to provide a clear perspective of the room.` : '';
 
-  return `Analyze the provided floor plan or photo and generate a ${renderingType} that accurately reflects the layout of walls, doors, windows, and internal spaces.
+  return `Analyze the provided floor plan or photo — whether the room is empty or already furnished — and generate a ${renderingType} that accurately reflects the layout of walls, doors, windows, and internal spaces.
 
-First, identify all relevant furniture and appliances that are or should be present in the ${roomType}. List them clearly in the following format:
+Start by listing the essential furniture and appliances that should be included in the redesigned ${roomType}, based on the ${style} style${colorPrompt}.  
+**Only provide a plain list of object names, with no extra descriptions, like this:**
 - [object name 1]
 - [object name 2]
 - etc.
+
+Do not combine this list with any explanation or context. The description comes after.
+
 
 Then, redesign the ${roomType} in a ${style} style${colorPrompt}. Make sure the design choices reflect the room’s purpose and architectural structure.${viewPrompt}
 
@@ -33,17 +37,15 @@ export async function generateInteriorDesign(
   style: string,
   roomType: string,
   colorTone: string,
-  renderingType: string, // Change parameter name
-  view: string // Make view required
-): Promise<{ description: string; imageData: string }> {
-  // Update log to use renderingType
+  renderingType: string,
+  view: string
+): Promise<{ description: string; imageData: string; detectedObjects: string[] }> {
   console.log(`[generateInteriorDesign] Starting with params: style=${style}, roomType=${roomType}, renderingType=${renderingType}, view=${view}`);
 
-  // Using type assertion to bypass TypeScript check while maintaining the exact format
   const model = genAI.getGenerativeModel({
     model: "gemini-2.0-flash-exp-image-generation",
     generationConfig: {
-      responseModalities: ["Text", "Image"], 
+      responseModalities: ["Text", "Image"],
     } as any,
   });
 
@@ -57,7 +59,6 @@ export async function generateInteriorDesign(
     )
   );
 
-  // Update function call to use renderingType and the new function name
   const prompt = getGenerationPrompt(renderingType, style, roomType, colorTone, view);
   console.log(`[generateInteriorDesign] Using prompt: ${prompt}`);
 
@@ -68,18 +69,17 @@ export async function generateInteriorDesign(
         inlineData: {
           data: imageBase64,
           mimeType: imageBlob.type,
-        }
+        },
       },
       {
-        text: prompt
-      }
+        text: prompt,
+      },
     ];
     console.log(`[generateInteriorDesign] Request contents:`, JSON.stringify(contents, null, 2));
-    
+
     const response = await model.generateContent(contents);
     console.log(`[generateInteriorDesign] Raw API response:`, JSON.stringify(response, null, 2));
-    
-    // Use optional chaining to safely access nested properties
+
     const parts = response.response?.candidates?.[0]?.content?.parts || [];
     console.log(`[generateInteriorDesign] Response parts:`, JSON.stringify(parts, null, 2));
 
@@ -89,18 +89,24 @@ export async function generateInteriorDesign(
 
     for (const part of parts) {
       if (part.text) {
-        // Extract detected objects from the beginning of the response
-        const objectListMatch = part.text.match(/(- .+?)(?:\n\n|$)/g);
-        if (objectListMatch) {
-          objectListMatch.forEach(obj => {
-            const objectName = obj.replace(/^- /, '').trim();
+        const lines = part.text.split('\n');
+        let reachedDescription = false;
+
+        for (const line of lines) {
+          if (line.trim().startsWith('###')) {
+            reachedDescription = true;
+            break;
+          }
+
+          if (line.trim().startsWith('- ')) {
+            const objectName = line.trim().replace(/^- /, '').trim();
             if (objectName) {
               detectedObjects.push(objectName);
             }
-          });
-          console.log('[Object Detection] Found objects:', detectedObjects);
+          }
         }
 
+        console.log('[Object Detection] Found objects:', detectedObjects);
         description += part.text;
         console.log(`[generateInteriorDesign] Found text part of length: ${part.text.length}`);
       } else if (part.inlineData) {
@@ -119,10 +125,11 @@ export async function generateInteriorDesign(
       throw new Error("Incomplete response: Image data is missing");
     }
 
-    return { description, imageData };
+    return { description, imageData, detectedObjects };
   } catch (error) {
     console.error("Errore nella generazione:", error);
     console.error("Error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
-    throw error; // Throw the original error to preserve the stack trace and message
+    throw error;
   }
 }
+
