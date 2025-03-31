@@ -9,6 +9,13 @@ export interface Project {
   updated_at: string;
 }
 
+export interface PaginatedProjects {
+  projects: Project[];
+  total: number;
+  page: number;
+  perPage: number;
+}
+
 export interface UserObject {
   id: string; // Corresponds to UUID
   user_id: string; // Corresponds to UUID

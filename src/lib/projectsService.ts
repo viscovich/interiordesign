@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { ImageObject, UserObject } from './projectsService.d'; // Import new types
+import { ImageObject, UserObject, PaginatedProjects } from './projectsService.d'; // Import new types
 import { uploadImage } from './storage'; // Corrected import path and function name
 
 // Helper function to convert File to Base64
@@ -25,15 +25,25 @@ export async function getProjects() {
   return data;
 }
 
-export async function getProjectsByUser(userId: string) {
-  const { data, error } = await supabase
+export async function getProjectsByUser(userId: string, page: number = 1, perPage: number = 6) {
+  const from = (page - 1) * perPage;
+  const to = from + perPage - 1;
+
+  const { data, error, count } = await supabase
     .from('projects')
-    .select('*')
+    .select('*', { count: 'exact' })
     .eq('user_id', userId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .range(from, to);
 
   if (error) throw error;
-  return data;
+
+  return {
+    projects: data,
+    total: count || 0,
+    page,
+    perPage
+  } as PaginatedProjects;
 }
 
 export async function createProject(
