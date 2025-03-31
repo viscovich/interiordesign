@@ -3,7 +3,10 @@ import ReactMarkdown from 'react-markdown';
 import { ImageUploader } from './components/ImageUploader';
 import { StyleSelector, Style } from './components/StyleSelector';
 import { RoomTypeSelector, RoomType } from './components/RoomTypeSelector';
-import { TransformationModeSelector, TransformationMode } from './components/TransformationModeSelector';
+import { ColorPaletteSelector, ColorPalette } from './components/ColorPaletteSelector';
+import { RenderingTypeSelector } from './components/RenderingTypeSelector'; // Removed RenderingType import
+import { ViewTypeSelector } from './components/ViewTypeSelector'; // Removed ViewType import
+// Removed TransformationMode import
 import { ImageComparison } from './components/ImageComparison';
 import { LoginModal } from './components/LoginModal';
 import { RegisterModal } from './components/RegisterModal';
@@ -32,7 +35,10 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>('design');
   const [selectedRoomType, setSelectedRoomType] = useState<RoomType | null>(null);
-  const [selectedTransformationMode, setSelectedTransformationMode] = useState<TransformationMode | null>(null);
+  const [selectedColorPalette, setSelectedColorPalette] = useState<ColorPalette | null>(null);
+  const [selectedView, setSelectedView] = useState<string | null>(null); // Change state type to string | null
+  const [selectedRenderingType, setSelectedRenderingType] = useState<string | null>(null); // Change state type to string | null
+  // Removed selectedTransformationMode state
   const [pendingGenerate, setPendingGenerate] = useState(false);
   // State for the modification modal
   const [isModificationModalOpen, setIsModificationModalOpen] = useState(false);
@@ -66,16 +72,26 @@ function App() {
     setSelectedRoomType(roomType);
   };
 
-  const handleTransformationModeSelect = (mode: TransformationMode) => {
-    setSelectedTransformationMode(mode);
-  };
+  // Removed handleTransformationModeSelect
 
   const handleStyleSelect = (style: Style) => {
     setSelectedStyle(style);
   };
 
+  // Update handler for ViewType
+  const handleViewSelect = (view: string) => { // Accept string
+    setSelectedView(view);
+  };
+
+  // Update handler for RenderingType
+  const handleRenderingTypeSelect = (renderingType: string) => { // Accept string
+    setSelectedRenderingType(renderingType);
+  };
+
+
   const handleGenerate = async () => {
-    if (!uploadedImage || !selectedStyle || !selectedRoomType || !selectedTransformationMode) return;
+    // Update condition to check for view and rendering type, remove transformation mode
+    if (!uploadedImage || !selectedStyle || !selectedRoomType || !selectedColorPalette || !selectedView || !selectedRenderingType) return;
     if (!user) {
       setIsLoginModalOpen(true);
       setPendingGenerate(true);
@@ -89,9 +105,11 @@ function App() {
         uploadedImage,
         selectedStyle.name,
         selectedRoomType.name,
-        selectedTransformationMode.id
+        selectedColorPalette.name,
+        selectedRenderingType, // Pass rendering type string directly
+        selectedView // Pass view string directly
       );
-      
+
       // First upload the generated image to storage
       const generatedImageUrl = await uploadImage(
         result.imageData, 
@@ -274,17 +292,18 @@ function App() {
             </div>
             
             <div className="max-w-5xl mx-auto">
+              {/* Pass props to ImageUploader and remove duplicate selectors */}
               <ImageUploader 
                 onImageUpload={handleImageUpload} 
                 onReset={resetUpload}
+                viewValue={selectedView}
+                renderingTypeValue={selectedRenderingType}
+                onViewChange={handleViewSelect}
+                onRenderingTypeChange={handleRenderingTypeSelect}
               />
               
               {uploadedImage && (
                 <div className="space-y-8 mt-8">
-                  <TransformationModeSelector
-                    onModeSelect={handleTransformationModeSelect}
-                    selectedModeId={selectedTransformationMode?.id}
-                  />
                   <StyleSelector
                     onStyleSelect={handleStyleSelect}
                     selectedStyleId={selectedStyle?.id}
@@ -293,13 +312,18 @@ function App() {
                     onRoomTypeSelect={handleRoomTypeSelect}
                     selectedRoomTypeId={selectedRoomType?.id}
                   />
+                  <ColorPaletteSelector
+                    onPaletteSelect={setSelectedColorPalette}
+                    selectedPaletteId={selectedColorPalette?.id}
+                  />
                   
                   <button
                     onClick={handleGenerate}
-                    disabled={isGenerating || !uploadedImage || !selectedStyle || !selectedRoomType || !selectedTransformationMode}
+                    // Update disabled check
+                    disabled={isGenerating || !uploadedImage || !selectedStyle || !selectedRoomType || !selectedColorPalette || !selectedView || !selectedRenderingType}
                     className={`
                       !rounded-button w-full py-4 text-white transition
-                      ${isGenerating || !uploadedImage || !selectedStyle || !selectedRoomType || !selectedTransformationMode
+                      ${isGenerating || !uploadedImage || !selectedStyle || !selectedRoomType || !selectedColorPalette || !selectedView || !selectedRenderingType
                         ? 'bg-gray-400 cursor-not-allowed'
                         : 'bg-custom hover:bg-custom/90'
                       }

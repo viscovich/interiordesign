@@ -13,43 +13,7 @@ interface TransformationModeSelectorProps {
 }
 
 export function TransformationModeSelector({ onModeSelect, selectedModeId }: TransformationModeSelectorProps) {
-  const TRANSFORMATION_MODES: TransformationMode[] = [
-    {
-      id: 'virtual-staging',
-      name: 'Virtual Staging',
-      description: 'Furnish your empty rooms with photorealistic furniture',
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-          <polyline points="9 22 9 12 15 12 15 22"></polyline>
-        </svg>
-      )
-    },
-    {
-      id: 'empty-space',
-      name: 'Empty Your Space',
-      description: 'Remove furniture and objects to create a neutral environment',
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-          <line x1="9" y1="9" x2="15" y2="15"></line>
-          <line x1="15" y1="9" x2="9" y2="15"></line>
-        </svg>
-      )
-    },
-    {
-      id: 'redesign',
-      name: 'Redesign & Style',
-      description: 'Renovate existing rooms with new design styles',
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M2 12h20"></path>
-          <path d="M6 12a10 10 0 0 1 10-10v10z"></path>
-          <path d="M18 12a10 10 0 0 1-10 10v-10z"></path>
-        </svg>
-      )
-    }
-  ];
+  const TRANSFORMATION_MODES: TransformationMode[] = [];
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

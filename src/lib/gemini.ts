@@ -3,58 +3,42 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-function getPromptForTransformationMode(mode: string, style: string, roomType: string): string {
-  switch (mode) {
-    case 'virtual-staging':
-      return `First, list all furniture and objects you detect in this image in the following format:
-      - [object name 1]
-      - [object name 2]
-      - etc.
+// Rename function for clarity
+function getGenerationPrompt(
+  renderingType: string,
+  style: string,
+  roomType: string,
+  colorTone?: string,
+  view?: string
+): string {
+  const colorPrompt = colorTone ? ` using a ${colorTone} color palette` : '';
+  const viewPrompt = view ? ` Set the point of view to be ${view} to provide a clear perspective of the room.` : '';
 
-      Then, if you were to furnish this room with a ${style} style for a ${roomType}, what would you include?
-      Describe it in detail using markdown format with headings, bullet points, and well-formatted paragraphs.
-      Then generate an image that represents your idea. Try to respect the walls and windows of the attached room.`;
-    
-    case 'empty-space':
-      return `First, list all furniture and objects you detect in this image in the following format:
-      - [object name 1]
-      - [object name 2]
-      - etc.
+  return `Analyze the provided floor plan or photo and generate a ${renderingType} that accurately reflects the layout of walls, doors, windows, and internal spaces.
 
-      Then remove all furniture and objects from this room to create an empty space.
-      Describe the potential of this empty space using markdown format with headings, bullet points, and well-formatted paragraphs.
-      Then generate an image that shows the room completely empty. Maintain the walls, windows, and architectural features.`;
-    
-    case 'redesign':
-      return `First, list all furniture and objects you detect in this image in the following format:
-      - [object name 1]
-      - [object name 2]
-      - etc.
+First, identify all relevant furniture and appliances that are or should be present in the ${roomType}. List them clearly in the following format:
+- [object name 1]
+- [object name 2]
+- etc.
 
-      Then redesign this ${roomType} with a ${style} style, changing the layout, colors, and materials.
-      Describe your redesign in detail using markdown format with headings, bullet points, and well-formatted paragraphs.
-      Then generate an image that represents your redesign. You can modify walls, flooring, and fixtures while maintaining the basic room structure.`;
-    
-    default:
-      return `First, list all furniture and objects you detect in this image in the following format:
-      - [object name 1]
-      - [object name 2]
-      - etc.
+Then, redesign the ${roomType} in a ${style} style${colorPrompt}. Make sure the design choices reflect the room’s purpose and architectural structure.${viewPrompt}
 
-      Then, if you were to furnish this room with a ${style} style for a ${roomType}, what would you include?
-      Describe it in detail using markdown format with headings, bullet points, and well-formatted paragraphs.
-      Then generate an image that represents your idea. Try to respect the walls and windows of the attached room.`;
-  }
+Describe the final design using markdown format with headings, bullet points, and well-structured paragraphs. Include details about layout, furniture, colors, and materials.
+
+Finally, generate an image that represents the redesign as accurately and professionally as possible.`;
 }
 
 export async function generateInteriorDesign(
   imageUrl: string,
   style: string,
   roomType: string,
-  transformationMode: string = 'virtual-staging'
+  colorTone: string,
+  renderingType: string, // Change parameter name
+  view: string // Make view required
 ): Promise<{ description: string; imageData: string }> {
-  console.log(`[generateInteriorDesign] Starting with params: style=${style}, roomType=${roomType}, transformationMode=${transformationMode}`);
-  
+  // Update log to use renderingType
+  console.log(`[generateInteriorDesign] Starting with params: style=${style}, roomType=${roomType}, renderingType=${renderingType}, view=${view}`);
+
   // Using type assertion to bypass TypeScript check while maintaining the exact format
   const model = genAI.getGenerativeModel({
     model: "gemini-2.0-flash-exp-image-generation",
@@ -73,7 +57,8 @@ export async function generateInteriorDesign(
     )
   );
 
-  const prompt = getPromptForTransformationMode(transformationMode, style, roomType);
+  // Update function call to use renderingType and the new function name
+  const prompt = getGenerationPrompt(renderingType, style, roomType, colorTone, view);
   console.log(`[generateInteriorDesign] Using prompt: ${prompt}`);
 
   try {

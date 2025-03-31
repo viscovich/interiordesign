@@ -7,9 +7,21 @@ import { Upload } from 'lucide-react';
 interface ImageUploaderProps {
   onImageUpload: (file: File) => void;
   onReset?: () => void;
+  // Add props for view and rendering type state/handlers
+  viewValue: string | null;
+  renderingTypeValue: string | null;
+  onViewChange: (value: string) => void;
+  onRenderingTypeChange: (value: string) => void;
 }
 
-export function ImageUploader({ onImageUpload, onReset }: ImageUploaderProps) {
+export function ImageUploader({ 
+  onImageUpload, 
+  onReset,
+  viewValue,
+  renderingTypeValue,
+  onViewChange,
+  onRenderingTypeChange 
+}: ImageUploaderProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -51,8 +63,9 @@ export function ImageUploader({ onImageUpload, onReset }: ImageUploaderProps) {
     maxFiles: 1
   });
 
-  const [viewType, setViewType] = useState('front');
-  const [renderingType, setRenderingType] = useState('3d');
+  // Remove internal state management for view and rendering type
+  // const [viewType, setViewType] = useState('front');
+  // const [renderingType, setRenderingType] = useState('3d');
 
   return (
     <div className="flex gap-4 h-[300px]">
@@ -108,13 +121,14 @@ export function ImageUploader({ onImageUpload, onReset }: ImageUploaderProps) {
       )}
       </div>
       <div className="w-2/4 space-y-6 h-full flex flex-col justify-center pl-4">
+        {/* Pass props down to selectors */}
         <ViewTypeSelector 
-          value={viewType}
-          onChange={setViewType}
+          value={viewValue || ''} // Use prop value
+          onChange={onViewChange} // Use prop handler
         />
         <RenderingTypeSelector
-          value={renderingType}
-          onChange={setRenderingType}
+          value={renderingTypeValue || ''} // Use prop value
+          onChange={onRenderingTypeChange} // Use prop handler
         />
       </div>
     </div>
