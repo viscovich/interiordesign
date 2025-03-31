@@ -2,7 +2,7 @@ import React, { useCallback, useState, useEffect } from 'react';
 import { ViewTypeSelector } from './ViewTypeSelector';
 import { RenderingTypeSelector } from './RenderingTypeSelector';
 import { useDropzone } from 'react-dropzone';
-import { Upload } from 'lucide-react';
+import { Upload, Image as ImageIcon } from 'lucide-react'; // Added ImageIcon for the button
 
 interface ImageUploaderProps {
   onImageUpload: (file: File) => void;
@@ -47,6 +47,26 @@ export function ImageUploader({
     }
   }, [onImageUpload]);
 
+  // Function to handle using the sample image
+  const handleUseSampleImage = useCallback(async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation(); // Prevent opening file dialog
+    try {
+      const response = await fetch('/images/stanza.jpg'); // Fetch the sample image
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const blob = await response.blob();
+      const fileName = 'stanza.jpg';
+      const file = new File([blob], fileName, { type: blob.type });
+      
+      setSelectedFile(file); // Update local state for preview
+      onImageUpload(file); // Call the prop handler
+    } catch (error) {
+      console.error("Error fetching or processing sample image:", error);
+      // TODO: Add user-facing error handling (e.g., a toast notification)
+    }
+  }, [onImageUpload]); // Dependency array includes the prop function
+
   const handleReplace = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
@@ -81,7 +101,17 @@ export function ImageUploader({
           <p className="mt-2 text-base font-medium text-gray-900">
             {isDragActive ? 'Drop the image here' : 'Drag & drop an image here'}
           </p>
-          <p className="mt-1 text-sm text-gray-500">or click to select a file</p>
+          {/* Sample Image Button */}
+          <button
+            type="button"
+            onClick={handleUseSampleImage}
+            className="mt-4 inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            <ImageIcon className="mr-2 h-4 w-4" aria-hidden="true" />
+            Use sample image
+          </button>
+          {/* Text below button */}
+          <p className="mt-4 text-sm text-gray-500">or click to select a file</p>
           <p className="mt-1 text-xs text-gray-400">
             Supported formats: JPEG, PNG
           </p>
