@@ -604,7 +604,7 @@ function App() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="container max-w-8xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
               <img src="/images/Dreamcasa3-removebg-preview.png" alt="DreamCasa AI Logo" className="h-8 mb-4 brightness-0 invert" />
               <span className="text-white text-lg font-bold block mb-2">DreamCasa AI</span>
@@ -625,14 +625,6 @@ function App() {
                 <li><a href="#" className="text-gray-400 hover:text-white">Contact</a></li>
                 <li><a href="#" className="text-gray-400 hover:text-white">Documentation</a></li>
               </ul>
-            </div>
-            <div>
-              <h4 className="text-lg font-semibold mb-4">Newsletter</h4>
-              <p className="text-gray-400 mb-4">Subscribe to receive updates</p>
-              <div className="flex">
-                <input type="email" placeholder="Your email" className="!rounded-button flex-1 px-4 py-2 bg-gray-800 border border-gray-700 focus:outline-none focus:border-custom" />
-                <button className="!rounded-button ml-2 px-6 py-2 bg-custom text-white hover:bg-custom/90">Subscribe</button>
-              </div>
             </div>
           </div>
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
