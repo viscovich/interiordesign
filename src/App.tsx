@@ -277,19 +277,44 @@ function App() {
                     selectedPaletteId={selectedColorPalette?.id}
                   />
                   
-                  <button
-                    onClick={handleGenerate}
-                    disabled={isGenerating || !uploadedImage || !selectedStyle || !selectedRoomType || !selectedColorPalette || !selectedView || !selectedRenderingType}
-                    className={`
-                      !rounded-button w-full py-4 text-white transition
-                      ${isGenerating || !uploadedImage || !selectedStyle || !selectedRoomType || !selectedColorPalette || !selectedView || !selectedRenderingType
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-custom hover:bg-custom/90'
-                      }
-                    `}
-                  >
-                    {isGenerating ? 'Generating...' : 'Generate Design'}
-                  </button>
+                  <div className="mb-2">
+                    {(!uploadedImage || !selectedStyle || !selectedRoomType || !selectedColorPalette || !selectedView || !selectedRenderingType) && (
+                      <div className="flex items-center justify-center gap-2 flex-wrap">
+                        {!uploadedImage && (
+                          <span className="text-sm text-red-500">• Upload an image</span>
+                        )}
+                        {uploadedImage && !selectedStyle && (
+                          <span className="text-sm text-red-500">• Select style</span>
+                        )}
+                        {uploadedImage && !selectedRoomType && (
+                          <span className="text-sm text-red-500">• Select room type</span>
+                        )}
+                        {uploadedImage && !selectedColorPalette && (
+                          <span className="text-sm text-red-500">• Select color palette</span>
+                        )}
+                        {uploadedImage && !selectedView && (
+                          <span className="text-sm text-red-500">• Select view</span>
+                        )}
+                        {uploadedImage && !selectedRenderingType && (
+                          <span className="text-sm text-red-500">• Select rendering</span>
+                        )}
+                      </div>
+                    )}
+
+                    <button
+                      onClick={handleGenerate}
+                      disabled={isGenerating || !uploadedImage || !selectedStyle || !selectedRoomType || !selectedColorPalette || !selectedView || !selectedRenderingType}
+                      className={`
+                        !rounded-button w-full py-4 text-white transition
+                        ${isGenerating || !uploadedImage || !selectedStyle || !selectedRoomType || !selectedColorPalette || !selectedView || !selectedRenderingType
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-custom hover:bg-custom/90'
+                        }
+                      `}
+                    >
+                      {isGenerating ? 'Generating...' : 'Generate Design'}
+                    </button>
+                  </div>
                   
                   {isGenerating && (
                     <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2 relative overflow-hidden">
@@ -323,10 +348,9 @@ function App() {
               <div className="text-center mt-12">
                 <button
                   onClick={() => {
-                    setUploadedImage(null);
-                    setSelectedStyle(null);
                     setGeneratedImage(null);
                     setDesignDescription(null);
+                    setActiveSection('design');
                     document.getElementById('design-section')?.scrollIntoView({ behavior: 'smooth' });
                   }}
                   className="!rounded-button px-8 py-4 bg-custom text-white hover:bg-custom/90 transition"
