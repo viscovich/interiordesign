@@ -1,28 +1,28 @@
 import React, { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import ReactMarkdown from 'react-markdown';
 import { ImageUploader } from './components/ImageUploader';
 import { StyleSelector, Style } from './components/StyleSelector';
 import { RoomTypeSelector, RoomType } from './components/RoomTypeSelector';
 import { ColorPaletteSelector, ColorPalette } from './components/ColorPaletteSelector';
-import { RenderingTypeSelector } from './components/RenderingTypeSelector'; // Removed RenderingType import
-import { ViewTypeSelector } from './components/ViewTypeSelector'; // Removed ViewType import
-// Removed TransformationMode import
+import { RenderingTypeSelector } from './components/RenderingTypeSelector';
+import { ViewTypeSelector } from './components/ViewTypeSelector';
 import { ImageComparison } from './components/ImageComparison';
 import { LoginModal } from './components/LoginModal';
 import { RegisterModal } from './components/RegisterModal';
 import { ProjectsList } from './components/ProjectsList';
-import ImageModificationModal from './components/ImageModificationModal'; // Import the new modal
+import ImageModificationModal from './components/ImageModificationModal';
 import { UserCredits } from './components/UserCredits';
 import { useAuth } from './lib/auth';
 import { generateInteriorDesign } from './lib/gemini';
 import { uploadImage } from './lib/storage';
-import { createProject, saveDetectedObjects } from './lib/projectsService'; // Import saveDetectedObjects instead
+import { createProject, saveDetectedObjects } from './lib/projectsService';
 import type { Project } from './lib/projectsService.d';
 import { hasEnoughCredits, useCredit, getUserProfile } from './lib/userService';
 import { getStripe, startCheckout } from './lib/stripe';
 import type { UserProfile } from './lib/userService.d';
 import toast from 'react-hot-toast';
-// Removed duplicate import of Project type here, it's already imported on line 17
+import SeoWrapper from './components/SeoWrapper';
 
 function App() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -36,24 +36,19 @@ function App() {
   const [activeSection, setActiveSection] = useState<string | null>('design');
   const [selectedRoomType, setSelectedRoomType] = useState<RoomType | null>(null);
   const [selectedColorPalette, setSelectedColorPalette] = useState<ColorPalette | null>(null);
-  const [selectedView, setSelectedView] = useState<string | null>(null); // Change state type to string | null
-  const [selectedRenderingType, setSelectedRenderingType] = useState<string | null>(null); // Change state type to string | null
-  // Removed selectedTransformationMode state
+  const [selectedView, setSelectedView] = useState<string | null>(null);
+  const [selectedRenderingType, setSelectedRenderingType] = useState<string | null>(null);
   const [pendingGenerate, setPendingGenerate] = useState(false);
-  // State for the modification modal
   const [isModificationModalOpen, setIsModificationModalOpen] = useState(false);
   const [projectToModify, setProjectToModify] = useState<Project | null>(null);
 
-
   const handleImageUpload = async (file: File) => {
-    // Convert file to data URL for upload
     const reader = new FileReader();
     reader.readAsDataURL(file);
     const dataUrl = await new Promise<string>((resolve) => {
       reader.onload = () => resolve(reader.result as string);
     });
-    
-    // Upload to storage
+
     const originalImageUrl = await uploadImage(
       dataUrl,
       `original/${Date.now()}_${file.name}`
@@ -72,25 +67,19 @@ function App() {
     setSelectedRoomType(roomType);
   };
 
-  // Removed handleTransformationModeSelect
-
   const handleStyleSelect = (style: Style) => {
     setSelectedStyle(style);
   };
 
-  // Update handler for ViewType
-  const handleViewSelect = (view: string) => { // Accept string
+  const handleViewSelect = (view: string) => {
     setSelectedView(view);
   };
 
-  // Update handler for RenderingType
-  const handleRenderingTypeSelect = (renderingType: string) => { // Accept string
+  const handleRenderingTypeSelect = (renderingType: string) => {
     setSelectedRenderingType(renderingType);
   };
 
-
   const handleGenerate = async () => {
-    // Update condition to check for view and rendering type, remove transformation mode
     if (!uploadedImage || !selectedStyle || !selectedRoomType || !selectedColorPalette || !selectedView || !selectedRenderingType) return;
     if (!user) {
       setIsLoginModalOpen(true);
@@ -101,70 +90,50 @@ function App() {
 
     setIsGenerating(true);
     try {
-      // Capture detectedObjects from the result
-      const { description, imageData, detectedObjects } = await generateInteriorDesign(
+      const { description, imageData } = await generateInteriorDesign(
         uploadedImage,
         selectedStyle.name,
         selectedRoomType.name,
         selectedColorPalette.name,
-        selectedRenderingType, // Pass rendering type string directly
-        selectedView // Pass view string directly
+        selectedRenderingType,
+        selectedView
       );
 
-      // First upload the generated image to storage
       const generatedImageUrl = await uploadImage(
-        imageData, // Use imageData from destructured result
+        imageData,
         `generated/${Date.now()}.jpg`
       );
       
-      // Then create the project in database
-      let newProject: Project | null = null; // Variable to hold the created project
       if (user) {
-        newProject = await createProject( // Assign the result
+        await createProject(
           user.id,
           uploadedImage,
           generatedImageUrl,
           selectedStyle.name,
           selectedRoomType.name
         );
-
-        // --- New Step: Recognize and save objects ---
-        if (newProject && user) { // Check if project creation was successful
-          try {
-            // Call the updated function to save the detected objects
-            console.log(`Saving detected objects for project ${newProject.id}:`, detectedObjects);
-            await saveDetectedObjects(newProject.id, user.id, detectedObjects); 
-            console.log(`Detected objects saved for project ${newProject.id}`);
-          } catch (saveObjectsError) {
-            console.error('Failed to save detected objects after generation:', saveObjectsError);
-            // Decide if we should notify the user - maybe a soft error?
-            toast.error('Could not automatically identify objects in the generated image.');
-          }
-        }
-        // --- End New Step ---
       }
 
-      console.log('Generated image data:', imageData); // Use imageData
-      setGeneratedImage(imageData); // Still use the base64 data for immediate display if needed
-      setDesignDescription(description); // Use description
+      setGeneratedImage(imageData);
+      setDesignDescription(description);
       setActiveSection('results');
       toast.success('Design generated and saved successfully!');
-      
-      setTimeout(() => {
-        const resultsSection = document.getElementById('results-section');
-        if (resultsSection) {
-          resultsSection.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 100);
     } catch (error) {
-      console.error('[handleGenerate] Generation failed:', error);
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'Failed to generate design. Please try again.';
-      toast.error(errorMessage);
+      console.error('Generation failed:', error);
+      toast.error('Failed to generate design. Please try again.');
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleOpenModificationModal = (project: Project) => {
+    setProjectToModify(project);
+    setIsModificationModalOpen(true);
+  };
+
+  const handleCloseModificationModal = () => {
+    setIsModificationModalOpen(false);
+    setProjectToModify(null);
   };
 
   React.useEffect(() => {
@@ -173,21 +142,12 @@ function App() {
     }
   }, [user, pendingGenerate]);
 
-  // Function to open the modification modal
-  const handleOpenModificationModal = (project: Project) => {
-    setProjectToModify(project);
-    setIsModificationModalOpen(true);
-  };
-
-  // Function to close the modification modal
-  const handleCloseModificationModal = () => {
-    setIsModificationModalOpen(false);
-    setProjectToModify(null);
-  };
-
-
   return (
-    <>
+    <SeoWrapper
+      title="Transform Your Space with AI"
+      description="Upload a photo and let AI redesign your room in your preferred style. Get stunning results in seconds."
+      ogImage="/images/before_after.jpg"
+    >
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm">
         <nav className="container max-w-8xl mx-auto px-4">
@@ -293,7 +253,6 @@ function App() {
             </div>
             
             <div className="max-w-5xl mx-auto">
-              {/* Pass props to ImageUploader and remove duplicate selectors */}
               <ImageUploader 
                 onImageUpload={handleImageUpload} 
                 onReset={resetUpload}
@@ -320,7 +279,6 @@ function App() {
                   
                   <button
                     onClick={handleGenerate}
-                    // Update disabled check
                     disabled={isGenerating || !uploadedImage || !selectedStyle || !selectedRoomType || !selectedColorPalette || !selectedView || !selectedRenderingType}
                     className={`
                       !rounded-button w-full py-4 text-white transition
@@ -338,14 +296,9 @@ function App() {
                       <div 
                         className="bg-custom h-1.5 rounded-full absolute top-0 left-0"
                         style={{ 
-                          width: '0%',
-                          animation: 'progress 15s linear forwards',
-                          animationFillMode: 'forwards'
+                          animation: 'progress 15s linear forwards'
                         }}
                       />
-                      <div className="text-xs text-gray-500 text-center mt-1">
-                        Generating your design...
-                      </div>
                     </div>
                   )}
                 </div>
@@ -367,19 +320,6 @@ function App() {
                 generatedImage={generatedImage}
               />
               
-              {designDescription && (
-                <div className="mt-12 max-w-4xl mx-auto bg-white rounded-lg shadow-md border border-gray-100 p-6 overflow-hidden">
-                  <div className="flex items-center mb-4">
-                    <div className="w-10 h-10 bg-custom/10 rounded-full flex items-center justify-center mr-3">
-                      <i className="fas fa-lightbulb text-custom"></i>
-                    </div>
-                    <h3 className="text-2xl font-semibold">AI Design Insights</h3>
-                  </div>
-                  <div className="prose prose-lg max-w-none text-gray-700">
-                    <ReactMarkdown>{designDescription}</ReactMarkdown>
-                  </div>
-                </div>
-              )}
               <div className="text-center mt-12">
                 <button
                   onClick={() => {
@@ -387,7 +327,6 @@ function App() {
                     setSelectedStyle(null);
                     setGeneratedImage(null);
                     setDesignDescription(null);
-                    setActiveSection(null);
                     document.getElementById('design-section')?.scrollIntoView({ behavior: 'smooth' });
                   }}
                   className="!rounded-button px-8 py-4 bg-custom text-white hover:bg-custom/90 transition"
@@ -405,7 +344,7 @@ function App() {
             <div className="container max-w-8xl mx-auto px-4">
               <ProjectsList
                 user={user}
-                onModifyProject={handleOpenModificationModal} // Pass the handler function
+                onModifyProject={handleOpenModificationModal}
               />
             </div>
           </section>
@@ -440,7 +379,7 @@ function App() {
                   </div>
                   <h3 className="text-xl font-semibold mb-3">Redesign & Style</h3>
                   <p className="text-gray-600">Renovate existing rooms with new design styles.</p>
-                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -529,7 +468,7 @@ function App() {
                       Standard: 5 credits/image
                     </li>
                     <li className="flex items-center">
-                      <i className="fas fa-check text-custom mr-2"></i>
+                      <i className="fas fa-check text_custom mr-2"></i>
                       Advanced: 15 credits/image
                     </li>
                     <li className="flex items-center">
@@ -563,10 +502,20 @@ function App() {
                   </div>
                 </div>
                 <div className="rounded-lg overflow-hidden">
-                  <img src="https://creatie.ai/ai/api/search-image?query=A luxurious master bedroom with elegant furnishings, soft textiles, and a calming color palette. The scene includes a king-size bed, designer lighting, and tasteful artwork. Professional interior design photography with attention to detail&width=400&height=300&orientation=landscape&flag=683b4d05-6475-4e10-9998-0dc08f72955a" alt="Bedroom Transform" className="w-full h-64 object-cover" />
+                  <img 
+                    src="https://creatie.ai/ai/api/search-image?query=A luxurious master bedroom with elegant furnishings, soft textiles, and a calming color palette. The scene includes a king-size bed, designer lighting, and tasteful artwork. Professional interior design photography with attention to detail&width=400&height=300&orientation=landscape&flag=683b4d05-6475-4e10-9998-0dc08f72955a" 
+                    alt="AI transformed bedroom design example" 
+                    className="w-full h-64 object-cover"
+                    loading="lazy"
+                  />
                 </div>
                 <div className="rounded-lg overflow-hidden">
-                  <img src="https://creatie.ai/ai/api/search-image?query=A contemporary kitchen with sleek cabinetry, marble countertops, and high-end appliances. The space features excellent lighting, clean lines, and a sophisticated design aesthetic. Professional interior design photography showcasing modern luxury&width=400&height=300&orientation=landscape&flag=8f07e65d-12a6-4b1f-aa2c-f373726533d8" alt="Kitchen Transform" className="w-full h-64 object-cover" />
+                  <img 
+                    src="https://creatie.ai/ai/api/search-image?query=A contemporary kitchen with sleek cabinetry, marble countertops, and high-end appliances. The space features excellent lighting, clean lines, and a sophisticated design aesthetic. Professional interior design photography showcasing modern luxury&width=400&height=300&orientation=landscape&flag=8f07e65d-12a6-4b1f-aa2c-f373726533d8" 
+                    alt="AI transformed kitchen design example" 
+                    className="w-full h-64 object-cover"
+                    loading="lazy"
+                  />
                 </div>
               </div>
             </div>
@@ -600,63 +549,64 @@ function App() {
             </div>
           </section>
         )}
+
       </main>
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
-        <div className="container max-w-8xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <img src="/images/Dreamcasa3-removebg-preview.png" alt="DreamCasa AI Logo" className="h-8 mb-4 brightness-0 invert" />
-              <span className="text-white text-lg font-bold block mb-2">DreamCasa AI</span>
-              <p className="text-gray-400">Transform your spaces with artificial intelligence</p>
+          <div className="container max-w-8xl mx-auto px-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div>
+                <img src="/images/Dreamcasa3-removebg-preview.png" alt="DreamCasa AI Logo" className="h-8 mb-4 brightness-0 invert" />
+                <span className="text-white text-lg font-bold block mb-2">DreamCasa AI</span>
+                <p className="text-gray-400">Transform your spaces with artificial intelligence</p>
+              </div>
+              <div>
+                <h4 className="text-lg font-semibold mb-4">Product</h4>
+                <ul className="space-y-2">
+                  <li><a href="#features" className="text-gray-400 hover:text-white">Features</a></li>
+                  <li><a href="#pricing" className="text-gray-400 hover:text-white">Pricing</a></li>
+                  <li><a href="#portfolio" className="text-gray-400 hover:text-white">Portfolio</a></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-lg font-semibold mb-4">Support</h4>
+                <ul className="space-y-2">
+                  <li><a href="#faq" className="text-gray-400 hover:text-white">FAQ</a></li>
+                  <li><a href="#" className="text-gray-400 hover:text-white">Contact</a></li>
+                  <li><a href="#" className="text-gray-400 hover:text-white">Documentation</a></li>
+                </ul>
+              </div>
             </div>
-            <div>
-              <h4 className="text-lg font-semibold mb-4">Product</h4>
-              <ul className="space-y-2">
-                <li><a href="#features" className="text-gray-400 hover:text-white">Features</a></li>
-                <li><a href="#pricing" className="text-gray-400 hover:text-white">Pricing</a></li>
-                <li><a href="#portfolio" className="text-gray-400 hover:text-white">Portfolio</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-lg font-semibold mb-4">Support</h4>
-              <ul className="space-y-2">
-                <li><a href="#faq" className="text-gray-400 hover:text-white">FAQ</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white">Contact</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white">Documentation</a></li>
-              </ul>
+            <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+              <p>&copy; 2025 DreamCasa AI. All rights reserved.</p>
             </div>
           </div>
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 DreamCasa AI. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+        </footer>
 
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onSwitchToRegister={() => {
-          setIsLoginModalOpen(false);
-          setIsRegisterModalOpen(true);
-        }}
-      />
-      <RegisterModal
-        isOpen={isRegisterModalOpen}
-        onClose={() => setIsRegisterModalOpen(false)}
-        onSwitchToLogin={() => {
-          setIsRegisterModalOpen(false);
-          setIsLoginModalOpen(true);
-        }}
-      />
-      {/* Render the Image Modification Modal */}
-      <ImageModificationModal
-        isOpen={isModificationModalOpen}
-        onClose={handleCloseModificationModal}
-        project={projectToModify}
-      />
-    </>
+        {/* Modals */}
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
+          onSwitchToRegister={() => {
+            setIsLoginModalOpen(false);
+            setIsRegisterModalOpen(true);
+          }}
+        />
+        <RegisterModal
+          isOpen={isRegisterModalOpen}
+          onClose={() => setIsRegisterModalOpen(false)}
+          onSwitchToLogin={() => {
+            setIsRegisterModalOpen(false);
+            setIsLoginModalOpen(true);
+          }}
+        />
+        <ImageModificationModal
+          isOpen={isModificationModalOpen}
+          onClose={handleCloseModificationModal}
+          project={projectToModify}
+        />
+      </SeoWrapper>
   );
 }
 
