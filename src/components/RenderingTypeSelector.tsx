@@ -8,9 +8,9 @@ interface RenderingTypeSelectorProps {
 
 export function RenderingTypeSelector({ value, onChange }: RenderingTypeSelectorProps) {
   const options = [
-    { value: '3d', label: '3D', icon: Box },
-    { value: 'wireframe', label: 'Wireframe', icon: Grid3x3 },
-    { value: '2d', label: '2D Plan', icon: MapIcon }
+    { value: '3d', label: '3D rendering', icon: Box },
+    { value: 'wireframe', label: 'Wireframe sketch', icon: Grid3x3 },
+    { value: '2d', label: '2D floor plan', icon: MapIcon }
   ];
 
   return (

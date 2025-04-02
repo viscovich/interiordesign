@@ -8,9 +8,9 @@ interface ViewTypeSelectorProps {
 
 export function ViewTypeSelector({ value, onChange }: ViewTypeSelectorProps) {
   const options = [
-    { value: 'front', label: 'Front', icon: Camera },
-    { value: 'side', label: 'Side', icon: Box },
-    { value: 'top', label: 'Top', icon: Map }
+    { value: 'frontal', label: 'Front view', icon: Camera },
+    { value: 'side', label: 'Side view', icon: Box },
+    { value: 'top', label: 'Top view', icon: Map }
   ];
 
   return (
