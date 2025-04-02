@@ -12,25 +12,48 @@ function getGenerationPrompt(
   view?: string
 ): string {
   const colorPrompt = colorTone ? ` using a ${colorTone} color palette` : '';
-  const viewPrompt = view ? ` Set the point of view to be ${view} to provide a clear perspective of the room.` : '';
 
-  return `Analyze the provided floor plan or photo — whether the room is empty or already furnished — and generate a ${renderingType} that accurately reflects the layout of walls, doors, windows, and internal spaces.
+  // Traduce il valore 'view' in frasi chiare
+  const viewMap: Record<string, string> = {
+    frontal: "from the front, facing the main wall",
+    side: "from the side, capturing an angled perspective",
+    top: "from above, as a bird’s-eye view"
+  };
+  const viewPrompt = view && viewMap[view] ? ` Set the point of view ${viewMap[view]}.` : '';
+
+  switch (renderingType.toLowerCase()) {
+    case 'wireframe':
+      return `Generate a black and white architectural **line drawing** of a ${roomType} in wireframe style.
+Show all major structural and furniture elements (walls, windows, cabinets, sink, stove, etc.) using only **clean black outlines**, with **no color, shading, or textures**.
+Use a 3D perspective based on the provided plan or image.${viewPrompt}
+
+Avoid realistic rendering. Focus only on a **technical-style sketch** as if created for architectural drafting.`;
+
+    case '2d':
+      return `Generate a clean and well-structured **2D floor plan** of a ${roomType}, viewed strictly from above.
+The drawing should clearly show walls, doors, windows, furniture, and key appliances, either with outlines or filled flat symbols.
+Do not include any perspective, shading, or 3D effects. The goal is to produce a **clear, professional top-down layout**.${colorPrompt}`;
+
+    case '3d':
+    default:
+      return `Analyze the provided floor plan or photo — whether the room is empty or already furnished — and generate a **stunning 3D rendering** that accurately reflects the layout of walls, doors, windows, and internal spaces.
 
 Start by listing the essential furniture and appliances that should be included in the redesigned ${roomType}, based on the ${style} style${colorPrompt}.  
-**Only provide a plain list of object names, with no extra descriptions, like this:**
+**Only provide a plain list of object names, like this:**
 - [object name 1]
 - [object name 2]
 - etc.
 
 Do not combine this list with any explanation or context. The description comes after.
 
-
 Then, redesign the ${roomType} in a ${style} style${colorPrompt}. Make sure the design choices reflect the room’s purpose and architectural structure.${viewPrompt}
 
 Describe the final design using markdown format with headings, bullet points, and well-structured paragraphs. Include details about layout, furniture, colors, and materials.
 
-Finally, generate an image that represents the redesign as accurately and professionally as possible.`;
+Finally, generate a **stunning, realistic, high-end image** that visually communicates the final design with clarity and elegance.`;
+  }
 }
+
 
 export async function generateInteriorDesign(
   imageUrl: string,

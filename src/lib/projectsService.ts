@@ -70,12 +70,23 @@ export async function createProject(
 }
 
 export async function deleteProject(projectId: string) {
-  const { error } = await supabase
+  console.log('Deleting project:', projectId);
+  
+  const { data, error } = await supabase
     .from('projects')
     .delete()
-    .eq('id', projectId);
+    .eq('id', projectId)
+    .select();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Delete failed:', { projectId, error });
+    throw error;
+  }
+
+  console.log('Delete result:', { 
+    projectId, 
+    deletedCount: data?.length || 0 
+  });
 }
 
 // --- Functions for Image Objects (Recognized by AI) ---

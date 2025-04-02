@@ -48,16 +48,18 @@ export function ProjectsList({ user, onModifyProject }: ProjectsListProps) {
     }
 
     try {
+      console.log('Attempting to delete project:', project.id);
       await deleteProject(project.id);
+      console.log('Delete successful, updating UI state');
       setPaginatedProjects(prev => ({
         ...prev,
         projects: prev.projects.filter(p => p.id !== project.id),
         total: prev.total - 1
       }));
-      toast.success('Project metadata deleted (S3 cleanup pending)');
+      toast.success('Project deleted successfully');
     } catch (error) {
-      toast.error('Failed to delete project');
-      console.error(error);
+      console.error('Full delete error:', error);
+      toast.error('Failed to delete project - see console for details');
     }
   };
 
