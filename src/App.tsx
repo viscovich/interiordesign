@@ -274,6 +274,11 @@ function App() {
                     onRoomTypeSelect={handleRoomTypeSelect}
                     selectedRoomTypeId={selectedRoomType?.id}
                   />
+                  
+                  <div className="mt-6">
+                    <UserObjectsManager />
+                  </div>
+
                   <ColorPaletteSelector
                     onPaletteSelect={setSelectedColorPalette}
                     selectedPaletteId={selectedColorPalette?.id}

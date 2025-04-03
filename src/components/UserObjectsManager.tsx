@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { getUserObjects, UserObject, deleteUserObject } from '../lib/userObjectsService';
-import UserObjectsSection from './UserObjectsSection';
+import { UserObjectsSection } from './UserObjectsSection';
 import UploadObjectModal from './UploadObjectModal';
 import { useAuth } from '../lib/auth';
 
 const UserObjectsManager: React.FC = () => {
   const { user } = useAuth();
   const [objects, setObjects] = useState<UserObject[]>([]);
+  const [selectedObjects, setSelectedObjects] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,24 +28,33 @@ const UserObjectsManager: React.FC = () => {
     }
   };
 
+  const handleSelectObject = (id: string): void => {
+    setSelectedObjects(prev => 
+      prev.includes(id) 
+        ? prev.filter(objId => objId !== id)
+        : [...prev, id]
+    );
+  };
+
   useEffect(() => {
     fetchObjects();
   }, [user]);
 
   const handleUploadSuccess = () => {
-    fetchObjects(); // Refresh list after upload
-    setIsModalOpen(false); // Close modal
+    fetchObjects();
+    setIsModalOpen(false);
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">My Objects</h2>
+      <h2 className="text-lg font-semibold mb-4">Select Objects</h2>
+      <div className="flex justify-between items-center mb-2">
+        <p className="text-sm text-gray-500">Choose objects to include in your design</p>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+          className="px-3 py-1 text-sm bg-custom text-white rounded-md hover:bg-custom/90"
         >
-          Upload New
+          + Upload
         </button>
       </div>
 
@@ -58,19 +68,22 @@ const UserObjectsManager: React.FC = () => {
         </div>
       ) : (
         <UserObjectsSection 
-        objects={objects}
-        onDelete={async (id) => {
-          if (window.confirm('Are you sure you want to delete this object?')) {
-            try {
-              await deleteUserObject(id);
-              setObjects(objects.filter(obj => obj.id !== id));
-            } catch (err) {
-              setError('Failed to delete object. Please try again.');
-              console.error('Error deleting object:', err);
+          objects={objects}
+          selectedObjects={selectedObjects}
+          onSelectObject={handleSelectObject}
+          onDelete={async (id) => {
+            if (window.confirm('Are you sure you want to delete this object?')) {
+              try {
+                await deleteUserObject(id);
+                setObjects(objects.filter(obj => obj.id !== id));
+                setSelectedObjects(selectedObjects.filter(objId => objId !== id));
+              } catch (err) {
+                setError('Failed to delete object. Please try again.');
+                console.error('Error deleting object:', err);
+              }
             }
-          }
-        }}
-      />
+          }}
+        />
       )}
 
       <UploadObjectModal
