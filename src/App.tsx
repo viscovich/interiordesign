@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import ReactMarkdown from 'react-markdown';
 import { ImageUploader } from './components/ImageUploader';
-import { StyleSelector, Style } from './components/StyleSelector';
-import { RoomTypeSelector, RoomType } from './components/RoomTypeSelector';
+import { TabbedSelector } from './components/TabbedSelector';
+import { Style } from './components/StyleSelector';
+import { RoomType } from './components/RoomTypeSelector';
 import { ColorPaletteSelector, ColorPalette } from './components/ColorPaletteSelector';
 import { RenderingTypeSelector } from './components/RenderingTypeSelector';
 import { ViewTypeSelector } from './components/ViewTypeSelector';
@@ -11,7 +12,7 @@ import { ImageComparison } from './components/ImageComparison';
 import { LoginModal } from './components/LoginModal';
 import { RegisterModal } from './components/RegisterModal';
 import { ProjectsList } from './components/ProjectsList';
-import UserObjectsManager from './components/UserObjectsManager'; // Import UserObjectsManager
+import { FloatingObjectsSidebar } from './components/FloatingObjectsSidebar';
 import ImageModificationModal from './components/ImageModificationModal';
 import { UserAccountDropdown } from './components/UserAccountDropdown';
 import { useAuth } from './lib/auth';
@@ -42,6 +43,16 @@ function App() {
   const [pendingGenerate, setPendingGenerate] = useState(false);
   const [isModificationModalOpen, setIsModificationModalOpen] = useState(false);
   const [projectToModify, setProjectToModify] = useState<Project | null>(null);
+  const [isObjectsSidebarOpen, setIsObjectsSidebarOpen] = useState(false);
+  const [selectedObjects, setSelectedObjects] = useState<string[]>([]);
+
+  const handleSelectObject = (id: string) => {
+    setSelectedObjects(prev => 
+      prev.includes(id) 
+        ? prev.filter(objId => objId !== id)
+        : [...prev, id]
+    );
+  };
 
   const handleImageUpload = async (file: File) => {
     const reader = new FileReader();
@@ -266,18 +277,26 @@ function App() {
               
               {uploadedImage && (
                 <div className="space-y-8 mt-8">
-                  <StyleSelector
-                    onStyleSelect={handleStyleSelect}
-                    selectedStyleId={selectedStyle?.id}
-                  />
-                  <RoomTypeSelector
-                    onRoomTypeSelect={handleRoomTypeSelect}
-                    selectedRoomTypeId={selectedRoomType?.id}
+                  <TabbedSelector
+                    styles={{
+                      onStyleSelect: handleStyleSelect,
+                      selectedStyleId: selectedStyle?.id
+                    }}
+                    roomTypes={{
+                      onRoomTypeSelect: handleRoomTypeSelect,
+                      selectedRoomTypeId: selectedRoomType?.id
+                    }}
                   />
                   
-                  <div className="mt-6">
-                    <UserObjectsManager />
-                  </div>
+                  <button
+                    onClick={() => setIsObjectsSidebarOpen(true)}
+                    className="mt-4 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md flex items-center gap-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                    </svg>
+                    Select Objects
+                  </button>
 
                   <ColorPaletteSelector
                     onPaletteSelect={setSelectedColorPalette}
@@ -377,10 +396,15 @@ function App() {
                 user={user}
                 onModifyProject={handleOpenModificationModal}
               />
-              {/* Add UserObjectsManager below ProjectsList */}
-              <div className="mt-12"> {/* Add some margin top for separation */}
-                <UserObjectsManager />
-              </div>
+              <button
+                onClick={() => setIsObjectsSidebarOpen(true)}
+                className="mt-8 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md flex items-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                </svg>
+                Select Objects
+              </button>
             </div>
           </section>
         )}
@@ -635,6 +659,12 @@ function App() {
             setIsRegisterModalOpen(false);
             setIsLoginModalOpen(true);
           }}
+        />
+        <FloatingObjectsSidebar
+          isOpen={isObjectsSidebarOpen}
+          onClose={() => setIsObjectsSidebarOpen(false)}
+          selectedObjects={selectedObjects}
+          onSelectObject={handleSelectObject}
         />
         <ImageModificationModal
           isOpen={isModificationModalOpen}
