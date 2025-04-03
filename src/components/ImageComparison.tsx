@@ -17,7 +17,7 @@ export function ImageComparison({ originalImage, generatedImage, className }: Im
         itemOne={<ReactCompareSliderImage src={originalImage} alt="Original room" />}
         itemTwo={<ReactCompareSliderImage src={generatedImage} alt="Generated design" />}
         position={50}
-        className={`h-[600px] ${className || ''}`}
+        className={className || ''}
       />
     </div>
   );
