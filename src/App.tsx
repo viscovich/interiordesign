@@ -460,6 +460,10 @@ function App() {
                       <i className="fas fa-check text-custom mr-2"></i>
                       Standard generation: 5 credits/image
                     </li>
+                    <li className="flex items-center">
+                      <i className="fas fa-check text-custom mr-2"></i>
+                      Image Resolution: 1024x720 pixel
+                    </li>
                   </ul>
                   <button className="!rounded-button w-full py-3 border border-custom text-custom hover:bg-custom hover:text-white transition">Get Started</button>
                 </div>
