@@ -15,7 +15,7 @@ export function RenderingTypeSelector({ value, onChange }: RenderingTypeSelector
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-medium text-gray-700">Rendering type</h3>
+      <h3 className="text-sm font-medium text-gray-600">Rendering Type</h3>
       <div className="grid grid-cols-3 gap-2">
         {options.map((option) => (
           <button
