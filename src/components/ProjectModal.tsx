@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import type { Project } from '../lib/projectsService.d';
 import { ArrowDownTrayIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { ImageComparison } from './ImageComparison';
@@ -62,7 +63,11 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
                 <div className="bg-gray-50 rounded-lg border border-gray-200 h-[350px] flex flex-col">
                   <h3 className="text-lg font-semibold p-4 pb-2 text-gray-800">Description</h3>
                   <div className="overflow-y-auto p-4 pt-0 flex-1">
-                    <p className="whitespace-pre-line text-gray-700">{project.description}</p>
+                    <div className="prose max-w-none text-gray-700">
+                      <ReactMarkdown>
+                        {project.description}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               )}
