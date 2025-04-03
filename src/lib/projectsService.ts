@@ -51,7 +51,10 @@ export async function createProject(
   originalImageUrl: string,
   generatedImageUrl: string,
   style: string,
-  roomType: string
+  roomType: string,
+  description: string | null = null,
+  viewType: string | null = null,
+  colorTone: string | null = null
 ) {
   const { data, error } = await supabase
     .from('projects')
@@ -60,7 +63,10 @@ export async function createProject(
       original_image_url: originalImageUrl,
       generated_image_url: generatedImageUrl,
       style,
-      room_type: roomType
+      room_type: roomType,
+      description,
+      view_type: viewType,
+      color_tone: colorTone
     })
     .select()
     .single();

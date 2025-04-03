@@ -118,13 +118,16 @@ function App() {
       );
       
       if (user) {
-        await createProject(
-          user.id,
-          uploadedImage,
-          generatedImageUrl,
-          selectedStyle.name,
-          selectedRoomType.name
-        );
+      await createProject(
+        user.id,
+        uploadedImage,
+        generatedImageUrl,
+        selectedStyle.name,
+        selectedRoomType.name,
+        description,  // Use the description returned from generateInteriorDesign
+        selectedView,
+        selectedColorPalette.name
+      );
       }
 
       setGeneratedImage(imageData);

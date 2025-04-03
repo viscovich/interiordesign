@@ -5,6 +5,9 @@ export interface Project {
   generated_image_url: string | null;
   style: string;
   room_type: string;
+  description: string | null;
+  view_type: string | null;
+  color_tone: string | null;
   created_at: string;
   updated_at: string;
 }
