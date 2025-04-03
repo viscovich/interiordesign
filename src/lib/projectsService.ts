@@ -21,7 +21,15 @@ export async function getProjects() {
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching projects:', error);
+    throw error;
+  }
+  console.log('Fetched projects with fields:', data?.map(p => ({
+    id: p.id,
+    hasViewType: !!p.view_type,
+    hasColorTone: !!p.color_tone
+  })));
   return data;
 }
 
@@ -228,24 +236,38 @@ export async function addUserObject(
 // --- Function for Regeneration ---
 
 export async function regenerateImageWithSubstitution(
-  originalImageUrl: string, // URL of the image to modify
-  replacementObject: UserObject, // The user object selected for replacement
-  objectNameToReplace: string // The name of the object identified in the original image
-): Promise<string> { // Returns the URL of the newly generated image
+  originalImageUrl: string,
+  replacementObject: UserObject | null,
+  objectNameToReplace: string | null,
+  viewType?: string | null,
+  renderingType?: string | null,
+  colorTone?: string | null
+): Promise<string> {
 
-  if (!replacementObject.asset_url) {
-    throw new Error('Replacement object is missing asset URL.');
+  if (replacementObject && objectNameToReplace) {
+    // Object replacement flow
+    if (!replacementObject.asset_url) {
+      throw new Error('Replacement object is missing asset URL.');
+    }
+    console.log('Replacing object with params:', {
+      objectNameToReplace,
+      replacementObject,
+      viewType,
+      renderingType,
+      colorTone
+    });
+  } else {
+    // Generate new variant with different parameters
+    console.log('Generating new variant with params:', {
+      viewType,
+      renderingType, 
+      colorTone
+    });
   }
 
-  // TODO: Implement actual regeneration logic, perhaps calling a modified gemini function
-  console.warn('Regeneration logic not implemented yet.');
-  // Placeholder call removed as geminiService is gone
-  // const newImageUrl = await geminiService.regenerateWithSubstitution(...) 
+  // TODO: Implement actual regeneration logic
+  console.warn('Regeneration logic not fully implemented yet');
   const newImageUrl = 'https://via.placeholder.com/1024x768.png?text=Regeneration+Not+Implemented';
 
-
-  // Potentially save the new image URL back to the project?
-  // This depends on how projects track their generated images.
-  // For now, just return the new URL.
   return newImageUrl;
 }

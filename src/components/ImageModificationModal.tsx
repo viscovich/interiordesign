@@ -3,10 +3,12 @@ import { Project, ImageObject, UserObject } from '../lib/projectsService.d';
 import {
   getImageObjects,
   getUserObjects,
-  recognizeAndSaveObjects,
   regenerateImageWithSubstitution
 } from '../lib/projectsService';
-import { useAuth } from '../lib/auth'; // Correctly imported useAuth
+import { useAuth } from '../lib/auth';
+import { ViewTypeSelector } from './ViewTypeSelector';
+import { RenderingTypeSelector } from './RenderingTypeSelector';
+import { ColorPaletteSelector } from './ColorPaletteSelector';
 
 // --- Placeholder Sub-components ---
 // These will be created in separate files later
@@ -193,26 +195,50 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
     setSelectedReplacementObject(object);
   };
 
+  const [selectedViewType, setSelectedViewType] = useState<string | null>(null);
+  const [selectedRenderingType, setSelectedRenderingType] = useState<string | null>(null);
+  const [selectedColorTone, setSelectedColorTone] = useState<string | null>(null);
+
   const handleGenerate = async () => {
-    if (!project || !selectedObjectName || !selectedReplacementObject || !currentImageUrl) {
-        setError("Please select an object to replace and a replacement object.");
+    if (!project || !currentImageUrl) {
+        setError("Project or image not loaded.");
         return;
     }
+    
+    // If no object replacement selected, we're just generating a new variant
+    const isObjectReplacement = selectedObjectName && selectedReplacementObject;
+    
     setIsLoadingGeneration(true);
     setError(null);
     try {
-        const newImageUrl = await regenerateImageWithSubstitution(
-            currentImageUrl,
-            selectedReplacementObject,
-            selectedObjectName
-        );
-        setCurrentImageUrl(newImageUrl); // Update the displayed image
-        // Optionally: Update the project in the database with the new URL
-        // await updateProjectImageUrl(project.id, newImageUrl);
-        setSelectedObjectName(null); // Reset selections after generation
+        let newImageUrl;
+        
+        if (isObjectReplacement) {
+            newImageUrl = await regenerateImageWithSubstitution(
+                currentImageUrl,
+                selectedReplacementObject,
+                selectedObjectName,
+                selectedViewType || project.view_type,
+                selectedRenderingType,
+                selectedColorTone || project.color_tone
+            );
+        } else {
+            // Generate new variant with different parameters
+            newImageUrl = await regenerateImageWithSubstitution(
+                currentImageUrl,
+                null,
+                null,
+                selectedViewType || project.view_type,
+                selectedRenderingType,
+                selectedColorTone || project.color_tone
+            );
+        }
+
+        setCurrentImageUrl(newImageUrl);
+        setSelectedObjectName(null);
         setSelectedReplacementObject(null);
-        setRecognizedObjects([]); // Clear recognized objects as they might be invalid now
-        alert("New image generated successfully!"); // Simple feedback for now
+        setRecognizedObjects([]);
+        alert("New image variant generated successfully!");
     } catch (err) {
         console.error("Error generating new image:", err);
         setError("Failed to generate new image.");
@@ -231,12 +257,21 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
       <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl h-[90vh] flex flex-col overflow-hidden"> {/* Increased max-width, overflow hidden */}
         {/* Header */}
         <div className="p-3 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
-          {/* Use project name or fallback */}
-          <h1 className="text-lg font-semibold text-gray-800">Modify Design: {project.room_type || project.id}</h1>
+          <div>
+            <h1 className="text-lg font-semibold text-gray-800">Modify Design: {project.room_type || project.id}</h1>
+            <div className="flex gap-4 text-sm mt-1">
+              {project.view_type && (
+                <span className="text-blue-600">View: {project.view_type}</span>
+              )}
+              {project.color_tone && (
+                <span className="text-green-600">Tone: {project.color_tone}</span>
+              )}
+            </div>
+          </div>
           {/* Close button using an icon */}
-           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-           </button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
         </div>
 
          {/* Main Content Area - Ensure it takes remaining height */}
@@ -258,27 +293,42 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
         </div>
 
         {/* Footer - Adjusted styling */}
-        <div className="p-3 border-t border-gray-200 flex justify-between items-center bg-gray-50 flex-shrink-0">
-             <div className="flex-grow mr-4">
-                {error && <p className="text-red-600 text-xs truncate">{error}</p>}
-                {!error && isLoadingGeneration && <p className="text-blue-600 text-xs">Generating new image, please wait...</p>}
-                {/* Placeholder for success message? */}
+        <div className="p-3 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+          <div className="grid grid-cols-3 gap-4 mb-3">
+            <ViewTypeSelector
+              value={selectedViewType || project.view_type || ''}
+              onChange={setSelectedViewType}
+            />
+            <RenderingTypeSelector
+              value={selectedRenderingType || ''}
+              onChange={setSelectedRenderingType}
+            />
+            <ColorPaletteSelector
+              selectedPaletteId={selectedColorTone || project.color_tone || undefined}
+              onPaletteSelect={(palette) => setSelectedColorTone(palette.id)}
+            />
+          </div>
+          <div className="flex justify-between items-center">
+            <div className="flex-grow mr-4">
+              {error && <p className="text-red-600 text-xs truncate">{error}</p>}
+              {!error && isLoadingGeneration && <p className="text-blue-600 text-xs">Generating new image, please wait...</p>}
             </div>
-             <button
-                onClick={handleGenerate}
-                disabled={!selectedObjectName || !selectedReplacementObject || isLoadingGeneration} // Removed isLoadingRecognition from disabled check
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-5 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
+            <button
+              onClick={handleGenerate}
+              disabled={isLoadingGeneration}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-5 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
             >
-                {isLoadingGeneration ? (
-                    <div className="flex items-center">
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Generating...
-                    </div>
-                ) : 'Generate New Image'}
+              {isLoadingGeneration ? (
+                <div className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Generating...
+                </div>
+              ) : 'Generate New Variant'}
             </button>
+          </div>
         </div>
       </div>
     </div>

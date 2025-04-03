@@ -89,6 +89,20 @@ export function ProjectDetails({ project, onBack }: ProjectDetailsProps) {
             <p className="text-gray-600">Style</p>
             <p className="font-medium">{project.style}</p>
           </div>
+          <div className="border border-blue-500 p-2 rounded-lg">
+            <p className="text-blue-600 font-bold">View Type (DEBUG)</p>
+            <p className="font-medium text-lg">{project.view_type || 'NULL'}</p>
+          </div>
+          <div className="border border-green-500 p-2 rounded-lg">
+            <p className="text-green-600 font-bold">Color Tone (DEBUG)</p>
+            <p className="font-medium text-lg">{project.color_tone || 'NULL'}</p>
+          </div>
+          {project.description && (
+            <div className="col-span-2">
+              <p className="text-gray-600">Description</p>
+              <p className="font-medium">{project.description}</p>
+            </div>
+          )}
           <div>
             <p className="text-gray-600">Created</p>
             <p className="font-medium">
