@@ -266,14 +266,17 @@ function App() {
             </div>
             
             <div className="max-w-5xl mx-auto">
-              <ImageUploader 
-                onImageUpload={handleImageUpload} 
-                onReset={resetUpload}
-                viewValue={selectedView}
-                renderingTypeValue={selectedRenderingType}
-                onViewChange={handleViewSelect}
-                onRenderingTypeChange={handleRenderingTypeSelect}
-              />
+ 
+                <ImageUploader 
+                  onImageUpload={handleImageUpload} 
+                  onReset={resetUpload}
+                  viewValue={selectedView}
+                  renderingTypeValue={selectedRenderingType}
+                  onViewChange={handleViewSelect}
+                  onRenderingTypeChange={handleRenderingTypeSelect}
+                />
+
+       
               
               {uploadedImage && (
                 <div className="space-y-8 mt-8">
@@ -288,15 +291,6 @@ function App() {
                     }}
                   />
                   
-                  <button
-                    onClick={() => setIsObjectsSidebarOpen(true)}
-                    className="mt-4 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md flex items-center gap-2"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-                    </svg>
-                    Select Objects
-                  </button>
 
                   <ColorPaletteSelector
                     onPaletteSelect={setSelectedColorPalette}
@@ -396,15 +390,6 @@ function App() {
                 user={user}
                 onModifyProject={handleOpenModificationModal}
               />
-              <button
-                onClick={() => setIsObjectsSidebarOpen(true)}
-                className="mt-8 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md flex items-center gap-2"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-                </svg>
-                Select Objects
-              </button>
             </div>
           </section>
         )}
@@ -429,8 +414,8 @@ function App() {
                   <div className="w-12 h-12 bg-custom/10 rounded-lg flex items-center justify-center mb-4">
                     <i className="fas fa-eraser text-custom text-xl"></i>
                   </div>
-                  <h3 className="text-xl font-semibold mb-3">Empty Your Space</h3>
-                  <p className="text-gray-600">Remove furniture and objects to create a neutral environment.</p>
+                  <h3 className="text-xl font-semibold mb-3">Enhance Designs with Your Personal Items</h3>
+                  <p className="text-gray-600">Personalize your designs by easily inserting items from your own object library – from sofas to lamps and beyond."</p>
                 </div>
                 <div className="p-6 bg-white rounded-lg shadow-sm border border-gray-100">
                   <div className="w-12 h-12 bg-custom/10 rounded-lg flex items-center justify-center mb-4">
@@ -560,21 +545,23 @@ function App() {
                     />
                   </div>
                 </div>
-                <div className="rounded-lg overflow-hidden">
-                <img 
-  src="/src/images/bedroom-design-example.jpg" 
-  alt="Bedroom design example" 
-  className="w-full h-64 object-cover"
-  loading="lazy"
-/>
+                <div className="rounded-lg overflow-hidden h-64 relative">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <ImageComparison
+                      originalImage="/images/planimetria-casa.jpg" 
+                      generatedImage="/images/bedroom-design-example.jpg"
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
                 </div>
-                <div className="rounded-lg overflow-hidden">
-                <img 
-  src="/src/images/kitchen-design-example.jpg" 
-  alt="Kitchen design example" 
-  className="w-full h-64 object-cover"
-  loading="lazy"
-/>
+                <div className="rounded-lg overflow-hidden h-64 relative">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <ImageComparison
+                      originalImage="/images/Cucina_prima.png" 
+                      generatedImage="/images/kitchen-design-example.jpg"
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -593,7 +580,7 @@ function App() {
                 <div className="space-y-4">
                   <div className="bg-white p-6 rounded-lg shadow-sm">
                     <h3 className="text-lg font-semibold mb-2">How does the transformation process work?</h3>
-                    <p className="text-gray-600">Upload a photo of your room or floor plan, select the desired style, and let the AI do the rest. You'll receive the result in seconds.</p>
+                    <p className="text-gray-600">Upload a photo of your room or floor plan, select the desired style, and let the AI do the rest. You'll receive the result in seconds. You may also Integrate Uploaded Objects into Your Scenes </p>
                   </div>
                   <div className="bg-white p-6 rounded-lg shadow-sm">
                     <h3 className="text-lg font-semibold mb-2">What type of photos can I upload?</h3>
