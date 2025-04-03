@@ -11,6 +11,7 @@ import { ImageComparison } from './components/ImageComparison';
 import { LoginModal } from './components/LoginModal';
 import { RegisterModal } from './components/RegisterModal';
 import { ProjectsList } from './components/ProjectsList';
+import UserObjectsManager from './components/UserObjectsManager'; // Import UserObjectsManager
 import ImageModificationModal from './components/ImageModificationModal';
 import { UserAccountDropdown } from './components/UserAccountDropdown';
 import { useAuth } from './lib/auth';
@@ -371,6 +372,10 @@ function App() {
                 user={user}
                 onModifyProject={handleOpenModificationModal}
               />
+              {/* Add UserObjectsManager below ProjectsList */}
+              <div className="mt-12"> {/* Add some margin top for separation */}
+                <UserObjectsManager />
+              </div>
             </div>
           </section>
         )}
