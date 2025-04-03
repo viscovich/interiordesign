@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { ImageObject, UserObject, PaginatedProjects } from './projectsService.d'; // Import new types
+import { ImageObject, UserObject, PaginatedProjects, Project } from './projectsService.d'; // Import all types
 import { uploadImage } from './storage'; // Corrected import path and function name
 
 // Helper function to convert File to Base64
@@ -241,7 +241,8 @@ export async function regenerateImageWithSubstitution(
   objectNameToReplace: string | null,
   viewType?: string | null,
   renderingType?: string | null,
-  colorTone?: string | null
+  colorTone?: string | null,
+  project?: Project | null
 ): Promise<string> {
 
   if (replacementObject && objectNameToReplace) {
@@ -265,9 +266,31 @@ export async function regenerateImageWithSubstitution(
     });
   }
 
-  // TODO: Implement actual regeneration logic
-  console.warn('Regeneration logic not fully implemented yet');
-  const newImageUrl = 'https://via.placeholder.com/1024x768.png?text=Regeneration+Not+Implemented';
+  try {
+    // Import the gemini service dynamically to avoid circular dependencies
+    const { generateInteriorDesign } = await import('./gemini');
+    
+    if (!project) {
+      throw new Error('Project data is required for generation');
+    }
 
-  return newImageUrl;
+    const { imageData } = await generateInteriorDesign(
+      originalImageUrl,
+      project.style,
+      project.room_type,
+      colorTone || project.color_tone || '',
+      renderingType || '3d',
+      viewType || 'frontal',
+      project.user_id
+    );
+
+    if (!imageData) {
+      throw new Error('Image generation failed - no image data returned');
+    }
+    
+    return imageData;
+  } catch (error) {
+    console.error('Error generating new image variant:', error);
+    throw new Error('Failed to generate new image variant');
+  }
 }

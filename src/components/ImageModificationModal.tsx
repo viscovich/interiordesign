@@ -3,7 +3,8 @@ import { Project, ImageObject, UserObject } from '../lib/projectsService.d';
 import {
   getImageObjects,
   getUserObjects,
-  regenerateImageWithSubstitution
+  regenerateImageWithSubstitution,
+  createProject
 } from '../lib/projectsService';
 import { useAuth } from '../lib/auth';
 import { ViewTypeSelector } from './ViewTypeSelector';
@@ -220,7 +221,8 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
                 selectedObjectName,
                 selectedViewType || project.view_type,
                 selectedRenderingType,
-                selectedColorTone || project.color_tone
+                selectedColorTone || project.color_tone,
+                project
             );
         } else {
             // Generate new variant with different parameters
@@ -230,15 +232,28 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
                 null,
                 selectedViewType || project.view_type,
                 selectedRenderingType,
-                selectedColorTone || project.color_tone
+                selectedColorTone || project.color_tone,
+                project
             );
         }
 
+        // Create new project with the variant
+        const newProject = await createProject(
+          project.user_id,
+          project.original_image_url, // Keep original image
+          newImageUrl,
+          project.style,
+          project.room_type,
+          project.description, // Keep original description
+          selectedViewType || project.view_type, // New view type
+          selectedColorTone || project.color_tone // New color tone
+        );
+        
         setCurrentImageUrl(newImageUrl);
         setSelectedObjectName(null);
         setSelectedReplacementObject(null);
         setRecognizedObjects([]);
-        alert("New image variant generated successfully!");
+        alert(`New variant saved as project: ${newProject.id}`);
     } catch (err) {
         console.error("Error generating new image:", err);
         setError("Failed to generate new image.");
