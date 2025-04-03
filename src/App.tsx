@@ -532,20 +532,20 @@ function App() {
                   </div>
                 </div>
                 <div className="rounded-lg overflow-hidden">
-                  <img 
-                    src="https://creatie.ai/ai/api/search-image?query=A luxurious master bedroom with elegant furnishings, soft textiles, and a calming color palette. The scene includes a king-size bed, designer lighting, and tasteful artwork. Professional interior design photography with attention to detail&width=400&height=300&orientation=landscape&flag=683b4d05-6475-4e10-9998-0dc08f72955a" 
-                    alt="AI transformed bedroom design example" 
-                    className="w-full h-64 object-cover"
-                    loading="lazy"
-                  />
+                <img 
+  src="/src/images/bedroom-design-example.jpg" 
+  alt="Bedroom design example" 
+  className="w-full h-64 object-cover"
+  loading="lazy"
+/>
                 </div>
                 <div className="rounded-lg overflow-hidden">
-                  <img 
-                    src="https://creatie.ai/ai/api/search-image?query=A contemporary kitchen with sleek cabinetry, marble countertops, and high-end appliances. The space features excellent lighting, clean lines, and a sophisticated design aesthetic. Professional interior design photography showcasing modern luxury&width=400&height=300&orientation=landscape&flag=8f07e65d-12a6-4b1f-aa2c-f373726533d8" 
-                    alt="AI transformed kitchen design example" 
-                    className="w-full h-64 object-cover"
-                    loading="lazy"
-                  />
+                <img 
+  src="/src/images/kitchen-design-example.jpg" 
+  alt="Kitchen design example" 
+  className="w-full h-64 object-cover"
+  loading="lazy"
+/>
                 </div>
               </div>
             </div>
