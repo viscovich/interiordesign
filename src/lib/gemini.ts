@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { useCredit } from './userService';
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(API_KEY);
@@ -69,8 +70,11 @@ export async function generateInteriorDesign(
   roomType: string,
   colorTone: string,
   renderingType: string,
-  view: string
+  view: string,
+  userId: string
 ): Promise<{ description: string; imageData: string; detectedObjects: string[] }> {
+  // Deduce 5 credits for image generation
+  await useCredit(userId, 5);
   console.log(`[generateInteriorDesign] Starting with params: style=${style}, roomType=${roomType}, renderingType=${renderingType}, view=${view}`);
 
   const model = genAI.getGenerativeModel({
@@ -163,4 +167,3 @@ export async function generateInteriorDesign(
     throw error;
   }
 }
-

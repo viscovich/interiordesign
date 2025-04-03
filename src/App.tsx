@@ -12,7 +12,7 @@ import { LoginModal } from './components/LoginModal';
 import { RegisterModal } from './components/RegisterModal';
 import { ProjectsList } from './components/ProjectsList';
 import ImageModificationModal from './components/ImageModificationModal';
-import { UserCredits } from './components/UserCredits';
+import { UserAccountDropdown } from './components/UserAccountDropdown';
 import { useAuth } from './lib/auth';
 import { generateInteriorDesign } from './lib/gemini';
 import { uploadImage } from './lib/storage';
@@ -96,7 +96,8 @@ function App() {
         selectedRoomType.name,
         selectedColorPalette.name,
         selectedRenderingType,
-        selectedView
+        selectedView,
+        user.id
       );
 
       const generatedImageUrl = await uploadImage(
@@ -175,15 +176,15 @@ function App() {
               )}
               {!authLoading && (
                 user ? (
-                  <div className="flex items-center gap-4">
-                    <UserCredits />
-                    <button
-                      onClick={() => signOut()}
-                      className="!rounded-button px-6 py-2 text-custom border border-custom hover:bg-custom hover:text-white transition"
-                    >
-                      Sign Out
-                    </button>
-                  </div>
+                    <div className="flex items-center gap-4">
+                      <UserAccountDropdown />
+                      <button
+                        onClick={() => signOut()}
+                        className="!rounded-button px-6 py-2 text-custom border border-custom hover:bg-custom hover:text-white transition"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
                 ) : (
                   <>
                     <button 
@@ -434,7 +435,7 @@ function App() {
                     </li>
                     <li className="flex items-center">
                       <i className="fas fa-check text-custom mr-2"></i>
-                      50 credits/month
+                      50 credits
                     </li>
                     <li className="flex items-center">
                       <i className="fas fa-check text-custom mr-2"></i>
@@ -447,7 +448,7 @@ function App() {
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-custom text-white px-4 py-1 rounded-full text-sm">Most popular</div>
                   <h3 className="text-2xl font-bold mb-4">🟦 Pro</h3>
                   <div className="text-4xl font-bold mb-6">
-                    $9<span className="text-xl font-normal">/month</span>
+                    $19<span className="text-xl font-normal">/month</span>
                   </div>
                   <ul className="space-y-4 mb-8">
                     <li className="flex items-center">
@@ -476,7 +477,7 @@ function App() {
                 <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
                   <h3 className="text-2xl font-bold mb-4">🟥 Enterprise</h3>
                   <div className="text-4xl font-bold mb-6">
-                    $29<span className="text-xl font-normal">/month</span>
+                    $49<span className="text-xl font-normal">/month</span>
                   </div>
                   <ul className="space-y-4 mb-8">
                     <li className="flex items-center">

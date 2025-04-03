@@ -44,7 +44,7 @@ export async function createUserProfile(userId: string, email: string) {
     .insert({
       id: userId,
       email,
-      credits: 3 // Default credits
+      credits: 50 // Default credits
     })
     .select()
     .single();
