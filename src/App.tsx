@@ -12,15 +12,19 @@ import { ImageComparison } from './components/ImageComparison';
 import { LoginModal } from './components/LoginModal';
 import { RegisterModal } from './components/RegisterModal';
 import { ProjectsList } from './components/ProjectsList';
+import { SidebarMenu } from './components/SidebarMenu'; // Import SidebarMenu
+import { UserObjectsSection } from './components/UserObjectsSection'; // Import UserObjectsSection
+import { CommunitySection } from './components/CommunitySection'; // Import CommunitySection
 import { FloatingObjectsSidebar } from './components/FloatingObjectsSidebar';
 import ImageModificationModal from './components/ImageModificationModal';
 import { UserAccountDropdown } from './components/UserAccountDropdown';
 import { useAuth } from './lib/auth';
 import { generateInteriorDesign } from './lib/gemini';
 import { uploadImage } from './lib/storage';
-import { createProject, saveDetectedObjects } from './lib/projectsService';
+import { createProject } from './lib/projectsService'; // Removed saveDetectedObjects as it's unused here
 import type { Project } from './lib/projectsService.d';
 import { hasEnoughCredits, useCredit, getUserProfile } from './lib/userService';
+import { getUserObjects, deleteUserObject, UserObject } from './lib/userObjectsService'; // Import user object functions and type
 import { getStripe, startCheckout } from './lib/stripe';
 import type { UserProfile } from './lib/userService.d';
 import toast from 'react-hot-toast';
@@ -45,10 +49,50 @@ function App() {
   const [projectToModify, setProjectToModify] = useState<Project | null>(null);
   const [isObjectsSidebarOpen, setIsObjectsSidebarOpen] = useState(false);
   const [selectedObjects, setSelectedObjects] = useState<string[]>([]);
+  const [userObjects, setUserObjects] = useState<UserObject[]>([]); // State for user objects
+  const [loadingObjects, setLoadingObjects] = useState(false); // State for loading objects
+
+  // Fetch user objects when user logs in or activeSection changes to 'objects'
+  React.useEffect(() => {
+    const fetchObjects = async () => {
+      if (user && activeSection === 'objects') {
+        setLoadingObjects(true);
+        try {
+          const objects = await getUserObjects(user.id);
+          setUserObjects(objects);
+        } catch (error) {
+          console.error("Failed to fetch user objects:", error);
+          toast.error("Could not load your objects.");
+        } finally {
+          setLoadingObjects(false);
+        }
+      }
+    };
+    fetchObjects();
+  }, [user, activeSection]);
+
+  // Handler for deleting an object
+  const handleDeleteObject = async (id: string) => {
+    if (!user) return;
+    // Optimistic UI update
+    const originalObjects = [...userObjects];
+    setUserObjects(currentObjects => currentObjects.filter(obj => obj.id !== id));
+    setSelectedObjects(currentSelected => currentSelected.filter(objId => objId !== id));
+
+    try {
+      await deleteUserObject(id); // Corrected: Removed user.id argument
+      toast.success("Object deleted successfully.");
+    } catch (error) {
+      console.error("Failed to delete object:", error);
+      toast.error("Failed to delete object. Please try again.");
+      // Revert UI if delete fails
+      setUserObjects(originalObjects);
+    }
+  };
 
   const handleSelectObject = (id: string) => {
-    setSelectedObjects(prev => 
-      prev.includes(id) 
+    setSelectedObjects(prev =>
+      prev.includes(id)
         ? prev.filter(objId => objId !== id)
         : [...prev, id]
     );
@@ -65,7 +109,7 @@ function App() {
       dataUrl,
       `original/${Date.now()}_${file.name}`
     );
-    
+
     setUploadedImage(originalImageUrl);
     setGeneratedImage(null);
     setDesignDescription(null);
@@ -116,7 +160,7 @@ function App() {
         imageData,
         `generated/${Date.now()}.jpg`
       );
-      
+
       if (user) {
       await createProject(
         user.id,
@@ -181,14 +225,7 @@ function App() {
                   <a href="#faq" className="text-gray-600 hover:text-custom">FAQ</a>
                 </>
               )}
-              {user && (
-                <button 
-                  onClick={() => setActiveSection('projects')}
-                  className="text-gray-600 hover:text-custom"
-                >
-                  My Projects
-                </button>
-              )}
+              {/* My Projects button removed from header */}
               {!authLoading && (
                 user ? (
                     <div className="flex items-center gap-4">
@@ -202,14 +239,14 @@ function App() {
                     </div>
                 ) : (
                   <>
-                    <button 
-                      onClick={() => setIsLoginModalOpen(true)} 
+                    <button
+                      onClick={() => setIsLoginModalOpen(true)}
                       className="!rounded-button px-6 py-2 text-custom border border-custom hover:bg-custom hover:text-white transition"
                     >
                       Sign In
                     </button>
-                    <button 
-                      onClick={() => setIsRegisterModalOpen(true)} 
+                    <button
+                      onClick={() => setIsRegisterModalOpen(true)}
                       className="!rounded-button px-6 py-2 bg-custom text-white hover:bg-custom/90 transition"
                     >
                       Register
@@ -222,9 +259,16 @@ function App() {
         </nav>
       </header>
 
-      <main className="pt-20">
-        {/* Hero Section - Only shown when not logged in */}
-        {!user && (
+      <div className="flex pt-20"> {/* Main flex container for sidebar + content */}
+        {user && (
+          <SidebarMenu
+            activeSection={activeSection}
+            setActiveSection={setActiveSection}
+          />
+        )}
+        <main className={`flex-1 ${user ? 'ml-64' : ''}`}> {/* Main content area */}
+          {/* Hero Section - Only shown when not logged in */}
+          {!user && (
           <section className="relative bg-gray-50 py-20">
             <div className="container max-w-8xl mx-auto px-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
@@ -233,14 +277,14 @@ function App() {
                   <p className="text-xl text-gray-600 mb-8">Upload a photo or a full floor plan and let AI redesign your selected room in your preferred style.
                   Get stunning, professional results in seconds.</p>
                   <div className="flex gap-4">
-                    <button 
+                    <button
                       onClick={() => document.getElementById('design-section')?.scrollIntoView({ behavior: 'smooth' })}
                       className="!rounded-button px-8 py-4 bg-custom text-white hover:bg-custom/90 transition flex items-center"
                     >
                       <i className="fas fa-upload mr-2"></i>
                       Upload a photo
                     </button>
-                    <button 
+                    <button
                       onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
                       className="!rounded-button px-8 py-4 border border-custom text-custom hover:bg-custom hover:text-white transition"
                     >
@@ -249,9 +293,9 @@ function App() {
                   </div>
                 </div>
                 <div className="relative">
-                  <img 
+                  <img
                     src="/images/before_after.jpg"
-                    alt="DreamCasa AI Transform" 
+                    alt="DreamCasa AI Transform"
                     className="rounded-lg shadow-lg"
                   />
                 </div>
@@ -261,99 +305,102 @@ function App() {
         )}
 
         {/* Design Section */}
-        <section id="design-section" className="py-20">
-          <div className="container max-w-8xl mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold mb-4">Transform Your Space</h2>
-              <p className="text-xl text-gray-600">Upload a photo and customize your design</p>
-            </div>
-            
-            <div className="max-w-5xl mx-auto">
- 
-                <ImageUploader 
-                  onImageUpload={handleImageUpload} 
-                  onReset={resetUpload}
-                  viewValue={selectedView}
-                  renderingTypeValue={selectedRenderingType}
-                  onViewChange={handleViewSelect}
-                  onRenderingTypeChange={handleRenderingTypeSelect}
-                />
+        {/* Conditionally render Design section only if activeSection is 'design' */}
+        {activeSection === 'design' && (
+          <section id="design-section" className="py-20">
+            <div className="container max-w-8xl mx-auto px-4">
+              <div className="text-center mb-12">
+                <h2 className="text-4xl font-bold mb-4">Transform Your Space</h2>
+                <p className="text-xl text-gray-600">Upload a photo and customize your design</p>
+              </div>
 
-       
-              
-              {uploadedImage && (
-                <div className="space-y-8 mt-8">
-                  <TabbedSelector
-                    styles={{
-                      onStyleSelect: handleStyleSelect,
-                      selectedStyleId: selectedStyle?.id
-                    }}
-                    roomTypes={{
-                      onRoomTypeSelect: handleRoomTypeSelect,
-                      selectedRoomTypeId: selectedRoomType?.id
-                    }}
-                  />
-                  
+              <div className="max-w-5xl mx-auto">
 
-                  <ColorPaletteSelector
-                    onPaletteSelect={setSelectedColorPalette}
-                    selectedPaletteId={selectedColorPalette?.id}
+                  <ImageUploader
+                    onImageUpload={handleImageUpload}
+                    onReset={resetUpload}
+                    viewValue={selectedView}
+                    renderingTypeValue={selectedRenderingType}
+                    onViewChange={handleViewSelect}
+                    onRenderingTypeChange={handleRenderingTypeSelect}
                   />
-                  
-                  <div className="mb-2">
-                    {(!uploadedImage || !selectedStyle || !selectedRoomType || !selectedColorPalette || !selectedView || !selectedRenderingType) && (
-                      <div className="flex items-center justify-center gap-2 flex-wrap">
-                        {!uploadedImage && (
-                          <span className="text-sm text-red-500">• Upload an image</span>
-                        )}
-                        {uploadedImage && !selectedStyle && (
-                          <span className="text-sm text-red-500">• Select style</span>
-                        )}
-                        {uploadedImage && !selectedRoomType && (
-                          <span className="text-sm text-red-500">• Select room type</span>
-                        )}
-                        {uploadedImage && !selectedColorPalette && (
-                          <span className="text-sm text-red-500">• Select color palette</span>
-                        )}
-                        {uploadedImage && !selectedView && (
-                          <span className="text-sm text-red-500">• Select view</span>
-                        )}
-                        {uploadedImage && !selectedRenderingType && (
-                          <span className="text-sm text-red-500">• Select rendering</span>
-                        )}
+
+
+
+                {uploadedImage && (
+                  <div className="space-y-8 mt-8">
+                    <TabbedSelector
+                      styles={{
+                        onStyleSelect: handleStyleSelect,
+                        selectedStyleId: selectedStyle?.id
+                      }}
+                      roomTypes={{
+                        onRoomTypeSelect: handleRoomTypeSelect,
+                        selectedRoomTypeId: selectedRoomType?.id
+                      }}
+                    />
+
+
+                    <ColorPaletteSelector
+                      onPaletteSelect={setSelectedColorPalette}
+                      selectedPaletteId={selectedColorPalette?.id}
+                    />
+
+                    <div className="mb-2">
+                      {(!uploadedImage || !selectedStyle || !selectedRoomType || !selectedColorPalette || !selectedView || !selectedRenderingType) && (
+                        <div className="flex items-center justify-center gap-2 flex-wrap">
+                          {!uploadedImage && (
+                            <span className="text-sm text-red-500">• Upload an image</span>
+                          )}
+                          {uploadedImage && !selectedStyle && (
+                            <span className="text-sm text-red-500">• Select style</span>
+                          )}
+                          {uploadedImage && !selectedRoomType && (
+                            <span className="text-sm text-red-500">• Select room type</span>
+                          )}
+                          {uploadedImage && !selectedColorPalette && (
+                            <span className="text-sm text-red-500">• Select color palette</span>
+                          )}
+                          {uploadedImage && !selectedView && (
+                            <span className="text-sm text-red-500">• Select view</span>
+                          )}
+                          {uploadedImage && !selectedRenderingType && (
+                            <span className="text-sm text-red-500">• Select rendering</span>
+                          )}
+                        </div>
+                      )}
+
+                      <button
+                        onClick={handleGenerate}
+                        disabled={isGenerating || !uploadedImage || !selectedStyle || !selectedRoomType || !selectedColorPalette || !selectedView || !selectedRenderingType}
+                        className={`
+                          !rounded-button w-full py-4 text-white transition
+                          ${isGenerating || !uploadedImage || !selectedStyle || !selectedRoomType || !selectedColorPalette || !selectedView || !selectedRenderingType
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-custom hover:bg-custom/90'
+                          }
+                        `}
+                      >
+                        {isGenerating ? 'Generating...' : 'Generate Design'}
+                      </button>
+                    </div>
+
+                    {isGenerating && (
+                      <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2 relative overflow-hidden">
+                        <div
+                          className="bg-custom h-1.5 rounded-full absolute top-0 left-0"
+                          style={{
+                            animation: 'progress 15s linear forwards'
+                          }}
+                        />
                       </div>
                     )}
-
-                    <button
-                      onClick={handleGenerate}
-                      disabled={isGenerating || !uploadedImage || !selectedStyle || !selectedRoomType || !selectedColorPalette || !selectedView || !selectedRenderingType}
-                      className={`
-                        !rounded-button w-full py-4 text-white transition
-                        ${isGenerating || !uploadedImage || !selectedStyle || !selectedRoomType || !selectedColorPalette || !selectedView || !selectedRenderingType
-                          ? 'bg-gray-400 cursor-not-allowed'
-                          : 'bg-custom hover:bg-custom/90'
-                        }
-                      `}
-                    >
-                      {isGenerating ? 'Generating...' : 'Generate Design'}
-                    </button>
                   </div>
-                  
-                  {isGenerating && (
-                    <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2 relative overflow-hidden">
-                      <div 
-                        className="bg-custom h-1.5 rounded-full absolute top-0 left-0"
-                        style={{ 
-                          animation: 'progress 15s linear forwards'
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Results Section */}
         {generatedImage && activeSection === 'results' && (
@@ -367,7 +414,7 @@ function App() {
                 originalImage={uploadedImage!}
                 generatedImage={generatedImage}
               />
-              
+
               <div className="text-center mt-12">
                 <button
                   onClick={() => {
@@ -386,7 +433,7 @@ function App() {
         )}
 
         {/* Projects Section */}
-        {activeSection === 'projects' && (
+        {activeSection === 'projects' && user && ( // Ensure user exists
           <section className="py-20">
             <div className="container max-w-8xl mx-auto px-4">
               <ProjectsList
@@ -395,6 +442,31 @@ function App() {
               />
             </div>
           </section>
+        )}
+
+        {/* Objects Section */}
+        {activeSection === 'objects' && user && (
+          <section className="py-20">
+            <div className="container max-w-8xl mx-auto px-4">
+              <h2 className="text-3xl font-bold mb-8 text-center">My Objects</h2>
+              {loadingObjects ? (
+                <p className="text-center text-gray-500">Loading objects...</p>
+              ) : (
+                <UserObjectsSection
+                  objects={userObjects} // Pass userObjects state
+                  onDelete={handleDeleteObject} // Pass handleDeleteObject function
+                  selectedObjects={selectedObjects} // Pass selectedObjects state
+                  onSelectObject={handleSelectObject} // Pass handleSelectObject function
+                />
+              )}
+              {/* Consider adding an UploadObjectModal trigger here */}
+            </div>
+          </section>
+        )}
+
+        {/* Community Section */}
+        {activeSection === 'community' && user && (
+          <CommunitySection />
         )}
 
         {/* Features Section - Only shown when not logged in */}
@@ -546,7 +618,7 @@ function App() {
                 <div className="rounded-lg overflow-hidden h-64 relative">
                   <div className="absolute inset-0 flex items-center justify-center">
                     <ImageComparison
-                      originalImage="/images/Salotto_vecchio.png" 
+                      originalImage="/images/Salotto_vecchio.png"
                       generatedImage="/images/Salotto_nuovo.png"
                       className="h-full w-full object-contain"
                     />
@@ -555,7 +627,7 @@ function App() {
                 <div className="rounded-lg overflow-hidden h-64 relative">
                   <div className="absolute inset-0 flex items-center justify-center">
                     <ImageComparison
-                      originalImage="/images/planimetria-casa.jpg" 
+                      originalImage="/images/planimetria-casa.jpg"
                       generatedImage="/images/bedroom-design-example.jpg"
                       className="h-full w-full object-contain"
                     />
@@ -564,7 +636,7 @@ function App() {
                 <div className="rounded-lg overflow-hidden h-64 relative">
                   <div className="absolute inset-0 flex items-center justify-center">
                     <ImageComparison
-                      originalImage="/images/Cucina_prima.png" 
+                      originalImage="/images/Cucina_prima.png"
                       generatedImage="/images/kitchen-design-example.jpg"
                       className="h-full w-full object-contain"
                     />
@@ -603,10 +675,13 @@ function App() {
           </section>
         )}
 
-      </main>
+      </main> {/* End of main content area */}
+      {/* Correctly placed closing div for the main flex container */}
+      </div>
 
-      {/* Footer */}
+      {/* Footer - Moved outside the flex container */}
       <footer className="bg-gray-900 text-white py-12">
+          {/* Inner container remains standard */}
           <div className="container max-w-8xl mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div>

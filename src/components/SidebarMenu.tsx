@@ -1,0 +1,48 @@
+import React from 'react';
+import {
+  PlusIcon,
+  FolderIcon,
+  CubeIcon, // Using CubeIcon for 'I miei oggetti' as a placeholder for 🛋️
+  GlobeAltIcon, // Using GlobeAltIcon for 'Community' as a placeholder for 🌐
+} from '@heroicons/react/24/outline'; // Using outline icons for a cleaner look
+
+interface SidebarMenuProps {
+  activeSection: string | null;
+  setActiveSection: (section: string) => void;
+}
+
+const menuItems = [
+  { name: 'Nuovo Progetto', section: 'design', icon: PlusIcon }, // 'design' section seems appropriate for new project creation
+  { name: 'I miei progetti', section: 'projects', icon: FolderIcon },
+  { name: 'I miei oggetti', section: 'objects', icon: CubeIcon },
+  { name: 'Community', section: 'community', icon: GlobeAltIcon },
+];
+
+export function SidebarMenu({ activeSection, setActiveSection }: SidebarMenuProps) {
+  return (
+    <aside className="fixed top-0 left-0 z-40 w-64 h-screen pt-20 bg-gray-900 border-r border-gray-700"> {/* Changed background to gray-900 and adjusted border */}
+      <div className="h-full px-3 pb-4 overflow-y-auto">
+        <ul className="space-y-2 font-medium">
+          {menuItems.map((item) => (
+            <li key={item.name}>
+              <button
+                onClick={() => setActiveSection(item.section)}
+                className={`flex items-center p-2 text-gray-100 rounded-lg hover:bg-gray-700 group w-full text-left ${ // Kept text color, hover background
+                  activeSection === item.section ? 'bg-gray-700' : '' // Adjusted active background slightly for gray-900
+                }`}
+              >
+                <item.icon
+                  className={`w-6 h-6 text-gray-400 transition duration-75 group-hover:text-gray-100 ${ // Kept icon color, hover icon color
+                    activeSection === item.section ? 'text-gray-100' : '' // Kept active icon color
+                  }`}
+                  aria-hidden="true"
+                />
+                <span className="ml-3">{item.name}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </aside>
+  );
+}
