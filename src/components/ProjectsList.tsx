@@ -80,26 +80,6 @@ export function ProjectsList({ user, onModifyProject }: ProjectsListProps) {
                 key={project.id}
                 className="relative p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteProject(project);
-                  }}
-                  className="absolute top-2 right-2 p-1 text-gray-400 hover:text-red-600 transition-colors z-10"
-                  aria-label="Delete project"
-                >
-                  <TrashIcon className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onModifyProject(project);
-                  }}
-                  className="absolute top-2 right-10 p-1 text-gray-400 hover:text-blue-600 transition-colors z-10"
-                  aria-label="Modify project"
-                >
-                  <PencilSquareIcon className="w-5 h-5" />
-                </button>
                 <div
                   className="cursor-pointer"
                   onClick={() => setSelectedProject(project)}
@@ -113,7 +93,31 @@ export function ProjectsList({ user, onModifyProject }: ProjectsListProps) {
                       />
                     )}
                     <div className="space-y-1">
-                      <h3 className="font-bold text-lg">{project.room_type}</h3>
+                      <div className="flex justify-between items-center">
+                        <h3 className="font-bold text-lg">{project.room_type}</h3>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onModifyProject(project);
+                            }}
+                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                            aria-label="Modify project"
+                          >
+                            <PencilSquareIcon className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteProject(project);
+                            }}
+                            className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                            aria-label="Delete project"
+                          >
+                            <TrashIcon className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-700">{project.style}</span>
                         <span className="text-gray-500 text-sm">
