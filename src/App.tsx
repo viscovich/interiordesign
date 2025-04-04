@@ -25,7 +25,8 @@ import FAQSection from './sections/FAQSection';
 function App() {
   const { user, loading: authLoading, signOut } = useAuth();
   const [activeSection, setActiveSection] = React.useState<string>('design');
-  
+  const [projectsRefreshKey, setProjectsRefreshKey] = React.useState(0); // State for triggering refresh
+
   // Custom hooks
   const modals = useModals();
   const design = useDesignGenerator({
@@ -65,6 +66,10 @@ function App() {
       modals.setPendingGenerate(false);
     }
   }, [user, modals.pendingGenerate, handleGenerate]); // Added handleGenerate dependency
+
+  const triggerProjectsRefresh = () => {
+    setProjectsRefreshKey(prevKey => prevKey + 1);
+  };
 
   console.log('App.tsx rendering - isLoginModalOpen:', modals.isLoginModalOpen); // DEBUG LOG
 
@@ -124,16 +129,18 @@ function App() {
         </nav>
       </header>
 
-      <div className="flex pt-20">
-        {user && (
-          <SidebarMenu
-            activeSection={activeSection}
-            setActiveSection={setActiveSection}
-          />
-        )}
-        <main className={`flex-1 ${user ? 'ml-64' : ''}`}>
-          {/* Render sections based on activeSection and user status */}
-          {!user && (
+      {/* Render sidebar conditionally (it's fixed, so position is independent) */}
+      {user && (
+        <SidebarMenu
+          activeSection={activeSection}
+          setActiveSection={setActiveSection}
+        />
+      )}
+
+      {/* Main content area: Apply top padding for header and conditional left margin for sidebar */}
+      <main className={`pt-20 ${user ? 'ml-64' : ''}`}> 
+        {/* Render sections based on activeSection and user status */}
+        {!user && (
             <>
               <HeroSection 
                 onScrollToDesign={handleScrollToDesign}
@@ -195,6 +202,7 @@ function App() {
             <ProjectsSection
               user={user}
               onModifyProject={modals.handleOpenModificationModal}
+              refreshKey={projectsRefreshKey} // Pass refresh key down
             />
           )}
 
@@ -210,14 +218,13 @@ function App() {
 
           {activeSection === 'community' && user && (
             <CommunitySection />
-          )}
-        </main>
-      </div>
+        )}
+      </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      {/* Footer: Apply conditional left margin for sidebar */}
+      <footer className={`bg-gray-900 text-white py-12 ${user ? 'ml-64' : ''}`}> 
         <div className="container max-w-8xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8"> 
             <div>
               <img src="/images/Dreamcasa3-removebg-preview.png" alt="DreamCasa AI Logo" className="h-8 mb-4 brightness-0 invert" />
               <span className="text-white text-lg font-bold block mb-2">DreamCasa AI</span>
@@ -241,10 +248,12 @@ function App() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 DreamCasa AI. All rights reserved.</p>
+              <p>&copy; 2025 DreamCasa AI. All rights reserved.</p>
+            </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      {/* Removed outer flex column wrapper */}
+
 
       {/* Modals */}
       <LoginModal
@@ -273,6 +282,7 @@ function App() {
         isOpen={modals.isModificationModalOpen}
         onClose={modals.handleCloseModificationModal}
         project={modals.projectToModify}
+        onGenerationComplete={triggerProjectsRefresh} // Pass refresh trigger function
       />
       </SeoWrapper>
   );

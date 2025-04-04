@@ -7,6 +7,7 @@ import {
   createProject
 } from '../lib/projectsService';
 import { useAuth } from '../lib/auth';
+import toast from 'react-hot-toast'; // Import toast
 import { ViewTypeSelector } from './ViewTypeSelector';
 import { RenderingTypeSelector } from './RenderingTypeSelector';
 import { ColorPaletteSelector } from './ColorPaletteSelector';
@@ -129,9 +130,10 @@ interface ImageModificationModalProps {
   isOpen: boolean;
   onClose: () => void;
   project: Project | null; // Pass the full project object
+  onGenerationComplete?: () => void; // Add callback for completion
 }
 
-const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen, onClose, project }) => {
+const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen, onClose, project, onGenerationComplete }) => {
   const { user } = useAuth(); // Make sure useAuth() is correctly imported and provides { user: { id: string } }
   const [recognizedObjects, setRecognizedObjects] = useState<ImageObject[]>([]);
   const [userObjectLibrary, setUserObjectLibrary] = useState<UserObject[]>([]);
@@ -249,14 +251,19 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
           selectedColorTone || project.color_tone // New color tone
         );
         
-        setCurrentImageUrl(newImageUrl);
+        // Success!
+        setCurrentImageUrl(newImageUrl); // Optional: update internal state if needed before close
         setSelectedObjectName(null);
         setSelectedReplacementObject(null);
-        setRecognizedObjects([]);
-        alert(`New variant saved as project: ${newProject.id}`);
+        setRecognizedObjects([]); // Clear recognized objects for the closed modal state
+        toast.success(`New variant generated and saved!`);
+        onClose(); // Close the modal
+        onGenerationComplete?.(); // Trigger refresh in parent
     } catch (err) {
         console.error("Error generating new image:", err);
-        setError("Failed to generate new image.");
+        const errorMessage = err instanceof Error ? err.message : "Failed to generate new image.";
+        setError(errorMessage);
+        toast.error(`Generation failed: ${errorMessage}`);
     } finally {
         setIsLoadingGeneration(false);
     }

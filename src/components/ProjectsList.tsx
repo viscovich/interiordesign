@@ -4,14 +4,15 @@ import type { User } from '@supabase/supabase-js';
 import { getProjectsByUser, deleteProject } from '../lib/projectsService';
 import toast from 'react-hot-toast';
 import { ProjectModal } from './ProjectModal';
-import { TrashIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, PencilSquareIcon, EyeIcon } from '@heroicons/react/24/outline';
 
 interface ProjectsListProps {
   user: User | null;
   onModifyProject: (project: Project) => void;
+  refreshKey: number; // Add refreshKey prop
 }
 
-export function ProjectsList({ user, onModifyProject }: ProjectsListProps) {
+export function ProjectsList({ user, onModifyProject, refreshKey }: ProjectsListProps) {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [paginatedProjects, setPaginatedProjects] = useState<PaginatedProjects>({
     projects: [],
@@ -32,7 +33,7 @@ export function ProjectsList({ user, onModifyProject }: ProjectsListProps) {
         })
         .finally(() => setLoading(false));
     }
-  }, [user, paginatedProjects.page]);
+  }, [user, paginatedProjects.page, refreshKey]); // Add refreshKey to dependencies
 
   if (!user) {
     return <p>Please sign in to view your projects</p>;
@@ -96,6 +97,16 @@ export function ProjectsList({ user, onModifyProject }: ProjectsListProps) {
                       <div className="flex justify-between items-center">
                         <h3 className="font-bold text-lg">{project.room_type}</h3>
                         <div className="flex space-x-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedProject(project);
+                            }}
+                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                            aria-label="View project details"
+                          >
+                            <EyeIcon className="w-5 h-5" />
+                          </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();

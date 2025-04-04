@@ -20,8 +20,9 @@ const menuItems = [
 
 export function SidebarMenu({ activeSection, setActiveSection }: SidebarMenuProps) {
   return (
-    <aside className="fixed top-0 left-0 z-40 w-64 h-screen pt-20 bg-gray-900 border-r border-gray-700"> {/* Changed background to gray-900 and adjusted border */}
-      <div className="h-full px-3 pb-4 overflow-y-auto">
+    // Revert to fixed positioning, spanning from below header to viewport bottom
+    <aside className="fixed top-20 bottom-0 left-0 z-40 w-64 bg-gray-900 border-r border-gray-700 overflow-y-auto"> 
+      <div className="px-3 py-4"> {/* Adjusted padding */}
         <ul className="space-y-2 font-medium">
           {menuItems.map((item) => (
             <li key={item.name}>

@@ -5,11 +5,13 @@ import { User } from '@supabase/supabase-js';
 interface ProjectsSectionProps {
   user: User;
   onModifyProject: (project: any) => void;
+  refreshKey: number; // Add refreshKey prop
 }
 
 export default function ProjectsSection({
   user,
-  onModifyProject
+  onModifyProject,
+  refreshKey // Destructure refreshKey
 }: ProjectsSectionProps) {
   return (
     <section className="py-20">
@@ -17,6 +19,7 @@ export default function ProjectsSection({
         <ProjectsList
           user={user}
           onModifyProject={onModifyProject}
+          refreshKey={refreshKey} // Pass refreshKey down
         />
       </div>
     </section>
