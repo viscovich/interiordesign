@@ -193,7 +193,7 @@ export function StyleSelector({ onStyleSelect, selectedStyleId }: StyleSelectorP
 
   return (
     <div className="style-slider-container">
-      <Slider {...sliderSettings}>
+      <Slider {...sliderSettings} className="relative">
         {STYLES.map((style) => (
           <div key={style.id} className="px-2">
             <div
@@ -204,7 +204,11 @@ export function StyleSelector({ onStyleSelect, selectedStyleId }: StyleSelectorP
                   : 'border-transparent hover:border-blue-300'
                 }
               `}
-              onClick={() => onStyleSelect(style)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onStyleSelect(style);
+              }}
             >
               <div className="aspect-video relative">
                 <img

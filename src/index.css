@@ -1,52 +1,24 @@
+/* Tailwind directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Custom styles for slick slider */
-.style-slider-container .slick-prev,
-.style-slider-container .slick-next,
-.room-type-slider-container .slick-prev,
-.room-type-slider-container .slick-next {
-  z-index: 10;
-  width: 45px;
-  height: 45px;
-  background: white;
-  border-radius: 50%;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  transition: transform 0.2s ease;
+/* Slider arrow styles */
+.slick-prev:before,
+.slick-next:before {
+  color: #3b82f6;
+  font-size: 24px;
 }
 
-.style-slider-container .slick-prev,
-.room-type-slider-container .slick-prev {
-  left: -25px;
+.slick-prev {
+  left: -30px;
 }
 
-.style-slider-container .slick-next,
-.room-type-slider-container .slick-next {
-  right: -25px;
+.slick-next {
+  right: -30px;
 }
 
-.style-slider-container .slick-prev:hover,
-.style-slider-container .slick-next:hover,
-.room-type-slider-container .slick-prev:hover,
-.room-type-slider-container .slick-next:hover {
-  transform: scale(1.1);
-}
-
-.style-slider-container .slick-prev:before,
-.style-slider-container .slick-next:before,
-.room-type-slider-container .slick-prev:before,
-.room-type-slider-container .slick-next:before {
-  color: #2563eb; /* blue-600 */
-  font-size: 20px;
-  opacity: 1;
-}
-
-@keyframes progress {
-  from {
-    width: 0%;
-  }
-  to {
-    width: 100%;
-  }
+.slick-prev:hover:before,
+.slick-next:hover:before {
+  opacity: 0.75;
 }

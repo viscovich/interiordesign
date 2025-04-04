@@ -49,7 +49,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[999]">
       <div className="bg-white rounded-lg max-w-md w-full p-6 relative">
         <button
           onClick={onClose}
