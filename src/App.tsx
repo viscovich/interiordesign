@@ -492,21 +492,22 @@ function App() {
                     <i className="fas fa-couch text-custom text-xl"></i>
                   </div>
                   <h3 className="text-xl font-semibold mb-3">Virtual Staging</h3>
-                  <p className="text-gray-600">Virtually furnish your empty rooms with photorealistic furniture.</p>
+                  <p className="text-gray-600">Virtually furnish your empty rooms with photorealistic furniture.
+Transform bare spaces into fully styled interiors by adding realistic, high-quality 3D furniture with just a few clicks.</p>
                 </div>
                 <div className="p-6 bg-white rounded-lg shadow-sm border border-gray-100">
                   <div className="w-12 h-12 bg-custom/10 rounded-lg flex items-center justify-center mb-4">
                     <i className="fas fa-eraser text-custom text-xl"></i>
                   </div>
                   <h3 className="text-xl font-semibold mb-3">Enhance Designs with Your Personal Items</h3>
-                  <p className="text-gray-600">Personalize your designs by easily inserting items from your own object library – from sofas to lamps and beyond."</p>
+                  <p className="text-gray-600">Make each project truly yours by inserting objects from your personal library – including sofas, lamps, decor, and more.</p>
                 </div>
                 <div className="p-6 bg-white rounded-lg shadow-sm border border-gray-100">
                   <div className="w-12 h-12 bg-custom/10 rounded-lg flex items-center justify-center mb-4">
                     <i className="fas fa-paint-roller text-custom text-xl"></i>
                   </div>
                   <h3 className="text-xl font-semibold mb-3">Redesign & Style</h3>
-                  <p className="text-gray-600">Renovate existing rooms with new design styles.</p>
+                  <p className="text-gray-600">Give your current spaces a fresh look by experimenting with new design styles, colors, and layouts tailored to your taste.</p>
                 </div>
               </div>
             </div>
