@@ -99,20 +99,29 @@ function App() {
   };
 
   const handleImageUpload = async (file: File) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    const dataUrl = await new Promise<string>((resolve) => {
-      reader.onload = () => resolve(reader.result as string);
-    });
+    try {
+      console.log('Starting image upload...');
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(reader.error);
+      });
+      console.log('Created data URL successfully');
 
-    const originalImageUrl = await uploadImage(
-      dataUrl,
-      `original/${Date.now()}_${file.name}`
-    );
+      const originalImageUrl = await uploadImage(
+        dataUrl,
+        `original/${Date.now()}_${file.name}`
+      );
+      console.log('Uploaded image to storage:', originalImageUrl);
 
-    setUploadedImage(originalImageUrl);
-    setGeneratedImage(null);
-    setDesignDescription(null);
+      setUploadedImage(originalImageUrl);
+      setGeneratedImage(null);
+      setDesignDescription(null);
+    } catch (error) {
+      console.error('Error in handleImageUpload:', error);
+      toast.error('Failed to process image upload');
+    }
   };
 
   const resetUpload = () => {
