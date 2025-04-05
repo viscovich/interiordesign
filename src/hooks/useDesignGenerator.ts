@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { generateInteriorDesign } from '../lib/gemini';
 import { uploadImage } from '../lib/storage';
-import { createProject } from '../lib/projectsService';
+import { createProject, saveDetectedObjects } from '../lib/projectsService';
 import toast from 'react-hot-toast';
 
 interface UseDesignGeneratorProps {
@@ -59,8 +59,16 @@ export default function useDesignGenerator({
   const handleGenerate = async () => {
     if (!uploadedImage || !selectedStyle || !selectedRoomType || 
         !selectedColorPalette || !selectedView || !selectedRenderingType) {
+      toast.error('Please complete all design selections', {
+        position: 'top-center',
+        duration: 4000
+      });
       return false;
     }
+
+    const loadingToast = toast.loading('Generating your design...', {
+      position: 'top-center'
+    });
 
     if (!userId) {
       console.log('User not authenticated - opening login modal');
@@ -71,7 +79,8 @@ export default function useDesignGenerator({
 
     setIsGenerating(true);
     try {
-      const { description, imageData } = await generateInteriorDesign(
+      toast.dismiss(loadingToast);
+      const { description, imageData, detectedObjects } = await generateInteriorDesign(
         uploadedImage,
         selectedStyle.name,
         selectedRoomType.name,
@@ -86,7 +95,7 @@ export default function useDesignGenerator({
         `generated/${Date.now()}.jpg`
       );
 
-      await createProject(
+      const project = await createProject(
         userId,
         uploadedImage,
         generatedImageUrl,
@@ -97,13 +106,23 @@ export default function useDesignGenerator({
         selectedColorPalette.name
       );
 
+      if (detectedObjects && detectedObjects.length > 0) {
+        await saveDetectedObjects(project.id, userId, detectedObjects);
+      }
+
       setGeneratedImage(imageData);
       setDesignDescription(description);
-      toast.success('Design generated and saved successfully!');
+      toast.success(`Generated ${selectedStyle.name} design for ${selectedRoomType.name}!`, {
+        position: 'top-center',
+        duration: 4000
+      });
       return true;
     } catch (error: unknown) {
       console.error('Generation failed:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to generate design');
+      toast.error(error instanceof Error ? error.message : 'Failed to generate design', {
+        position: 'top-center',
+        duration: 4000
+      });
       return false;
     } finally {
       setIsGenerating(false);

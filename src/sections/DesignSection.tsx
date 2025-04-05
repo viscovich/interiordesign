@@ -108,7 +108,11 @@ export default function DesignSection({
                 <button
                   onClick={async () => {
                     try {
-                      await onGenerate();
+                      const success = await onGenerate();
+                      if (success) {
+                        // Scroll to projects section on success
+                        document.getElementById('projects-section')?.scrollIntoView({ behavior: 'smooth' });
+                      }
                     } catch (error: unknown) {
                       const errorMessage = error instanceof Error ? error.message : 'Generation failed';
                       toast.error(errorMessage);

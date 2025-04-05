@@ -54,9 +54,11 @@ function App() {
     const result = await design.handleGenerate();
     console.log('Generation result:', result);
     if (result === true) {
-      setActiveSection('results');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Trigger refresh of projects list after successful generation
+      triggerProjectsRefresh();
+      // Scroll logic is now handled within DesignSection's onClick
     }
+    // No setActiveSection change, no window.scrollTo
   };
 
   // Handle pending generation after login
@@ -190,14 +192,16 @@ function App() {
             />
           )}
 
-          {design.generatedImage && activeSection === 'results' && (
+          {/* ResultsSection removed from main flow based on activeSection */}
+          {/* {design.generatedImage && activeSection === 'results' && (
             <ResultsSection
               originalImage={design.uploadedImage!}
               generatedImage={design.generatedImage}
               onNewDesign={handleNewDesign}
             />
-          )}
+          )} */}
 
+          {/* Render sections based on activeSection */}
           {activeSection === 'projects' && user && (
             <ProjectsSection
               user={user}
