@@ -22,3 +22,9 @@
 .slick-next:hover:before {
   opacity: 0.75;
 }
+
+/* Progress bar animation */
+@keyframes progress {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
