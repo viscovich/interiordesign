@@ -153,7 +153,7 @@ function App() {
                 isGenerating={design.isGenerating}
                 selectedStyle={design.selectedStyle}
                 selectedRoomType={design.selectedRoomType}
-                selectedColorPalette={design.selectedColorPalette}
+                selectedColorTone={design.selectedColorTone} // Updated prop name
                 selectedView={design.selectedView}
                 selectedRenderingType={design.selectedRenderingType}
                 onImageUpload={design.handleImageUpload}
@@ -161,7 +161,7 @@ function App() {
                 onGenerate={handleGenerate}
                 onStyleSelect={design.setSelectedStyle}
                 onRoomTypeSelect={design.setSelectedRoomType}
-                onColorPaletteSelect={design.setSelectedColorPalette}
+                onColorToneSelect={design.setSelectedColorTone} // Updated prop handler name
                 onViewChange={design.setSelectedView}
                 onRenderingTypeChange={design.setSelectedRenderingType}
               />
@@ -178,7 +178,7 @@ function App() {
               isGenerating={design.isGenerating}
               selectedStyle={design.selectedStyle}
               selectedRoomType={design.selectedRoomType}
-              selectedColorPalette={design.selectedColorPalette}
+              selectedColorTone={design.selectedColorTone} // Updated prop name
               selectedView={design.selectedView}
               selectedRenderingType={design.selectedRenderingType}
               onImageUpload={design.handleImageUpload}
@@ -186,7 +186,7 @@ function App() {
               onGenerate={handleGenerate}
               onStyleSelect={design.setSelectedStyle}
               onRoomTypeSelect={design.setSelectedRoomType}
-              onColorPaletteSelect={design.setSelectedColorPalette}
+              onColorToneSelect={design.setSelectedColorTone} // Updated prop handler name
               onViewChange={design.setSelectedView}
               onRenderingTypeChange={design.setSelectedRenderingType}
             />

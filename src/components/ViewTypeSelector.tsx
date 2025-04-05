@@ -14,21 +14,21 @@ export function ViewTypeSelector({ value, onChange }: ViewTypeSelectorProps) {
   ];
 
   return (
-    <div className="space-y-2">
-      <h3 className="text-sm font-medium text-gray-700">View type</h3>
-      <div className="grid grid-cols-3 gap-2">
+    <div> {/* Removed space-y-1 */}
+      <h3 className="text-xs font-medium text-gray-600">View type</h3> 
+      <div className="grid grid-cols-3 gap-1.5 mt-1"> {/* Added small top margin to grid */}
         {options.map((option) => (
           <button
             key={option.value}
             type="button"
             onClick={() => onChange(option.value)}
-            className={`flex flex-col items-center p-2 rounded border transition-colors h-24
+             className={`flex flex-col items-center justify-center p-1 rounded border transition-colors h-12 
               ${value === option.value 
                 ? 'border-blue-500 bg-blue-50' 
                 : 'border-gray-300 hover:border-blue-400'}`}
           >
-            <option.icon className="h-8 w-8 text-gray-700 mb-1" />
-            <span className="text-xs">{option.label}</span>
+            <option.icon className="h-5 w-5 text-gray-700 mb-0.5" /> {/* Smaller icon */}
+            <span className="text-[10px] text-center leading-tight">{option.label}</span> {/* Smaller text */}
           </button>
         ))}
       </div>

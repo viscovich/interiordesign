@@ -1,26 +1,17 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { ViewTypeSelector } from './ViewTypeSelector';
-import { RenderingTypeSelector } from './RenderingTypeSelector';
+// Removed ViewTypeSelector and RenderingTypeSelector imports
 import { useDropzone } from 'react-dropzone';
 import { Upload, Image as ImageIcon } from 'lucide-react'; // Added ImageIcon for the button
 
 interface ImageUploaderProps {
   onImageUpload: (file: File) => void;
   onReset?: () => void;
-  // Add props for view and rendering type state/handlers
-  viewValue: string | null;
-  renderingTypeValue: string | null;
-  onViewChange: (value: string) => void;
-  onRenderingTypeChange: (value: string) => void;
+  // Removed props for view and rendering type state/handlers
 }
 
 export function ImageUploader({ 
   onImageUpload, 
-  onReset,
-  viewValue,
-  renderingTypeValue,
-  onViewChange,
-  onRenderingTypeChange 
+  onReset
 }: ImageUploaderProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -83,13 +74,12 @@ export function ImageUploader({
     maxFiles: 1
   });
 
-  // Remove internal state management for view and rendering type
-  // const [viewType, setViewType] = useState('front');
-  // const [renderingType, setRenderingType] = useState('3d');
+  // Removed internal state management comments
 
   return (
-    <div className="flex gap-4 h-[300px]">
-      <div className="w-2/4 h-full flex flex-col">
+    // Reduced height
+    <div className="h-[240px]"> 
+      <div className="w-full h-full flex flex-col"> 
       {!previewUrl ? (
         <div
           {...getRootProps()}
@@ -150,17 +140,7 @@ export function ImageUploader({
         </div>
       )}
       </div>
-      <div className="w-2/4 space-y-6 h-full flex flex-col justify-center pl-4">
-        {/* Pass props down to selectors */}
-        <ViewTypeSelector 
-          value={viewValue || ''} // Use prop value
-          onChange={onViewChange} // Use prop handler
-        />
-        <RenderingTypeSelector
-          value={renderingTypeValue || ''} // Use prop value
-          onChange={onRenderingTypeChange} // Use prop handler
-        />
-      </div>
+      {/* Removed the right-side div containing ViewTypeSelector and RenderingTypeSelector */}
     </div>
   );
 }

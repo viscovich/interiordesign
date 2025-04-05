@@ -9,10 +9,20 @@ function getGenerationPrompt(
   renderingType: string,
   style: string,
   roomType: string,
-  colorTone?: string,
+  colorTone?: string, // Expects 'palette:name' or 'color:name' or undefined
   view?: string
 ): string {
-  const colorPrompt = colorTone ? ` using a ${colorTone} color palette` : '';
+  let colorPrompt = '';
+  if (colorTone) {
+    if (colorTone.startsWith('palette:')) {
+      const paletteName = colorTone.substring('palette:'.length);
+      colorPrompt = ` using a ${paletteName} color palette`;
+    } else if (colorTone.startsWith('color:')) {
+      const colorName = colorTone.substring('color:'.length);
+      // Using the phrasing discussed in PLAN MODE
+      colorPrompt = ` focusing on ${colorName} tones`; 
+    }
+  }
 
   const viewMap: Record<string, string> = {
     frontal: "from the front, facing the main wall",

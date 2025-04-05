@@ -25,7 +25,7 @@ export default function useDesignGenerator({
     _setSelectedStyle(style);
   };
   const [selectedRoomType, setSelectedRoomType] = useState<any | null>(null);
-  const [selectedColorPalette, setSelectedColorPalette] = useState<any | null>(null);
+  const [selectedColorTone, setSelectedColorTone] = useState<string | null>(null); // Renamed state and setter
   const [selectedView, setSelectedView] = useState<string | null>(null);
   const [selectedRenderingType, setSelectedRenderingType] = useState<string | null>(null);
 
@@ -57,8 +57,9 @@ export default function useDesignGenerator({
   };
 
   const handleGenerate = async () => {
+    // Updated condition to use selectedColorTone
     if (!uploadedImage || !selectedStyle || !selectedRoomType || 
-        !selectedColorPalette || !selectedView || !selectedRenderingType) {
+        !selectedColorTone || !selectedView || !selectedRenderingType) {
       toast.error('Please complete all design selections', {
         position: 'top-center',
         duration: 4000
@@ -84,7 +85,7 @@ export default function useDesignGenerator({
         uploadedImage,
         selectedStyle.name,
         selectedRoomType.name,
-        selectedColorPalette.name,
+        selectedColorTone, // Pass the full string ID ('palette:name' or 'color:name')
         selectedRenderingType,
         selectedView,
         userId
@@ -103,7 +104,7 @@ export default function useDesignGenerator({
         selectedRoomType.name,
         description,
         selectedView,
-        selectedColorPalette.name
+        selectedColorTone // Pass the full string ID
       );
 
       if (detectedObjects && detectedObjects.length > 0) {
@@ -146,14 +147,14 @@ export default function useDesignGenerator({
     isGenerating,
     selectedStyle,
     selectedRoomType,
-    selectedColorPalette,
+    selectedColorTone, // Return renamed state
     selectedView,
     selectedRenderingType,
     handleImageUpload,
     resetUpload,
     handleGenerate,
     setSelectedRoomType,
-    setSelectedColorPalette,
+    setSelectedColorTone, // Return renamed setter
     setSelectedView,
     setSelectedStyle,
     setSelectedRenderingType
