@@ -119,7 +119,17 @@ export default function useDesignGenerator({
       return true;
     } catch (error: unknown) {
       console.error('Generation failed:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to generate design', {
+      let errorMessage = 'Failed to generate design';
+      if (error instanceof Error) {
+        // Check specifically for the insufficient credits error
+        if (error.message.includes('Insufficient credits')) {
+          errorMessage = 'Your credit is not enough to proceed.';
+        } else {
+          // Use the original error message for other errors
+          errorMessage = error.message;
+        }
+      }
+      toast.error(errorMessage, {
         position: 'top-center',
         duration: 4000
       });

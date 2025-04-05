@@ -13,32 +13,32 @@ const ROOM_TYPES: RoomType[] = [
   {
     id: 'living-room',
     name: 'Living Room',
-    image: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=500&auto=format'
+    image: '/images/selectors/room-types/living-room.jpg'
   },
   {
     id: 'bedroom',
     name: 'Bedroom',
-    image: 'https://images.unsplash.com/photo-1540518614846-7eded433c457?w=500&auto=format'
+    image: '/images/selectors/room-types/bedroom.jpg'
   },
   {
     id: 'kitchen',
     name: 'Kitchen',
-    image: 'https://images.unsplash.com/photo-1588854337236-6889d631faa8?w=500&auto=format'
+    image: '/images/selectors/room-types/kitchen.jpg'
   },
   {
     id: 'bathroom',
     name: 'Bathroom',
-    image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=500&auto=format'
+    image: '/images/selectors/room-types/bathroom.jpg'
   },
   {
     id: 'office',
     name: 'Office',
-    image: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=500&auto=format'
+    image: '/images/selectors/room-types/office.jpg'
   },
   {
     id: 'dining-room',
     name: 'Dining Room',
-    image: 'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?w=500&auto=format'
+    image: '/images/selectors/room-types/dining-room.jpg'
   }
 ];
 

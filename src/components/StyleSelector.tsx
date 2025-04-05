@@ -15,140 +15,140 @@ const STYLES: Style[] = [
   {
     id: 'modern',
     name: 'Modern',
-    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c',
+    image: '/images/selectors/styles/modern.jpg',
     description: 'Clean lines, minimal decoration, and functional furniture',
     rooms: ['Living Room', 'Bedroom', 'Office']
   },
   {
     id: 'scandinavian',
     name: 'Scandinavian',
-    image: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace',
+    image: '/images/selectors/styles/scandinavian.jpg',
     description: 'Light colors, natural materials, and cozy textures',
     rooms: ['Living Room', 'Bedroom', 'Dining Room']
   },
   {
     id: 'industrial',
     name: 'Industrial',
-    image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c',
+    image: '/images/selectors/styles/industrial.jpg',
     description: 'Raw materials, exposed elements, and urban appeal',
     rooms: ['Living Room', 'Office', 'Kitchen']
   },
   {
     id: 'bohemian',
     name: 'Bohemian',
-    image: 'https://images.unsplash.com/photo-1617103996702-96ff29b1c467',
+    image: '/images/selectors/styles/bohemian.jpg',
     description: 'Eclectic patterns, rich colors, and artistic elements',
     rooms: ['Living Room', 'Bedroom', 'Studio']
   },
   {
     id: 'minimalist',
     name: 'Minimalist',
-    image: 'https://images.unsplash.com/photo-1598928506311-c55ded91a20c',
+    image: '/images/selectors/styles/minimalist.jpg',
     description: 'Clean lines, monochromatic palette, and clutter-free spaces',
     rooms: ['Living Room', 'Bedroom', 'Office', 'Dining Room']
   },
   {
     id: 'mid-century-modern',
     name: 'Mid-Century Modern',
-    image: 'https://images.unsplash.com/photo-1556228453-efd6c1ff04f6',
+    image: '/images/selectors/styles/mid-century-modern.jpg',
     description: 'Retro style with organic shapes and functional design',
     rooms: ['Living Room', 'Dining Room', 'Office']
   },
   {
     id: 'traditional',
     name: 'Traditional',
-    image: 'https://images.unsplash.com/photo-1618221118493-9cfa1a1c00da',
+    image: '/images/selectors/styles/traditional.jpg',
     description: 'Classic, timeless design with elegant details and rich colors',
     rooms: ['Living Room', 'Bedroom', 'Dining Room']
   },
   {
     id: 'contemporary',
     name: 'Contemporary',
-    image: 'https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e',
+    image: '/images/selectors/styles/contemporary.jpg',
     description: 'Current, evolving style that borrows from various styles',
     rooms: ['Living Room', 'Bedroom', 'Office', 'Kitchen']
   },
   {
     id: 'rustic',
     name: 'Rustic',
-    image: 'https://images.unsplash.com/photo-1588880331179-bc9b93a8cb5e',
+    image: '/images/selectors/styles/rustic.jpg',
     description: 'Natural, aged, and casual style with organic textures',
     rooms: ['Living Room', 'Bedroom', 'Dining Room', 'Kitchen']
   },
   {
     id: 'art-deco',
     name: 'Art Deco',
-    image: 'https://images.unsplash.com/photo-1618220179428-22790b461013',
+    image: '/images/selectors/styles/art-deco.jpg',
     description: 'Bold, glamorous style with geometric patterns and rich colors',
     rooms: ['Living Room', 'Bedroom', 'Dining Room']
   },
   {
     id: 'coastal',
     name: 'Coastal',
-    image: 'https://images.unsplash.com/photo-1600210492493-0946911123ea',
+    image: '/images/selectors/styles/coastal.jpg',
     description: 'Beach-inspired style with light colors and natural elements',
     rooms: ['Living Room', 'Bedroom', 'Bathroom']
   },
   {
     id: 'farmhouse',
     name: 'Farmhouse',
-    image: 'https://images.unsplash.com/photo-1558882224-dda166733046',
+    image: '/images/selectors/styles/farmhouse.jpg',
     description: 'Cozy, practical style with vintage touches and natural materials',
     rooms: ['Living Room', 'Kitchen', 'Dining Room', 'Bedroom']
   },
   {
     id: 'mediterranean',
     name: 'Mediterranean',
-    image: 'https://images.unsplash.com/photo-1600566752355-35792bedcfea',
+    image: '/images/selectors/styles/mediterranean.jpg',
     description: 'Warm colors, textured walls, and ornate details',
     rooms: ['Living Room', 'Dining Room', 'Kitchen', 'Bathroom']
   },
   {
     id: 'japandi',
     name: 'Japandi',
-    image: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=500&auto=format',
+    image: '/images/selectors/styles/japandi.jpg',
     description: 'Fusion of Japanese and Scandinavian aesthetics with minimalism',
     rooms: ['Living Room', 'Bedroom', 'Office']
   },
   {
     id: 'eclectic',
     name: 'Eclectic',
-    image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7',
+    image: '/images/selectors/styles/eclectic.jpg',
     description: 'Mix of different styles, textures, and time periods',
     rooms: ['Living Room', 'Bedroom', 'Studio']
   },
   {
     id: 'transitional',
     name: 'Transitional',
-    image: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6',
+    image: '/images/selectors/styles/transitional.jpg',
     description: 'Blend of traditional and contemporary elements',
     rooms: ['Living Room', 'Bedroom', 'Dining Room']
   },
   {
     id: 'neoclassical',
     name: 'Neoclassical',
-    image: 'https://images.unsplash.com/photo-1618220048045-10a6dbdf83e0',
+    image: '/images/selectors/styles/neoclassical.jpg',
     description: 'Modern interpretation of classical Greek and Roman style',
     rooms: ['Living Room', 'Dining Room', 'Office']
   },
   {
     id: 'hollywood-regency',
     name: 'Hollywood Regency',
-    image: 'https://images.unsplash.com/photo-1616137422495-1e9e46e2aa77',
+    image: '/images/selectors/styles/hollywood-regency.jpg',
     description: 'Glamorous, high-contrast style with bold colors',
     rooms: ['Living Room', 'Bedroom', 'Dining Room']
   },
   {
     id: 'shabby-chic',
     name: 'Shabby Chic',
-    image: 'https://images.unsplash.com/photo-1616593969747-4797dc75033e',
+    image: '/images/selectors/styles/shabby-chic.jpg',
     description: 'Vintage style with distressed furniture and soft colors',
     rooms: ['Living Room', 'Bedroom', 'Dining Room']
   },
   {
     id: 'tropical',
     name: 'Tropical',
-    image: 'https://images.unsplash.com/photo-1617104678098-de229db51175',
+    image: '/images/selectors/styles/tropical.jpg',
     description: 'Vibrant colors, natural materials, and lush plant elements',
     rooms: ['Living Room', 'Bedroom', 'Bathroom', 'Dining Room']
   }
