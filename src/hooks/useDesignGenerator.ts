@@ -117,7 +117,7 @@ export default function useDesignGenerator({
         position: 'top-center',
         duration: 4000
       });
-      return true;
+      return project.id;
     } catch (error: unknown) {
       console.error('Generation failed:', error);
       let errorMessage = 'Failed to generate design';

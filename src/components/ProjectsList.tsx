@@ -9,10 +9,11 @@ import { TrashIcon, PencilSquareIcon, EyeIcon } from '@heroicons/react/24/outlin
 interface ProjectsListProps {
   user: User | null;
   onModifyProject: (project: Project) => void;
-  refreshKey: number; // Add refreshKey prop
+  refreshKey: number;
+  newProjectId?: string | null;
 }
 
-export function ProjectsList({ user, onModifyProject, refreshKey }: ProjectsListProps) {
+export function ProjectsList({ user, onModifyProject, refreshKey, newProjectId }: ProjectsListProps) {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [paginatedProjects, setPaginatedProjects] = useState<PaginatedProjects>({
     projects: [],
@@ -26,14 +27,21 @@ export function ProjectsList({ user, onModifyProject, refreshKey }: ProjectsList
     if (user) {
       setLoading(true);
       getProjectsByUser(user.id, paginatedProjects.page, paginatedProjects.perPage)
-        .then(setPaginatedProjects)
+        .then(projects => {
+          setPaginatedProjects(projects);
+          // Auto-open details for new project if it exists in the list
+          if (newProjectId && projects.projects.some(p => p.id === newProjectId)) {
+            const project = projects.projects.find(p => p.id === newProjectId);
+            if (project) setSelectedProject(project);
+          }
+        })
         .catch((error: Error) => {
           toast.error('Failed to load projects');
           console.error(error);
         })
         .finally(() => setLoading(false));
     }
-  }, [user, paginatedProjects.page, refreshKey]); // Add refreshKey to dependencies
+  }, [user, paginatedProjects.page, refreshKey, newProjectId]);
 
   if (!user) {
     return <p>Please sign in to view your projects</p>;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from './lib/auth';
 import SeoWrapper from './components/SeoWrapper';
@@ -50,15 +50,16 @@ function App() {
     document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const [newProjectId, setNewProjectId] = useState<string | null>(null);
+
   const handleGenerate = async () => {
-    const result = await design.handleGenerate();
-    console.log('Generation result:', result);
-    if (result === true) {
-      // Trigger refresh of projects list after successful generation
+    const projectId = await design.handleGenerate();
+    console.log('Generation result:', projectId);
+    if (projectId) {
+      setNewProjectId(projectId);
       triggerProjectsRefresh();
-      // Scroll logic is now handled within DesignSection's onClick
+      setActiveSection('projects');
     }
-    // No setActiveSection change, no window.scrollTo
   };
 
   // Handle pending generation after login
