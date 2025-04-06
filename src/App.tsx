@@ -21,6 +21,7 @@ import FeaturesSection from './sections/FeaturesSection';
 import PricingSection from './sections/PricingSection';
 import PortfolioSection from './sections/PortfolioSection';
 import FAQSection from './sections/FAQSection';
+import UserObjectsManager from './components/UserObjectsManager';
 
 function App() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -212,13 +213,7 @@ function App() {
           )}
 
           {activeSection === 'objects' && user && (
-            <ObjectsSection
-              objects={objects.userObjects}
-              loading={objects.loadingObjects}
-              selectedObjects={objects.selectedObjects}
-              onSelectObject={objects.handleSelectObject}
-              onDeleteObject={objects.handleDeleteObject}
-            />
+            <UserObjectsManager />
           )}
 
           {activeSection === 'community' && user && (
