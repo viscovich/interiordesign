@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { useAuth } from './lib/auth';
 import SeoWrapper from './components/SeoWrapper';
 import { SidebarMenu } from './components/SidebarMenu';
-import { CommunitySection } from './components/CommunitySection';
+// import { CommunitySection } from './components/CommunitySection'; // Original import, commented out
 import { FloatingObjectsSidebar } from './components/FloatingObjectsSidebar';
 import { LoginModal } from './components/LoginModal';
 import { RegisterModal } from './components/RegisterModal';
@@ -22,6 +22,7 @@ import PricingSection from './sections/PricingSection';
 import PortfolioSection from './sections/PortfolioSection';
 import FAQSection from './sections/FAQSection';
 import UserObjectsManager from './components/UserObjectsManager';
+import CommunityProjectsSection from './sections/CommunityProjectsSection'; // Reverted import path
 
 function App() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -94,7 +95,7 @@ function App() {
             <div className="hidden md:flex items-center space-x-8">
               {!user && (
                 <>
-                  <a href="#features" className="text-gray-极6 hover:text-custom">Features</a>
+                  <a href="#features" className="text-gray-600 hover:text-custom">Features</a> {/* Corrected typo */}
                   <a href="#pricing" className="text-gray-600 hover:text-custom">Pricing</a>
                   <a href="#portfolio" className="text-gray-600 hover:text-custom">Portfolio</a>
                   <a href="#faq" className="text-gray-600 hover:text-custom">FAQ</a>
@@ -142,11 +143,11 @@ function App() {
       )}
 
       {/* Main content area: Apply top padding for header and conditional left margin for sidebar */}
-      <main className={`pt-20 ${user ? 'ml-64' : ''}`}> 
+      <main className={`pt-20 ${user ? 'ml-64' : ''}`}>
         {/* Render sections based on activeSection and user status */}
         {!user && (
             <>
-              <HeroSection 
+              <HeroSection
                 onScrollToDesign={handleScrollToDesign}
                 onScrollToFeatures={handleScrollToFeatures}
               />
@@ -217,14 +218,14 @@ function App() {
           )}
 
           {activeSection === 'community' && user && (
-            <CommunitySection />
-        )}
+             <CommunityProjectsSection /> // Render the new section
+          )}
       </main>
 
       {/* Footer: Apply conditional left margin for sidebar */}
-      <footer className={`bg-gray-900 text-white py-12 ${user ? 'ml-64' : ''}`}> 
+      <footer className={`bg-gray-900 text-white py-12 ${user ? 'ml-64' : ''}`}>
         <div className="container max-w-8xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8"> 
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
               <img src="/images/Dreamcasa3-removebg-preview.png" alt="DreamCasa AI Logo" className="h-8 mb-4 brightness-0 invert" />
               <span className="text-white text-lg font-bold block mb-2">DreamCasa AI</span>

@@ -54,6 +54,32 @@ export async function getProjectsByUser(userId: string, page: number = 1, perPag
   } as PaginatedProjects;
 }
 
+// Function to get all projects (for community view)
+export const getAllProjects = async (page: number = 1, perPage: number = 6): Promise<PaginatedProjects> => {
+  const from = (page - 1) * perPage;
+  const to = from + perPage - 1;
+
+  const { data, error, count } = await supabase
+    .from('projects')
+    .select('*', { count: 'exact' })
+    // No user filter here
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
+  if (error) {
+    console.error('Error fetching all projects:', error);
+    throw error;
+  }
+
+  return {
+    projects: data || [],
+    total: count || 0,
+    page,
+    perPage
+  };
+};
+
+
 export async function createProject(
   userId: string,
   originalImageUrl: string,
