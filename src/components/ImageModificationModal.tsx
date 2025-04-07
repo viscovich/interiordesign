@@ -276,47 +276,79 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl h-[90vh] flex flex-col overflow-hidden"> {/* Increased max-width, overflow hidden */}
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-8xl h-[95vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="p-3 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
-          <div>
-            <h1 className="text-lg font-semibold text-gray-800">Modify Design: {project.room_type || project.id}</h1>
-            <div className="flex gap-4 text-sm mt-1">
-              {project.view_type && (
-                <span className="text-blue-600">View: {project.view_type}</span>
-              )}
-              {project.color_tone && (
-                <span className="text-green-600">Tone: {project.color_tone}</span>
-              )}
+        <header className="py-4 px-6 border-b border-gray-200 flex items-center justify-between">
+          <h1 className="text-2xl font-semibold text-gray-900">Modifica Design: {project.room_type}</h1>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 p-2"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </header>
+
+        <main className="py-4 px-6">
+          <div className="flex gap-6 h-[70vh]">
+            {/* Colonna sinistra - 25% */}
+            <div className="w-1/4 overflow-y-auto">
+              <LibrarySidebar
+                recognizedObjects={recognizedObjects}
+                onSelectObject={handleSelectObject}
+                selectedObjectName={selectedObjectName}
+              />
+            </div>
+
+            {/* Colonna centrale - 50% */}
+            <div className="w-1/2 flex flex-col gap-4">
+              <div className="rounded-lg overflow-hidden shadow-lg h-[60%]">
+                <ImageEditor imageUrl={currentImageUrl} />
+              </div>
+
+              {/* Sezione oggetti selezionati */}
+              <div className="mt-2 p-4 bg-gray-50 rounded-lg">
+                <h3 className="text-lg font-medium mb-4">Oggetti Selezionati</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  {selectedReplacementObject && (
+                    <div className="p-4 bg-white rounded-lg shadow-sm">
+                      <div className="flex justify-between items-start">
+                        <span className="text-sm font-medium">{selectedReplacementObject.object_name}</span>
+                        <button 
+                          onClick={() => setSelectedReplacementObject(null)}
+                          className="text-gray-400 hover:text-gray-500"
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                      <img 
+                        src={selectedReplacementObject.thumbnail_url || selectedReplacementObject.asset_url} 
+                        alt={selectedReplacementObject.object_name} 
+                        className="mt-2 w-full h-20 object-cover rounded"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Colonna destra - 25% */}
+            <div className="w-1/4 overflow-y-auto">
+              <SubstitutionPanel
+                project={project}
+                selectedObjectName={selectedObjectName}
+                userObjectLibrary={userObjectLibrary}
+                onSelectReplacement={handleSelectReplacement}
+                selectedReplacementObject={selectedReplacementObject}
+              />
             </div>
           </div>
-          {/* Close button using an icon */}
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-          </button>
-        </div>
+        </main>
 
-         {/* Main Content Area - Ensure it takes remaining height */}
-        <div className="flex flex-grow min-h-0"> {/* Use min-h-0 to allow flex items to shrink/scroll */}
-          <LibrarySidebar
-            recognizedObjects={recognizedObjects}
-            // Removed onRecognize and isLoadingRecognition props
-            onSelectObject={handleSelectObject}
-            selectedObjectName={selectedObjectName}
-          />
-          <ImageEditor imageUrl={currentImageUrl} /> {/* Pass null if needed */}
-          <SubstitutionPanel
-             project={project} // Pass project
-             selectedObjectName={selectedObjectName}
-             userObjectLibrary={userObjectLibrary}
-             onSelectReplacement={handleSelectReplacement}
-             selectedReplacementObject={selectedReplacementObject}
-          />
-        </div>
-
-        {/* Footer - Adjusted styling */}
-        <div className="p-3 border-t border-gray-200 bg-gray-50 flex-shrink-0">
-          <div className="grid grid-cols-3 gap-4 mb-3">
+        {/* Controlli di visualizzazione */}
+        <div className="border-t pt-4">
+          <div className="grid grid-cols-3 gap-4">
             <ViewTypeSelector
               value={selectedViewType || project.view_type || ''}
               onChange={setSelectedViewType}
@@ -330,27 +362,24 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
               onPaletteSelect={(palette) => setSelectedColorTone(palette.id)}
             />
           </div>
-          <div className="flex justify-between items-center">
-            <div className="flex-grow mr-4">
-              {error && <p className="text-red-600 text-xs truncate">{error}</p>}
-              {!error && isLoadingGeneration && <p className="text-blue-600 text-xs">Generating new image, please wait...</p>}
-            </div>
-            <button
-              onClick={handleGenerate}
-              disabled={isLoadingGeneration}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-5 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
-            >
-              {isLoadingGeneration ? (
-                <div className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Generating...
-                </div>
-              ) : 'Generate New Variant'}
-            </button>
-          </div>
+        </div>
+
+        <div className="px-6 pb-4 flex justify-end sticky bottom-0 bg-white">
+          <button
+            onClick={handleGenerate}
+            disabled={isLoadingGeneration}
+            className="!rounded-button px-6 py-3 bg-custom text-white font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+          >
+            {isLoadingGeneration ? (
+              <div className="flex items-center">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Generando...
+              </div>
+            ) : 'Genera Nuova Variante'}
+          </button>
         </div>
       </div>
     </div>

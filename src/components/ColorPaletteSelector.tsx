@@ -75,9 +75,7 @@ export function ColorPaletteSelector({ onPaletteSelect, selectedPaletteId }: Col
   };
 
   return (
-    <div className="space-y-2">
-      <h3 className="text-sm font-medium text-gray-600">Color Tone</h3>
-      <div className="room-type-slider-container">
+    <div className="room-type-slider-container">
       <Slider {...sliderSettings}>
         {COLOR_PALETTES.map((palette) => (
           <div key={palette.id} className="px-2">
@@ -105,7 +103,6 @@ export function ColorPaletteSelector({ onPaletteSelect, selectedPaletteId }: Col
           </div>
         ))}
       </Slider>
-      </div>
     </div>
   );
 }
