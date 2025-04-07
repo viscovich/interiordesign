@@ -22,6 +22,36 @@ export const getUserObjects = async (userId: string): Promise<UserObject[]> => {
   return data || [];
 };
 
+export const searchObjects = async (
+  userId: string,
+  query: string = '',
+  category: string = '',
+  page: number = 1,
+  pageSize: number = 10
+): Promise<{data: UserObject[], count: number}> => {
+  let request = supabase
+    .from('user_objects')
+    .select('*', { count: 'exact' })
+    .eq('user_id', userId);
+
+  if (query) {
+    request = request.or(`object_name.ilike.%${query}%,object_type.ilike.%${query}%`);
+  }
+
+  if (category) {
+    request = request.eq('object_type', category);
+  }
+
+  request = request
+    .order('created_at', { ascending: false })
+    .range((page - 1) * pageSize, page * pageSize - 1);
+
+  const { data, error, count } = await request;
+
+  if (error) throw error;
+  return { data: data || [], count: count || 0 };
+};
+
 export const addUserObject = async (object: Omit<UserObject, 'id'|'created_at'>): Promise<UserObject> => {
   const { data, error } = await supabase
     .from('user_objects')

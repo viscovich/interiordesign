@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getUserObjects, UserObject, deleteUserObject } from '../lib/userObjectsService';
+import { getUserObjects, UserObject, deleteUserObject, searchObjects } from '../lib/userObjectsService';
 import { UserObjectsSection } from './UserObjectsSection';
 import UploadObjectModal from './UploadObjectModal';
 import { useAuth } from '../lib/auth';
@@ -24,7 +24,13 @@ const UserObjectsManager: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const userObjects = await getUserObjects(user.id);
+      const { data: userObjects } = await searchObjects(
+        user.id,
+        nameFilter,
+        typeFilter,
+        currentPage,
+        objectsPerPage
+      );
       setAllObjects(userObjects);
       setFilteredObjects(userObjects);
     } catch (err) {
@@ -36,13 +42,22 @@ const UserObjectsManager: React.FC = () => {
   };
 
   useEffect(() => {
+    console.log('Filtering objects:', { 
+      nameFilter, 
+      typeFilter,
+      objectTypes: allObjects.map(o => o.object_type) 
+    });
+    
     const filtered = allObjects.filter(obj => {
       const matchesName = obj.object_name.toLowerCase().includes(nameFilter.toLowerCase());
-      const matchesType = typeFilter === '' || obj.object_type === typeFilter;
+      const matchesType = typeFilter === '' || 
+                         obj.object_type.toUpperCase() === typeFilter.toUpperCase();
       return matchesName && matchesType;
     });
+    
+    console.log('Filtered objects count:', filtered.length);
     setFilteredObjects(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
+    setCurrentPage(1);
   }, [nameFilter, typeFilter, allObjects]);
 
   // Get current objects for pagination
@@ -106,7 +121,7 @@ const UserObjectsManager: React.FC = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white"
             >
               <option value="">All Types</option>
-              {["TAVOLO", "SEDIA", "FRIGORIFERO", "DIVANO", "LAMPADA", "LETTO", "ARMADIO", "ALTRO"].map(type => (
+              {["TABLE", "CHAIR", "FRIDGE", "SOFA", "LAMP", "BED", "WARDROBE", "OTHER"].map(type => (
                 <option key={type} value={type}>{type}</option>
               ))}
             </select>
