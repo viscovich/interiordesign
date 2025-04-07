@@ -83,11 +83,11 @@ const UserObjectsManager: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-8"> {/* Increased padding to p-8 */}
       <h2 className="text-lg font-semibold mb-4">Select Objects</h2>
       <div className="space-y-4 mb-4">
         <div className="flex justify-between items-center">
-          <p className="text-sm text-gray-500">Choose objects to include in your design</p>
+          <p className="text-sm text-gray-500">Upload your objects to include in your design</p>
           <button
             onClick={() => setIsModalOpen(true)}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 shadow-md"

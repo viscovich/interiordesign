@@ -12,9 +12,9 @@ interface SidebarMenuProps {
 }
 
 const menuItems = [
-  { name: 'Nuovo Progetto', section: 'design', icon: PlusIcon }, // 'design' section seems appropriate for new project creation
-  { name: 'I miei progetti', section: 'projects', icon: FolderIcon },
-  { name: 'I miei oggetti', section: 'objects', icon: CubeIcon },
+  { name: 'New Projects', section: 'design', icon: PlusIcon }, // 'design' section seems appropriate for new project creation
+  { name: 'My projects', section: 'projects', icon: FolderIcon },
+  { name: 'My Objects', section: 'objects', icon: CubeIcon },
   { name: 'Community', section: 'community', icon: GlobeAltIcon },
 ];
 
