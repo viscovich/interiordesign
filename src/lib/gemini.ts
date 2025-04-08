@@ -86,13 +86,25 @@ ${listAndDescriptionPrompt}${imagePrompt}${objectsInstruction}`; // Added object
 
     case '3d':
     default:
-      return `Analyze the provided floor plan or photo — whether the room is empty or already furnished — and generate a **stunning 3D rendering** that accurately reflects the layout of walls, doors, windows, and internal spaces.
+      // Revised prompt structure from PLAN MODE discussion
+      return `**Primary Goal:** Generate a stunning 3D rendered image of a redesigned ${roomType} based on the provided floor plan or photo.
 
-${listAndDescriptionPrompt}
+**Design Specifications:**
+*   **Style:** ${style}
+*   **Color Palette/Tone:** ${colorPrompt.trim() || 'Default'}
+*   **Viewpoint:** ${view && viewMap[view] ? viewMap[view] : 'Default (Front)'}
+*   **Rendering Type:** ${renderingType}
+*   **Input:** Analyze the provided floor plan or photo (empty or furnished) to accurately reflect the layout of walls, doors, windows, and internal spaces in the final rendering.
 
-Redesign the ${roomType} in a ${style} style${colorPrompt}. Make sure the design choices reflect the room’s purpose and architectural structure.${viewPrompt}
+**Required Outputs:**
 
-Describe the final design using markdown format with headings, bullet points, and well-structured paragraphs. Include details about layout, furniture, colors, and materials.${imagePrompt}${objectsInstruction}`; // Added objectsInstruction
+1.  **Textual Description (Markdown Format):**
+    *   **Essential Furniture & Appliances:** ${listAndDescriptionPrompt}
+    *   **Layout Description:** Describe the layout and positioning of the listed elements within the room.
+    *   **Final Design Details:** Describe the complete redesigned room, including layout, furniture choices, colors, materials, and how they fit the ${style} style${colorPrompt}. Ensure the design reflects the room's purpose and structure.${viewPrompt}
+
+2.  **Image Output (Most Important):**
+    *   Generate **one high-quality 3D rendered image** visually representing the final described design according to all specifications (${style} style, ${colorPrompt.trim() || 'appropriate colors'}, ${view && viewMap[view] ? viewMap[view] : 'front view'}). This image is the main deliverable.${objectsInstruction}`; // Added objectsInstruction
   }
 }
 
