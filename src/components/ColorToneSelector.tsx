@@ -1,8 +1,7 @@
 import React from 'react';
-import Slider from 'react-slick'; // Import Slider
+// Removed Slider import
 import { Tooltip } from 'react-tooltip';
-import 'slick-carousel/slick/slick.css'; // Import slick CSS
-import 'slick-carousel/slick/slick-theme.css'; // Import slick theme CSS
+// Removed slick CSS imports
 
 export interface ColorPalette {
   id: string; // Will be prefixed with 'palette:' e.g., 'palette:cool'
@@ -50,49 +49,17 @@ interface ColorToneSelectorProps {
 }
 
 export function ColorToneSelector({ onSelect, selectedValue }: ColorToneSelectorProps) {
-  const sliderSettings = {
-    dots: false,
-    infinite: false, // Don't loop infinitely
-    speed: 500,
-    slidesToShow: 8, // Show more items
-    slidesToScroll: 3, // Scroll multiple items
-    responsive: [
-      {
-        breakpoint: 1024, // Large screens
-        settings: {
-          slidesToShow: 7,
-          slidesToScroll: 3
-        }
-      },
-      {
-        breakpoint: 768, // Medium screens
-        settings: {
-          slidesToShow: 6,
-          slidesToScroll: 2
-        }
-      },
-      {
-        breakpoint: 640, // Small screens
-        settings: {
-          slidesToShow: 5,
-          slidesToScroll: 2
-        }
-      }
-    ]
-  };
+  // Removed slider settings
 
   return (
-    <div className="space-y-1"> 
+    <div className="space-y-1">
       <h3 className="text-xs font-medium text-gray-600">Color Tone</h3> {/* Removed bottom margin */}
-      {/* Use Slider component */}
-      <div className="color-tone-slider-container -mx-1">
-        <Slider {...sliderSettings}>
+      {/* Replace Slider with Flexbox */}
+      <div className="flex flex-wrap gap-1 items-center"> {/* Use flex wrap and small gap */}
           {/* Map Palettes */}
           {COLOR_PALETTES.map((palette) => (
-            <div key={palette.id} className="px-1">
-              {/* Palette rendering */}
-              {/* Removed duplicated div below */}
-              <div
+            // Removed outer div wrapper for each item
+              <div // Keep this div for tooltip and styling
                 data-tooltip-id="color-tooltip"
                 data-tooltip-content={palette.name}
                 className={`
@@ -103,7 +70,7 @@ export function ColorToneSelector({ onSelect, selectedValue }: ColorToneSelector
                   }
                 `}
                 onClick={() => onSelect(palette.id)}
-                style={{ width: '28px', height: '28px' }} // Consistent size
+                style={{ width: '24px', height: '24px' }} // Reduced size
               >
                 <img
                   src={palette.image}
@@ -111,19 +78,18 @@ export function ColorToneSelector({ onSelect, selectedValue }: ColorToneSelector
                   className="w-full h-full object-cover rounded-sm"
                 />
               </div>
-            </div>
+            // Removed outer div wrapper
           ))}
 
-          {/* "or" Separator as a slide item */}
-          <div key="separator" className="px-1 flex items-center justify-center h-[28px]">
+          {/* "or" Separator */}
+          <div key="separator" className="flex items-center justify-center h-[24px] px-1"> {/* Add slight padding to separator */}
              <span className="text-xs text-gray-500">or</span>
           </div>
 
           {/* Map Single Colors */}
           {SINGLE_COLORS.map((color) => (
-             <div key={color.id} className="px-1">
-               {/* Single color rendering */}
-               <div
+             // Removed outer div wrapper
+               <div // Keep this div for tooltip and styling
                  data-tooltip-id="color-tooltip"
                  data-tooltip-content={color.name}
                  className={`
@@ -134,14 +100,13 @@ export function ColorToneSelector({ onSelect, selectedValue }: ColorToneSelector
                    }
                  `}
                  onClick={() => onSelect(color.id)}
-                 style={{ width: '28px', height: '28px', backgroundColor: color.hex }} // Consistent size
+                 style={{ width: '24px', height: '24px', backgroundColor: color.hex }} // Reduced size
                >
                  {/* Border for white swatch */}
                  {color.hex === '#FFFFFF' && <div className="w-full h-full border border-gray-300 rounded-sm"></div>}
                </div>
-             </div>
+            // Removed outer div wrapper
           ))}
-       </Slider>
       </div>
       <Tooltip id="color-tooltip" place="bottom" />
     </div>

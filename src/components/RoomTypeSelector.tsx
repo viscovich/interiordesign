@@ -1,7 +1,5 @@
 import React from 'react';
-import Slider from 'react-slick';
-import 'slick-carousel/slick/slick.css';
-import 'slick-carousel/slick/slick-theme.css';
+// Removed Slider imports
 
 export interface RoomType {
   id: string;
@@ -48,67 +46,28 @@ interface RoomTypeSelectorProps {
 }
 
 export function RoomTypeSelector({ onRoomTypeSelect, selectedRoomTypeId }: RoomTypeSelectorProps) {
-  const sliderSettings = {
-    dots: false,
-    infinite: true,
-    speed: 500,
-    slidesToShow: 4,
-    slidesToScroll: 1,
-    responsive: [
-      {
-        breakpoint: 1024,
-        settings: {
-          slidesToShow: 3,
-          slidesToScroll: 1
-        }
-      },
-      {
-        breakpoint: 768,
-        settings: {
-          slidesToShow: 2,
-          slidesToScroll: 1
-        }
-      },
-      {
-        breakpoint: 480,
-        settings: {
-          slidesToShow: 1,
-          slidesToScroll: 1
-        }
-      }
-    ]
-  };
+  // Removed slider settings
 
   return (
-    <div className="room-type-slider-container">
-      <Slider {...sliderSettings}>
+    <div className="mb-4"> {/* Added margin bottom */}
+      <h3 className="text-lg font-semibold mb-2">Room Type</h3> {/* Added title */}
+      <div className="grid grid-cols-3 gap-2"> {/* Changed to grid layout */}
         {ROOM_TYPES.map((roomType) => (
-          <div key={roomType.id} className="px-2">
-            <div
-              className={`
-                rounded-lg overflow-hidden border-2 cursor-pointer transition-all
-                ${selectedRoomTypeId === roomType.id
-                  ? 'border-blue-500 shadow-md scale-105'
-                  : 'border-transparent hover:border-blue-300'
-                }
-              `}
-              onClick={() => onRoomTypeSelect(roomType)}
-            >
-              <div className="aspect-video relative">
-                <img
-                  src={roomType.image}
-                  alt={roomType.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="p-3 text-center">
-                <p className="font-semibold text-base">{roomType.name}</p>
-              </div>
-            </div>
-          </div>
+          <button
+            key={roomType.id}
+            onClick={() => onRoomTypeSelect(roomType)}
+            className={`
+              w-full py-2 px-3 border rounded-md text-sm transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-custom
+              ${selectedRoomTypeId === roomType.id
+                ? 'bg-gray-900 text-white border-gray-900' // Selected style
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' // Default style
+              }
+            `}
+          >
+            {roomType.name}
+          </button>
         ))}
-      </Slider>
-      {/* Custom styles for slider arrows are in index.css */}
+      </div>
     </div>
   );
 }

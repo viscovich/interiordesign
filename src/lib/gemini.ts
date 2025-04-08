@@ -1,8 +1,28 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, InlineDataPart } from '@google/generative-ai'; // Added InlineDataPart
 import { useCredit } from './userService';
+import { UserObject } from './userObjectsService'; // Added UserObject import
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(API_KEY);
+
+// Helper to fetch and convert image URL to InlineDataPart
+async function urlToInlineDataPart(url: string): Promise<InlineDataPart> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch image: ${response.statusText}`);
+  }
+  const blob = await response.blob();
+  const buffer = await blob.arrayBuffer();
+  const base64 = btoa(
+    new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
+  );
+  return {
+    inlineData: {
+      data: base64,
+      mimeType: blob.type,
+    },
+  };
+}
 
 // Rename function for clarity
 function getGenerationPrompt(
@@ -10,7 +30,8 @@ function getGenerationPrompt(
   style: string,
   roomType: string,
   colorTone?: string, // Expects 'palette:name' or 'color:name' or undefined
-  view?: string
+  view?: string,
+  includeObjectsInstruction?: boolean // Added flag for objects
 ): string {
   let colorPrompt = '';
   if (colorTone) {
@@ -46,19 +67,22 @@ Then, describe the layout and positioning of these elements in the ${roomType}.`
 
 Finally, generate an image that represents the design in a ${renderingType} format.`;
 
+  // Add instruction for objects if needed
+  const objectsInstruction = includeObjectsInstruction ? "\nBe sure to include the attached object(s) in the final image, integrating them naturally into the scene." : "";
+
   switch (renderingType.toLowerCase()) {
     case 'wireframe':
       return `Generate a black and white architectural **line drawing** of a ${roomType} in wireframe style.
 Show all major structural and furniture elements (walls, windows, cabinets, sink, stove, etc.) using only **clean black outlines**, with **no color, shading, or textures**.
 Use a 3D perspective based on the provided plan or image.${viewPrompt}
 Avoid realistic rendering. Focus only on a **technical-style sketch** as if created for architectural drafting.
-${listAndDescriptionPrompt}${imagePrompt}`;
+${listAndDescriptionPrompt}${imagePrompt}${objectsInstruction}`; // Added objectsInstruction
 
     case '2d':
       return `Generate a clean and well-structured **2D floor plan** of a ${roomType}, viewed strictly from above.
 The drawing should clearly show walls, doors, windows, furniture, and key appliances, either with outlines or filled flat symbols.
 Do not include any perspective, shading, or 3D effects. The goal is to produce a **clear, professional top-down layout**.${colorPrompt}
-${listAndDescriptionPrompt}${imagePrompt}`;
+${listAndDescriptionPrompt}${imagePrompt}${objectsInstruction}`; // Added objectsInstruction
 
     case '3d':
     default:
@@ -68,7 +92,7 @@ ${listAndDescriptionPrompt}
 
 Redesign the ${roomType} in a ${style} style${colorPrompt}. Make sure the design choices reflect the room’s purpose and architectural structure.${viewPrompt}
 
-Describe the final design using markdown format with headings, bullet points, and well-structured paragraphs. Include details about layout, furniture, colors, and materials.${imagePrompt}`;
+Describe the final design using markdown format with headings, bullet points, and well-structured paragraphs. Include details about layout, furniture, colors, and materials.${imagePrompt}${objectsInstruction}`; // Added objectsInstruction
   }
 }
 
@@ -81,11 +105,12 @@ export async function generateInteriorDesign(
   colorTone: string,
   renderingType: string,
   view: string,
-  userId: string
+  userId: string,
+  selectedObjects: UserObject[] = [] // Added selectedObjects parameter
 ): Promise<{ description: string; imageData: string; detectedObjects: string[] }> {
   // Deduce 5 credits for image generation
   await useCredit(userId, 5);
-  console.log(`[generateInteriorDesign] Starting with params: style=${style}, roomType=${roomType}, renderingType=${renderingType}, view=${view}`);
+  console.log(`[generateInteriorDesign] Starting with params: style=${style}, roomType=${roomType}, renderingType=${renderingType}, view=${view}, objects=${selectedObjects.length}`);
 
   const model = genAI.getGenerativeModel({
     model: "gemini-2.0-flash-exp-image-generation",
@@ -94,33 +119,48 @@ export async function generateInteriorDesign(
     } as any,
   });
 
-  const imageResponse = await fetch(imageUrl);
-  const imageBlob = await imageResponse.blob();
-  const imageBuffer = await imageBlob.arrayBuffer();
-  const imageBase64 = btoa(
-    new Uint8Array(imageBuffer).reduce(
-      (data, byte) => data + String.fromCharCode(byte),
-      ""
-    )
-  );
+  // Fetch and prepare main image data
+  const mainImagePart = await urlToInlineDataPart(imageUrl);
 
-  const prompt = getGenerationPrompt(renderingType, style, roomType, colorTone, view);
+  // Fetch and prepare selected object image data
+  const objectImageParts: InlineDataPart[] = [];
+  for (const obj of selectedObjects) {
+    try {
+      // Prefer thumbnail_url if available, otherwise use asset_url
+      const objectImageUrl = obj.thumbnail_url || obj.asset_url;
+      if (objectImageUrl) {
+        const objectImagePart = await urlToInlineDataPart(objectImageUrl);
+        objectImageParts.push(objectImagePart);
+      } else {
+         console.warn(`Skipping object ${obj.id} due to missing image URL.`);
+      }
+    } catch (error) {
+      console.error(`Error fetching image for object ${obj.id}:`, error);
+      // Optionally decide whether to proceed without this object's image or throw error
+    }
+  }
+
+  // Generate prompt, including object instruction if objects are selected
+  const prompt = getGenerationPrompt(
+    renderingType, 
+    style, 
+    roomType, 
+    colorTone, 
+    view, 
+    selectedObjects.length > 0 // Pass true if objects are selected
+  );
   console.log(`[generateInteriorDesign] Using prompt: ${prompt}`);
 
   try {
     console.log(`[generateInteriorDesign] Calling Gemini API...`);
+    // Combine main image, object images, and text prompt
     const contents = [
-      {
-        inlineData: {
-          data: imageBase64,
-          mimeType: imageBlob.type,
-        },
-      },
-      {
-        text: prompt,
-      },
+      mainImagePart,
+      ...objectImageParts, // Spread the object image parts
+      { text: prompt },
     ];
-    console.log(`[generateInteriorDesign] Request contents:`, JSON.stringify(contents, null, 2));
+    
+    console.log(`[generateInteriorDesign] Request contents length: ${contents.length}`); // Log length instead of full content
 
     const response = await model.generateContent(contents);
     console.log(`[generateInteriorDesign] Raw API response:`, JSON.stringify(response, null, 2));

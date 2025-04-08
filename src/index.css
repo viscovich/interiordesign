@@ -28,3 +28,13 @@
   0% { width: 0%; }
   100% { width: 100%; }
 }
+
+/* Reduce spacing between color tone slider items */
+.color-tone-slider-container .slick-slide {
+  margin: 0 !important; /* Force remove margin */
+  padding: 0 !important; /* Force remove padding */
+}
+.color-tone-slider-container .slick-slide > div {
+  margin: 0 !important; /* Force remove margin */
+  padding: 0 !important; /* Force remove padding */
+}

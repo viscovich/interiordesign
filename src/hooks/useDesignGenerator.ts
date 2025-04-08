@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react'; // Added useCallback
 import { generateInteriorDesign } from '../lib/gemini';
 import { uploadImage } from '../lib/storage';
 import { createProject, saveDetectedObjects } from '../lib/projectsService';
+import { UserObject } from '../lib/userObjectsService'; // Added UserObject import
 import toast from 'react-hot-toast';
 
 interface UseDesignGeneratorProps {
@@ -56,9 +57,10 @@ export default function useDesignGenerator({
     setUploadedImage(null);
   };
 
-  const handleGenerate = async () => {
+  // Wrap handleGenerate in useCallback to ensure stable reference if passed down
+  const handleGenerate = useCallback(async (selectedObjects: UserObject[] = []) => {
     // Updated condition to use selectedColorTone
-    if (!uploadedImage || !selectedStyle || !selectedRoomType || 
+    if (!uploadedImage || !selectedStyle || !selectedRoomType ||
         !selectedColorTone || !selectedView || !selectedRenderingType) {
       toast.error('Please complete all design selections', {
         position: 'top-center',
@@ -88,7 +90,8 @@ export default function useDesignGenerator({
         selectedColorTone, // Pass the full string ID ('palette:name' or 'color:name')
         selectedRenderingType,
         selectedView,
-        userId
+        userId,
+        selectedObjects // Pass selected objects
       );
 
       const generatedImageUrl = await uploadImage(
@@ -138,7 +141,18 @@ export default function useDesignGenerator({
     } finally {
       setIsGenerating(false);
     }
-  };
+  // Add dependencies for useCallback
+  }, [
+    uploadedImage, 
+    selectedStyle, 
+    selectedRoomType, 
+    selectedColorTone, 
+    selectedView, 
+    selectedRenderingType, 
+    userId, 
+    setIsLoginModalOpen, 
+    setPendingGenerate
+  ]);
 
   return {
     uploadedImage,

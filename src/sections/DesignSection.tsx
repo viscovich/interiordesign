@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react'; // Added useState
 import { ImageUploader } from '../components/ImageUploader';
 // import { TabbedSelector } from '../components/TabbedSelector'; // Removed
 import { StyleSelector } from '../components/StyleSelector'; // Added
+import { ObjectSelector } from '../components/ObjectSelector'; // Added ObjectSelector import
+import { UserObject } from '../lib/userObjectsService'; // Added UserObject import
 import { RoomTypeSelector } from '../components/RoomTypeSelector'; // Added
 import { ColorToneSelector } from '../components/ColorToneSelector'; // Changed import
 import { ViewTypeSelector } from '../components/ViewTypeSelector'; // Added import
@@ -19,12 +21,14 @@ interface DesignSectionProps {
   selectedRenderingType: string | null;
   onImageUpload: (file: File) => void;
   onReset: () => void;
-  onGenerate: () => Promise<boolean | void>;
+  // Update onGenerate prop type to accept selectedObjects
+  onGenerate: (selectedObjects: UserObject[]) => Promise<boolean | void>; 
   onStyleSelect: (style: any) => void;
   onRoomTypeSelect: (roomType: any) => void;
   onColorToneSelect: (tone: string) => void; // Renamed prop handler
   onViewChange: (view: string) => void;
   onRenderingTypeChange: (renderingType: string) => void;
+  // Add a prop for selected objects if needed from parent, or manage locally
 }
 
 export default function DesignSection({
@@ -42,9 +46,18 @@ export default function DesignSection({
   onRoomTypeSelect,
   onColorToneSelect, // Renamed prop handler
   onViewChange,
-  onRenderingTypeChange
+  onRenderingTypeChange,
 }: DesignSectionProps) {
   const modals = useModals();
+  // State for selected objects
+  const [selectedObjects, setSelectedObjects] = useState<UserObject[]>([]);
+
+  // Handler for object selection changes
+  const handleObjectSelectionChange = (objects: UserObject[]) => {
+    setSelectedObjects(objects);
+    // Optional: Pass selection up if needed by parent component
+  };
+
 
   return (
     <section id="design-section" className="py-20">
@@ -78,9 +91,11 @@ export default function DesignSection({
                   value={selectedView || ''}
                   onChange={onViewChange}
                 />
-                <ColorToneSelector
-                  selectedValue={selectedColorTone || undefined} // Use renamed prop
-                  onSelect={onColorToneSelect} // Use renamed handler
+                {/* ColorToneSelector removed from here */}
+                {/* Moved RoomTypeSelector here */}
+                <RoomTypeSelector
+                  onRoomTypeSelect={onRoomTypeSelect} // Corrected prop name
+                  selectedRoomTypeId={selectedRoomType?.id} // Corrected prop name and value
                 />
               </div>
             )}
@@ -94,16 +109,19 @@ export default function DesignSection({
                 onStyleSelect={onStyleSelect} // Corrected prop name
                 selectedStyleId={selectedStyle?.id} // Corrected prop name and value
               />
-              {/* Added RoomTypeSelector */}
-              <RoomTypeSelector
-                onRoomTypeSelect={onRoomTypeSelect} // Corrected prop name
-                selectedRoomTypeId={selectedRoomType?.id} // Corrected prop name and value
+              {/* Moved ColorToneSelector here */}
+              <ColorToneSelector
+                selectedValue={selectedColorTone || undefined} // Use renamed prop
+                onSelect={onColorToneSelect} // Use renamed handler
               />
+              {/* RoomTypeSelector removed from here */}
+              {/* Added ObjectSelector */}
+              <ObjectSelector onSelectionChange={handleObjectSelectionChange} />
 
               {/* Removed old ColorPaletteSelector */}
 
               <div className="mb-2 pt-4"> {/* Added padding top */}
-                {/* Updated validation check */}
+                {/* Updated validation check - No change needed here for objects, as they are optional */}
                 {(!uploadedImage || !selectedStyle || !selectedRoomType || !selectedColorTone || !selectedView || !selectedRenderingType) && (
                   <div className="flex items-center justify-center gap-2 flex-wrap">
                     {/* No changes needed here, just the condition above */}
@@ -132,7 +150,8 @@ export default function DesignSection({
                 <button
                   onClick={async () => {
                     try {
-                      const success = await onGenerate();
+                      // Pass selectedObjects to onGenerate
+                      const success = await onGenerate(selectedObjects); 
                       if (success) {
                         // Scroll to projects section on success
                         document.getElementById('projects-section')?.scrollIntoView({ behavior: 'smooth' });
