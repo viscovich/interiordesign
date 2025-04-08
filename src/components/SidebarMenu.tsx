@@ -1,48 +1,54 @@
 import React from 'react';
-import {
-  PlusIcon,
-  FolderIcon,
-  CubeIcon, // Using CubeIcon for 'I miei oggetti' as a placeholder for 🛋️
-  GlobeAltIcon, // Using GlobeAltIcon for 'Community' as a placeholder for 🌐
-} from '@heroicons/react/24/outline'; // Using outline icons for a cleaner look
+// Removed Heroicons imports, will use Font Awesome classes directly
 
 interface SidebarMenuProps {
-  activeSection: string | null;
-  setActiveSection: (section: string) => void;
+  activeSection: string | null; // Keep activeSection prop
+  setActiveSection: (section: string) => void; // Keep setActiveSection prop
 }
 
+// Define menu items with Font Awesome classes
 const menuItems = [
-  { name: 'New Projects', section: 'design', icon: PlusIcon }, // 'design' section seems appropriate for new project creation
-  { name: 'My projects', section: 'projects', icon: FolderIcon },
-  { name: 'My Objects', section: 'objects', icon: CubeIcon },
-  { name: 'Community', section: 'community', icon: GlobeAltIcon },
+  // Note: "New Project" is handled separately as a button above the nav
+  { name: 'My projects', section: 'projects', iconClass: 'fas fa-folder' },
+  { name: 'My Objects', section: 'objects', iconClass: 'fas fa-cube' },
+  { name: 'Community', section: 'community', iconClass: 'fas fa-users' }, // Changed icon to match target
 ];
 
 export function SidebarMenu({ activeSection, setActiveSection }: SidebarMenuProps) {
   return (
-    // Revert to fixed positioning, spanning from below header to viewport bottom
-    <aside className="fixed top-20 bottom-0 left-0 z-40 w-64 bg-gray-900 border-r border-gray-700 overflow-y-auto"> 
-      <div className="px-3 py-4"> {/* Adjusted padding */}
-        <ul className="space-y-2 font-medium">
+    // Changed positioning and styling to match target layout
+    <aside className="w-64 bg-gray-50 text-gray-800 border-r border-gray-200">
+      <div className="p-4">
+        {/* New Project Button */}
+        <button
+          onClick={() => setActiveSection('design')} // Set active section to 'design'
+          className="w-full bg-custom text-white p-3 !rounded-button flex items-center justify-center space-x-2 mb-8" // Added margin-bottom
+        >
+          <i className="fas fa-plus"></i>
+          <span>New Project</span> {/* Changed text to English */}
+        </button>
+
+        {/* Navigation Links */}
+        <nav className="space-y-2"> {/* Removed mt-8, handled by button margin */}
           {menuItems.map((item) => (
-            <li key={item.name}>
-              <button
-                onClick={() => setActiveSection(item.section)}
-                className={`flex items-center p-2 text-gray-100 rounded-lg hover:bg-gray-700 group w-full text-left ${ // Kept text color, hover background
-                  activeSection === item.section ? 'bg-gray-700' : '' // Adjusted active background slightly for gray-900
-                }`}
-              >
-                <item.icon
-                  className={`w-6 h-6 text-gray-400 transition duration-75 group-hover:text-gray-100 ${ // Kept icon color, hover icon color
-                    activeSection === item.section ? 'text-gray-100' : '' // Kept active icon color
-                  }`}
-                  aria-hidden="true"
-                />
-                <span className="ml-3">{item.name}</span>
-              </button>
-            </li>
+            <a // Changed to <a> tag for semantic correctness, though button functionality is kept via onClick
+              key={item.name}
+              href="#" // Added href for <a> tag
+              onClick={(e) => {
+                e.preventDefault(); // Prevent default link behavior
+                setActiveSection(item.section);
+              }}
+              className={`flex items-center space-x-3 p-3 rounded-lg ${ // Adjusted padding and spacing
+                activeSection === item.section
+                  ? 'bg-gray-200 text-custom' // Active state styles
+                  : 'text-gray-600 hover:bg-gray-200' // Default and hover styles
+              }`}
+            >
+              <i className={`${item.iconClass} w-5 h-5`}></i> {/* Use iconClass, added width/height */}
+              <span>{item.name}</span>
+            </a>
           ))}
-        </ul>
+        </nav>
       </div>
     </aside>
   );
