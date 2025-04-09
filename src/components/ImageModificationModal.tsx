@@ -10,7 +10,7 @@ import { useAuth } from '../lib/auth';
 import toast from 'react-hot-toast'; // Import toast
 import { ViewTypeSelector } from './ViewTypeSelector';
 import { RenderingTypeSelector } from './RenderingTypeSelector';
-import { ColorPaletteSelector } from './ColorPaletteSelector';
+import { ColorToneSelector } from './ColorToneSelector';
 
 // --- Placeholder Sub-components ---
 // These will be created in separate files later
@@ -309,7 +309,7 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
 
               {/* Sezione oggetti selezionati */}
               <div className="mt-2 p-4 bg-gray-50 rounded-lg">
-                <h3 className="text-lg font-medium mb-4">Oggetti Selezionati</h3>
+                <h3 className="text-lg font-medium mb-4">Selected Objects</h3>
                 <div className="grid grid-cols-3 gap-4">
                   {selectedReplacementObject && (
                     <div className="p-4 bg-white rounded-lg shadow-sm">
@@ -357,14 +357,14 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
               value={selectedRenderingType || ''}
               onChange={setSelectedRenderingType}
             />
-            <ColorPaletteSelector
-              selectedPaletteId={selectedColorTone || project.color_tone || undefined}
-              onPaletteSelect={(palette) => setSelectedColorTone(palette.id)}
+            <ColorToneSelector
+              selectedValue={selectedColorTone || project.color_tone || undefined}
+              onSelect={setSelectedColorTone}
             />
           </div>
         </div>
 
-        <div className="px-6 pb-4 flex justify-end sticky bottom-0 bg-white">
+        <div className="px-6 py-6 flex justify-end sticky bottom-0 bg-white border-t border-gray-200 mt-4">
           <button
             onClick={handleGenerate}
             disabled={isLoadingGeneration}
@@ -378,7 +378,7 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
                 </svg>
                 Generando...
               </div>
-            ) : 'Genera Nuova Variante'}
+            ) : 'Generate New Variant'}
           </button>
         </div>
       </div>

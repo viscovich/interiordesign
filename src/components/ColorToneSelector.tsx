@@ -53,9 +53,9 @@ export function ColorToneSelector({ onSelect, selectedValue }: ColorToneSelector
 
   return (
     <div className="space-y-1">
-      <h3 className="text-xs font-medium text-gray-600">Color Tone</h3> {/* Removed bottom margin */}
+
       {/* Replace Slider with Flexbox */}
-      <div className="flex flex-wrap gap-1 items-center"> {/* Use flex wrap and small gap */}
+      <div className="flex flex-nowrap gap-2 items-center overflow-x-auto pb-2"> {/* Prevent wrap, allow scroll */}
           {/* Map Palettes */}
           {COLOR_PALETTES.map((palette) => (
             // Removed outer div wrapper for each item
@@ -71,7 +71,7 @@ export function ColorToneSelector({ onSelect, selectedValue }: ColorToneSelector
                   }
                 `}
                 onClick={() => onSelect(palette.id)}
-                style={{ width: '32x', height: '32px' }} // Reduced size
+                style={{ width: '40px', height: '40px' }} // Increased size
               >
 <img
   src={palette.image}
@@ -103,7 +103,7 @@ export function ColorToneSelector({ onSelect, selectedValue }: ColorToneSelector
                    }
                  `}
                  onClick={() => onSelect(color.id)}
-                 style={{ width: '24px', height: '24px', backgroundColor: color.hex }} // Reduced size
+                 style={{ width: '32px', height: '32px', backgroundColor: color.hex }} // Increased size
                >
                  {/* Border for white swatch */}
                  {color.hex === '#FFFFFF' && <div className="w-full h-full border border-gray-300 rounded-sm"></div>}
@@ -111,7 +111,7 @@ export function ColorToneSelector({ onSelect, selectedValue }: ColorToneSelector
             // Removed outer div wrapper
           ))}
       </div>
-      <Tooltip id="color-tooltip" place="bottom" />
+      <Tooltip id="color-tooltip" place="top" />
     </div>
   );
 }
