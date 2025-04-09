@@ -17,11 +17,11 @@ export interface SingleColor {
 
 // Existing palettes, IDs updated
 const COLOR_PALETTES: ColorPalette[] = [
-  { id: 'palette:cool', name: 'Cool', image: '/images/tones/Cool.png' },
-  { id: 'palette:dark', name: 'Dark', image: '/images/tones/Dark.png' },
-  { id: 'palette:neutrals', name: 'Neutrals', image: '/images/tones/Neutrals.png' },
-  { id: 'palette:pastel', name: 'Pastel', image: '/images/tones/Pastel.png' },
-  { id: 'palette:warm', name: 'Warm', image: '/images/tones/Warm.png' }
+  { id: 'palette:cool', name: 'Cool', image: '/images/tones/optimized/Cool.webp' },
+  { id: 'palette:dark', name: 'Dark', image: '/images/tones/optimized/Dark.webp' },
+  { id: 'palette:neutrals', name: 'Neutrals', image: '/images/tones/optimized/Neutrals.webp' },
+  { id: 'palette:pastel', name: 'Pastel', image: '/images/tones/optimized/Pastel.webp' },
+  { id: 'palette:warm', name: 'Warm', image: '/images/tones/optimized/Warm.webp' }
 ];
 
 // Default single colors + added ones

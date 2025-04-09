@@ -15,140 +15,140 @@ const STYLES: Style[] = [
   {
     id: 'modern',
     name: 'Modern',
-    image: '/images/selectors/styles/modern.jpg',
+    image: '/images/selectors/styles/optimized/modern.webp',
     description: 'Clean lines, minimal decoration, and functional furniture',
     rooms: ['Living Room', 'Bedroom', 'Office']
   },
   {
     id: 'scandinavian',
     name: 'Scandinavian',
-    image: '/images/selectors/styles/scandinavian.jpg',
+    image: '/images/selectors/styles/optimized/scandinavian.webp',
     description: 'Light colors, natural materials, and cozy textures',
     rooms: ['Living Room', 'Bedroom', 'Dining Room']
   },
   {
     id: 'industrial',
     name: 'Industrial',
-    image: '/images/selectors/styles/industrial.jpg',
+    image: '/images/selectors/styles/optimized/industrial.webp',
     description: 'Raw materials, exposed elements, and urban appeal',
     rooms: ['Living Room', 'Office', 'Kitchen']
   },
   {
     id: 'bohemian',
     name: 'Bohemian',
-    image: '/images/selectors/styles/bohemian.jpg',
+    image: '/images/selectors/styles/optimized/bohemian.webp',
     description: 'Eclectic patterns, rich colors, and artistic elements',
     rooms: ['Living Room', 'Bedroom', 'Studio']
   },
   {
     id: 'minimalist',
     name: 'Minimalist',
-    image: '/images/selectors/styles/minimalist.jpg',
+    image: '/images/selectors/styles/optimized/minimalist.webp',
     description: 'Clean lines, monochromatic palette, and clutter-free spaces',
     rooms: ['Living Room', 'Bedroom', 'Office', 'Dining Room']
   },
   {
     id: 'mid-century-modern',
     name: 'Mid-Century Modern',
-    image: '/images/selectors/styles/mid-century-modern.jpg',
+    image: '/images/selectors/styles/optimized/mid-century-modern.webp',
     description: 'Retro style with organic shapes and functional design',
     rooms: ['Living Room', 'Dining Room', 'Office']
   },
   {
     id: 'traditional',
     name: 'Traditional',
-    image: '/images/selectors/styles/traditional.jpg',
+    image: '/images/selectors/styles/optimized/traditional.webp',
     description: 'Classic, timeless design with elegant details and rich colors',
     rooms: ['Living Room', 'Bedroom', 'Dining Room']
   },
   {
     id: 'contemporary',
     name: 'Contemporary',
-    image: '/images/selectors/styles/contemporary.jpg',
+    image: '/images/selectors/styles/optimized/contemporary.webp',
     description: 'Current, evolving style that borrows from various styles',
     rooms: ['Living Room', 'Bedroom', 'Office', 'Kitchen']
   },
   {
     id: 'rustic',
     name: 'Rustic',
-    image: '/images/selectors/styles/rustic.jpg',
+    image: '/images/selectors/styles/optimized/rustic.webp',
     description: 'Natural, aged, and casual style with organic textures',
     rooms: ['Living Room', 'Bedroom', 'Dining Room', 'Kitchen']
   },
   {
     id: 'art-deco',
     name: 'Art Deco',
-    image: '/images/selectors/styles/art-deco.jpg',
+    image: '/images/selectors/styles/optimized/art-deco.webp',
     description: 'Bold, glamorous style with geometric patterns and rich colors',
     rooms: ['Living Room', 'Bedroom', 'Dining Room']
   },
   {
     id: 'coastal',
     name: 'Coastal',
-    image: '/images/selectors/styles/coastal.jpg',
+    image: '/images/selectors/styles/optimized/coastal.webp',
     description: 'Beach-inspired style with light colors and natural elements',
     rooms: ['Living Room', 'Bedroom', 'Bathroom']
   },
   {
     id: 'farmhouse',
     name: 'Farmhouse',
-    image: '/images/selectors/styles/farmhouse.jpg',
+    image: '/images/selectors/styles/optimized/farmhouse.webp',
     description: 'Cozy, practical style with vintage touches and natural materials',
     rooms: ['Living Room', 'Kitchen', 'Dining Room', 'Bedroom']
   },
   {
     id: 'mediterranean',
     name: 'Mediterranean',
-    image: '/images/selectors/styles/mediterranean.jpg',
+    image: '/images/selectors/styles/optimized/mediterranean.webp',
     description: 'Warm colors, textured walls, and ornate details',
     rooms: ['Living Room', 'Dining Room', 'Kitchen', 'Bathroom']
   },
   {
     id: 'japandi',
     name: 'Japandi',
-    image: '/images/selectors/styles/japandi.jpg',
+    image: '/images/selectors/styles/optimized/japandi.webp',
     description: 'Fusion of Japanese and Scandinavian aesthetics with minimalism',
     rooms: ['Living Room', 'Bedroom', 'Office']
   },
   {
     id: 'eclectic',
     name: 'Eclectic',
-    image: '/images/selectors/styles/eclectic.jpg',
+    image: '/images/selectors/styles/optimized/eclectic.webp',
     description: 'Mix of different styles, textures, and time periods',
     rooms: ['Living Room', 'Bedroom', 'Studio']
   },
   {
     id: 'transitional',
     name: 'Transitional',
-    image: '/images/selectors/styles/transitional.jpg',
+    image: '/images/selectors/styles/optimized/transitional.webp',
     description: 'Blend of traditional and contemporary elements',
     rooms: ['Living Room', 'Bedroom', 'Dining Room']
   },
   {
     id: 'neoclassical',
     name: 'Neoclassical',
-    image: '/images/selectors/styles/neoclassical.jpg',
+    image: '/images/selectors/styles/optimized/neoclassical.webp',
     description: 'Modern interpretation of classical Greek and Roman style',
     rooms: ['Living Room', 'Dining Room', 'Office']
   },
   {
     id: 'hollywood-regency',
     name: 'Hollywood Regency',
-    image: '/images/selectors/styles/hollywood-regency.jpg',
+    image: '/images/selectors/styles/optimized/hollywood-regency.webp',
     description: 'Glamorous, high-contrast style with bold colors',
     rooms: ['Living Room', 'Bedroom', 'Dining Room']
   },
   {
     id: 'shabby-chic',
     name: 'Shabby Chic',
-    image: '/images/selectors/styles/shabby-chic.jpg',
+    image: '/images/selectors/styles/optimized/shabby-chic.webp',
     description: 'Vintage style with distressed furniture and soft colors',
     rooms: ['Living Room', 'Bedroom', 'Dining Room']
   },
   {
     id: 'tropical',
     name: 'Tropical',
-    image: '/images/selectors/styles/tropical.jpg',
+    image: '/images/selectors/styles/optimized/tropical.webp',
     description: 'Vibrant colors, natural materials, and lush plant elements',
     rooms: ['Living Room', 'Bedroom', 'Bathroom', 'Dining Room']
   }
