@@ -60,23 +60,25 @@ export function ColorToneSelector({ onSelect, selectedValue }: ColorToneSelector
           {COLOR_PALETTES.map((palette) => (
             // Removed outer div wrapper for each item
               <div // Keep this div for tooltip and styling
+                key={palette.id} // Added key prop
                 data-tooltip-id="color-tooltip"
                 data-tooltip-content={palette.name}
                 className={`
-                  rounded border-2 p-0.5 cursor-pointer transition-all mx-auto block
+                  rounded border-2 cursor-pointer transition-all mx-auto block {/* Removed p-0.5 */}
                   ${selectedValue === palette.id
                     ? 'border-blue-500 shadow-md scale-105'
                     : 'border-transparent hover:border-blue-300'
                   }
                 `}
                 onClick={() => onSelect(palette.id)}
-                style={{ width: '24px', height: '24px' }} // Reduced size
+                style={{ width: '32x', height: '32px' }} // Reduced size
               >
-                <img
-                  src={palette.image}
-                  alt={palette.name}
-                  className="w-full h-full object-cover rounded-sm"
-                />
+<img
+  src={palette.image}
+  alt={palette.name}
+  className="w-full h-full object-cover rounded-sm"
+/>
+
               </div>
             // Removed outer div wrapper
           ))}
@@ -90,6 +92,7 @@ export function ColorToneSelector({ onSelect, selectedValue }: ColorToneSelector
           {SINGLE_COLORS.map((color) => (
              // Removed outer div wrapper
                <div // Keep this div for tooltip and styling
+                 key={color.id} // Added key prop
                  data-tooltip-id="color-tooltip"
                  data-tooltip-content={color.name}
                  className={`

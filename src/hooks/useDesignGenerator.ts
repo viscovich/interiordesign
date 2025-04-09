@@ -20,15 +20,32 @@ export default function useDesignGenerator({
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [designDescription, setDesignDescription] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [selectedStyle, _setSelectedStyle] = useState<any | null>(null);
+
+  // Default style object for Modern
+  const defaultStyle = {
+    id: 'modern',
+    name: 'Modern',
+    image: '/images/selectors/styles/modern.jpg',
+    description: 'Clean lines, minimal decoration, and functional furniture',
+    rooms: ['Living Room', 'Bedroom', 'Office']
+  };
+
+  // Default room type object for Living Room
+  const defaultRoomType = {
+    id: 'living-room',
+    name: 'Living Room',
+    image: '/images/selectors/room-types/living-room.jpg'
+  };
+
+  const [selectedStyle, _setSelectedStyle] = useState<any | null>(userId ? null : defaultStyle);
   const setSelectedStyle = (style: any) => {
     console.log('Updating selected style:', style);
     _setSelectedStyle(style);
   };
-  const [selectedRoomType, setSelectedRoomType] = useState<any | null>(null);
-  const [selectedColorTone, setSelectedColorTone] = useState<string | null>(null); // Renamed state and setter
-  const [selectedView, setSelectedView] = useState<string | null>(null);
-  const [selectedRenderingType, setSelectedRenderingType] = useState<string | null>(null);
+  const [selectedRoomType, setSelectedRoomType] = useState<any | null>(userId ? null : defaultRoomType);
+  const [selectedColorTone, setSelectedColorTone] = useState<string | null>(userId ? null : 'palette:neutrals');
+  const [selectedView, setSelectedView] = useState<string | null>(userId ? null : 'frontal');
+  const [selectedRenderingType, setSelectedRenderingType] = useState<string | null>(userId ? null : '3d');
 
   const handleImageUpload = async (file: File) => {
     try {

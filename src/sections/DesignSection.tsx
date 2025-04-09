@@ -69,57 +69,51 @@ export default function DesignSection({
 
         {/* Main content area */}
         <div className="max-w-4xl mx-auto"> {/* Reduced max-width again */}
-          {/* Two-column layout for Uploader and Sidebar */}
-          <div className="flex flex-col md:flex-row gap-4 mb-8"> 
+          {/* Two-column layout for Uploader and Core Selectors */}
+          <div className="flex flex-col md:flex-row gap-4 mb-8">
             {/* Left Column: Image Uploader */}
-            <div className="w-full md:w-1/2"> {/* Changed width back to 1/2 */}
+            <div className="w-full md:w-1/2">
               <ImageUploader
                 onImageUpload={onImageUpload}
                 onReset={onReset}
-                // Removed view/rendering props
               />
             </div>
 
-            {/* Right Column: Sidebar Selectors */}
-            {uploadedImage && (
-              <div className="w-full md:w-1/2 space-y-1"> {/* Changed width back to 1/2 */}
-                <RenderingTypeSelector
-                  value={selectedRenderingType || ''}
-                  onChange={onRenderingTypeChange}
-                />
-                <ViewTypeSelector
-                  value={selectedView || ''}
-                  onChange={onViewChange}
-                />
-                {/* ColorToneSelector removed from here */}
-                {/* Moved RoomTypeSelector here */}
-                <RoomTypeSelector
-                  onRoomTypeSelect={onRoomTypeSelect} // Corrected prop name
-                  selectedRoomTypeId={selectedRoomType?.id} // Corrected prop name and value
-                />
-              </div>
-            )}
+            {/* Right Column: Core Selectors (Always Visible) */}
+            <div className="w-full md:w-1/2 space-y-1">
+              <RenderingTypeSelector
+                value={selectedRenderingType || ''}
+                onChange={onRenderingTypeChange}
+              />
+              <ViewTypeSelector
+                value={selectedView || ''}
+                onChange={onViewChange}
+              />
+              {/* Moved RoomTypeSelector to be always visible */}
+              <RoomTypeSelector
+                onRoomTypeSelect={onRoomTypeSelect} // Corrected prop name
+                selectedRoomTypeId={selectedRoomType?.id} // Corrected prop name and value
+              />
+            </div>
           </div>
 
-          {/* Elements below the two-column layout */}
+          {/* Conditional Elements below the two-column layout */}
           {uploadedImage && (
             <div className="space-y-4"> {/* Reduced spacing */}
-              {/* Added StyleSelector */}
+              {/* StyleSelector */}
               <StyleSelector
                 onStyleSelect={onStyleSelect} // Corrected prop name
                 selectedStyleId={selectedStyle?.id} // Corrected prop name and value
               />
-              {/* Moved ColorToneSelector here */}
+              {/* ColorToneSelector */}
               <ColorToneSelector
                 selectedValue={selectedColorTone || undefined} // Use renamed prop
                 onSelect={onColorToneSelect} // Use renamed handler
               />
-              {/* RoomTypeSelector removed from here */}
-              {/* Added ObjectSelector */}
+              {/* ObjectSelector */}
               <ObjectSelector onSelectionChange={handleObjectSelectionChange} />
 
-              {/* Removed old ColorPaletteSelector */}
-
+              {/* Generate Button and Validation */}
               <div className="mb-2 pt-4"> {/* Added padding top */}
                 {/* Updated validation check - No change needed here for objects, as they are optional */}
                 {(!uploadedImage || !selectedStyle || !selectedRoomType || !selectedColorTone || !selectedView || !selectedRenderingType) && (

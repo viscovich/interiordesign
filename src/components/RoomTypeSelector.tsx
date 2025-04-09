@@ -57,10 +57,10 @@ export function RoomTypeSelector({ onRoomTypeSelect, selectedRoomTypeId }: RoomT
             key={roomType.id}
             onClick={() => onRoomTypeSelect(roomType)}
             className={`
-              w-full py-2 px-3 border rounded-md text-sm transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-custom
+              w-full py-2 px-3 border rounded-md text-sm transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-custom text-gray-700 // Ensure default text color
               ${selectedRoomTypeId === roomType.id
-                ? 'bg-gray-900 text-white border-gray-900' // Selected style
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' // Default style
+                ? 'border-blue-500 bg-blue-50' // Selected style (matches ViewTypeSelector)
+                : 'bg-white border-gray-300 hover:bg-gray-50' // Default style (removed text-gray-700 as it's now default)
               }
             `}
           >
