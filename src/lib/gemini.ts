@@ -226,6 +226,12 @@ export async function generateInteriorDesign(
   } catch (error) {
     console.error("Errore nella generazione:", error);
     console.error("Error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    
+    if (error instanceof Error && 
+        error.name === 'GoogleGenerativeAIFetchError' && 
+        error.message.includes('503')) {
+      throw new Error("servizio overloaded o qualcosa del genere");
+    }
     throw error;
   }
 }

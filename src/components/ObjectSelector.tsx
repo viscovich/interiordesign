@@ -5,31 +5,21 @@ import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/solid'; // A
 
 interface ObjectSelectorProps {
   onSelectionChange: (selectedObjects: UserObject[]) => void;
-  // We might need userId passed down if not available via context
-  // userId: string; 
+  userId: string | null; // Required prop - controls whether to render at all
 }
 
-export const ObjectSelector: React.FC<ObjectSelectorProps> = ({ onSelectionChange }) => {
+export const ObjectSelector: React.FC<ObjectSelectorProps> = ({ onSelectionChange, userId }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [objects, setObjects] = useState<UserObject[]>([]);
   const [selectedObjects, setSelectedObjects] = useState<UserObject[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
 
-  // Get user ID on mount
-  useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUserId(user.id);
-      } else {
-        setError("User not logged in."); // Handle case where user is not logged in
-      }
-    };
-    fetchUser();
-  }, []);
+  // Don't render anything if not auth by parent
+  if (!userId || !userId.trim()) {
+    return null;
+  }
 
   // Debounced search function
   const debounce = <F extends (...args: any[]) => any>(func: F, waitFor: number) => {

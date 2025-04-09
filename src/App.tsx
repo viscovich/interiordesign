@@ -159,35 +159,9 @@ function App() {
                   onScrollToDesign={handleScrollToDesign} // Keep logged-out view as is
                   onScrollToFeatures={handleScrollToFeatures} // Keep logged-out view as is
                 /> {/* Keep logged-out view as is */}
-                <DesignSection // Keep logged-out view as is
-                  uploadedImage={design.uploadedImage} // Keep logged-out view as is
-                  isGenerating={design.isGenerating} // Keep logged-out view as is
-                  selectedStyle={design.selectedStyle} // Keep logged-out view as is
-                  selectedRoomType={design.selectedRoomType} // Keep logged-out view as is
-                  selectedColorTone={design.selectedColorTone} // Keep logged-out view as is
-                  selectedView={design.selectedView} // Keep logged-out view as is
-                  selectedRenderingType={design.selectedRenderingType} // Keep logged-out view as is
-                  onImageUpload={design.handleImageUpload} // Keep logged-out view as is
-                  onReset={design.resetUpload} // Keep logged-out view as is
-                  onGenerate={handleGenerate} // Keep logged-out view as is
-                  onStyleSelect={design.setSelectedStyle} // Keep logged-out view as is
-                  onRoomTypeSelect={design.setSelectedRoomType} // Keep logged-out view as is
-                  onColorToneSelect={design.setSelectedColorTone} // Keep logged-out view as is
-                  onViewChange={design.setSelectedView} // Keep logged-out view as is
-                  onRenderingTypeChange={design.setSelectedRenderingType} // Keep logged-out view as is
-                /> {/* Keep logged-out view as is */}
-                <FeaturesSection /> {/* Keep logged-out view as is */}
-                <PricingSection /> {/* Keep logged-out view as is */}
-                <PortfolioSection /> {/* Keep logged-out view as is */}
-                <FAQSection /> {/* Keep logged-out view as is */}
-              </> // Keep logged-out view as is
-            )}
-
-            {/* Logged-in view sections */}
-            {activeSection === 'design' && user && (
-              <DesignSection
-                uploadedImage={design.uploadedImage}
-                isGenerating={design.isGenerating}
+                <DesignSection
+                  uploadedImage={design.uploadedImage}
+                  isGenerating={design.isGenerating}
                   selectedStyle={design.selectedStyle}
                   selectedRoomType={design.selectedRoomType}
                   selectedColorTone={design.selectedColorTone}
@@ -201,7 +175,37 @@ function App() {
                   onColorToneSelect={design.setSelectedColorTone}
                   onViewChange={design.setSelectedView}
                   onRenderingTypeChange={design.setSelectedRenderingType}
+                  isAuthenticated={!!user}
+                  hasObjects={objects.userObjects.length > 0}
                 />
+                <FeaturesSection /> {/* Keep logged-out view as is */}
+                <PricingSection /> {/* Keep logged-out view as is */}
+                <PortfolioSection /> {/* Keep logged-out view as is */}
+                <FAQSection /> {/* Keep logged-out view as is */}
+              </> // Keep logged-out view as is
+            )}
+
+            {/* Logged-in view sections */}
+            {activeSection === 'design' && user && (
+              <DesignSection
+                uploadedImage={design.uploadedImage}
+                isGenerating={design.isGenerating}
+                selectedStyle={design.selectedStyle}
+                selectedRoomType={design.selectedRoomType}
+                selectedColorTone={design.selectedColorTone}
+                selectedView={design.selectedView}
+                selectedRenderingType={design.selectedRenderingType}
+                onImageUpload={design.handleImageUpload}
+                onReset={design.resetUpload}
+                onGenerate={handleGenerate}
+                onStyleSelect={design.setSelectedStyle}
+                onRoomTypeSelect={design.setSelectedRoomType}
+                onColorToneSelect={design.setSelectedColorTone}
+                onViewChange={design.setSelectedView}
+                onRenderingTypeChange={design.setSelectedRenderingType}
+                isAuthenticated={!!user}
+                hasObjects={objects.userObjects.length > 0}
+              />
               )}
 
               {/* ResultsSection removed from main flow based on activeSection */}

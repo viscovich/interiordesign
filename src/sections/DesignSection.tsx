@@ -28,6 +28,9 @@ interface DesignSectionProps {
   onColorToneSelect: (tone: string) => void; // Renamed prop handler
   onViewChange: (view: string) => void;
   onRenderingTypeChange: (renderingType: string) => void;
+  isAuthenticated: boolean;
+  hasObjects: boolean;
+  userId?: string | null;
   // Add a prop for selected objects if needed from parent, or manage locally
 }
 
@@ -47,6 +50,8 @@ export default function DesignSection({
   onColorToneSelect, // Renamed prop handler
   onViewChange,
   onRenderingTypeChange,
+  isAuthenticated,
+  userId,
 }: DesignSectionProps) {
   const modals = useModals();
   // State for selected objects
@@ -111,7 +116,10 @@ export default function DesignSection({
                 onSelect={onColorToneSelect} // Use renamed handler
               />
               {/* ObjectSelector */}
-              <ObjectSelector onSelectionChange={handleObjectSelectionChange} />
+              <ObjectSelector 
+                onSelectionChange={handleObjectSelectionChange}
+                userId={isAuthenticated ? userId || null : null}
+              />
 
               {/* Generate Button and Validation */}
               <div className="mb-2 pt-4"> {/* Added padding top */}
