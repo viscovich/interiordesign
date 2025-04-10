@@ -66,7 +66,7 @@ export function UserAccountDropdown() {
   const handleUpgrade = async () => {
     setLoading(prev => ({...prev, upgrade: true}));
     try {
-      const { sessionId } = await startCheckout('price_test_pro');
+      const { sessionId } = await startCheckout('price_1RCGMcHqqEp5PbqKlqBheNM9'); // Correct Test Price ID
       const stripeModule = await import('@stripe/stripe-js');
       const stripe = await stripeModule.loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
       if (!stripe) throw new Error('Failed to load Stripe');
@@ -146,15 +146,25 @@ export function UserAccountDropdown() {
                 <button className="block w-full text-left px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded">
                   Manage Profile
                 </button>
-                <button 
+                <button
                   onClick={handleBillingPortal}
                   disabled={!userProfile?.stripe_customer_id || loading.billing}
-                  className={`block w-full text-left px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded ${loading.billing ? 'opacity-50' : ''}`}
+                  className={`block w-full text-left px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded ${!userProfile?.stripe_customer_id || loading.billing ? 'opacity-50 cursor-not-allowed' : ''}`} // Added disabled styling
                 >
                   {loading.billing ? 'Loading...' : 'Subscription & Billing'}
                 </button>
-                <button className="block w-full text-left px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded">
-                  Credit Usage
+                {/* <button className="block w-full text-left px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded">
+                  Credit Usage // Commented out as it might be redundant with the usage section
+                </button> */}
+                <button
+                  onClick={() => {
+                    const { signOut } = useAuth(); // Get signOut directly here or pass it down if needed
+                    signOut();
+                    setIsOpen(false); // Close dropdown on sign out
+                  }}
+                  className="block w-full text-left px-2 py-1 text-sm text-red-600 hover:bg-gray-100 rounded" // Sign out in red
+                >
+                  Sign Out
                 </button>
               </div>
             </div>

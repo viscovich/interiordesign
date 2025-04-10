@@ -92,20 +92,12 @@ function App() {
               <img src="/images/Dreamcasa3-removebg-preview.png" alt="DreamCasa AI Logo" className="h-8 w-auto" /> {/* Matched height */}
               <span className="ml-2 text-xl font-semibold text-custom">DreamCasa AI</span> {/* Matched font weight */}
             </div>
-            {/* Right side of header - simplified for logged-in state based on target */}
+            {/* Right side of header */}
             <div className="flex items-center space-x-4">
-              {/* Language button placeholder */}
-              <button className="bg-gray-100 p-2 rounded-lg text-gray-600">EN</button> {/* Changed to EN */}
               {/* User Account/Sign Out */}
               {!authLoading && user && (
                  <div className="flex items-center gap-4">
-                    {/* <UserAccountDropdown /> Replaced dropdown with simple Sign Out */}
-                    <button
-                      onClick={() => signOut()}
-                      className="bg-custom text-white px-4 py-2 !rounded-button" /* Matched target style */
-                    >
-                      Sign Out
-                    </button>
+                    <UserAccountDropdown /> {/* Restored dropdown */}
                   </div>
               )}
               {/* Sign In/Register buttons for logged-out state (kept original logic) */}
