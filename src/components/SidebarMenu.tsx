@@ -4,6 +4,7 @@ import React from 'react';
 interface SidebarMenuProps {
   activeSection: string | null; // Keep activeSection prop
   setActiveSection: (section: string) => void; // Keep setActiveSection prop
+  onNewProjectClick: () => void; // Add the new prop
 }
 
 // Define menu items with Font Awesome classes
@@ -14,14 +15,14 @@ const menuItems = [
   { name: 'Community', section: 'community', iconClass: 'fas fa-users' }, // Changed icon to match target
 ];
 
-export function SidebarMenu({ activeSection, setActiveSection }: SidebarMenuProps) {
+export function SidebarMenu({ activeSection, setActiveSection, onNewProjectClick }: SidebarMenuProps) { // Destructure the new prop
   return (
     // Changed positioning and styling to match target layout
     <aside className="w-64 bg-gray-50 text-gray-800 border-r border-gray-200">
       <div className="p-4">
         {/* New Project Button */}
         <button
-          onClick={() => setActiveSection('design')} // Set active section to 'design'
+          onClick={onNewProjectClick} // Call the passed-in handler
           className="w-full bg-custom text-white p-3 !rounded-button flex items-center justify-center space-x-2 mb-8" // Added margin-bottom
         >
           <i className="fas fa-plus"></i>

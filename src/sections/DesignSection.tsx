@@ -79,6 +79,7 @@ export default function DesignSection({
             {/* Left Column: Image Uploader */}
             <div className="w-full md:w-1/2">
               <ImageUploader
+                uploadedImage={uploadedImage} // Pass the prop down
                 onImageUpload={onImageUpload}
                 onReset={onReset}
               />

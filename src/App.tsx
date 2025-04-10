@@ -38,11 +38,14 @@ function App() {
   });
   const objects = useUserObjects(user?.id, activeSection);
 
+  // Removed duplicate handleNewDesign
+
   const handleNewDesign = () => {
-    design.resetUpload();
+    design.startNewProject(); // Use the new function to reset and pre-fill image
     setActiveSection('design');
   };
 
+  // Restored handleScrollToDesign
   const handleScrollToDesign = () => {
     setActiveSection('design');
     document.getElementById('design-section')?.scrollIntoView({ behavior: 'smooth' });
@@ -137,6 +140,7 @@ function App() {
           <SidebarMenu
             activeSection={activeSection}
             setActiveSection={setActiveSection}
+            onNewProjectClick={handleNewDesign} // Pass the handler down
           />
         )}
 
@@ -160,7 +164,7 @@ function App() {
                   selectedView={design.selectedView}
                   selectedRenderingType={design.selectedRenderingType}
                   onImageUpload={design.handleImageUpload}
-                  onReset={design.resetUpload}
+                  onReset={design.resetUpload} // Re-added prop
                   onGenerate={handleGenerate}
                   onStyleSelect={design.setSelectedStyle}
                   onRoomTypeSelect={design.setSelectedRoomType}
@@ -188,7 +192,7 @@ function App() {
                 selectedView={design.selectedView}
                 selectedRenderingType={design.selectedRenderingType}
                 onImageUpload={design.handleImageUpload}
-                onReset={design.resetUpload}
+                onReset={design.resetUpload} // Re-added prop
                 onGenerate={handleGenerate}
                 onStyleSelect={design.setSelectedStyle}
                 onRoomTypeSelect={design.setSelectedRoomType}

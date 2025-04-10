@@ -6,30 +6,49 @@ import { Upload, Image as ImageIcon } from 'lucide-react'; // Added ImageIcon fo
 interface ImageUploaderProps {
   onImageUpload: (file: File) => void;
   onReset?: () => void;
-  // Removed props for view and rendering type state/handlers
+  uploadedImage: string | null; // Add prop to receive image URL from parent
 }
 
-export function ImageUploader({ 
-  onImageUpload, 
-  onReset
+export function ImageUploader({
+  onImageUpload,
+  onReset,
+  uploadedImage // Destructure the new prop
 }: ImageUploaderProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  // Create preview URL when file is selected
+  // Effect to sync internal preview with the uploadedImage prop from parent
+  useEffect(() => {
+    // Only update preview from prop if it's different from the current preview
+    // and if no local file is currently selected (to avoid overriding a new local selection)
+    if (uploadedImage && uploadedImage !== previewUrl && !selectedFile) {
+      setPreviewUrl(uploadedImage);
+    } else if (!uploadedImage && !selectedFile) {
+      // Clear preview if prop is null and no local file is selected
+      setPreviewUrl(null);
+    }
+  }, [uploadedImage, selectedFile, previewUrl]); // Re-run if prop, local file, or preview changes
+
+
+  // Create preview URL when a new local file is selected
   useEffect(() => {
     if (!selectedFile) {
+      // If file is cleared (e.g., by handleReplace), also clear previewUrl
+      // unless it's already being set by the uploadedImage prop effect
+      if (!uploadedImage) {
+         setPreviewUrl(null);
+      }
       return;
     }
-    
+
     const objectUrl = URL.createObjectURL(selectedFile);
     setPreviewUrl(objectUrl);
-    
+
     // Free memory when component unmounts
     return () => {
       URL.revokeObjectURL(objectUrl);
     };
-  }, [selectedFile]);
+  }, [selectedFile, uploadedImage]); // Added uploadedImage dependency to avoid race condition
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles[0]) {
@@ -49,7 +68,7 @@ export function ImageUploader({
       const blob = await response.blob();
       const fileName = 'stanza.jpg';
       const file = new File([blob], fileName, { type: blob.type });
-      
+
       setSelectedFile(file); // Update local state for preview
       onImageUpload(file); // Call the prop handler
     } catch (error) {
@@ -58,11 +77,12 @@ export function ImageUploader({
     }
   }, [onImageUpload]); // Dependency array includes the prop function
 
+  // Updated handleReplace to clear local state and call parent reset
   const handleReplace = () => {
-    setSelectedFile(null);
-    setPreviewUrl(null);
+    setSelectedFile(null); // Clear local file state
+    setPreviewUrl(null); // Clear local preview
     if (onReset) {
-      onReset();
+      onReset(); // Call parent reset to clear uploadedImage state in the hook
     }
   };
 
@@ -78,8 +98,8 @@ export function ImageUploader({
 
   return (
     // Reduced height
-    <div className="h-[240px]"> 
-      <div className="w-full h-full flex flex-col"> 
+    <div className="h-[240px]">
+      <div className="w-full h-full flex flex-col">
       {!previewUrl ? (
         <div
           {...getRootProps()}
@@ -110,9 +130,9 @@ export function ImageUploader({
         <div className="border rounded-lg overflow-hidden h-full flex flex-col">
           <div className="relative">
             <div className="flex-grow flex items-center justify-center bg-gray-50">
-              <img 
-                src={previewUrl} 
-                alt="Uploaded room" 
+              <img
+                src={previewUrl}
+                alt="Uploaded room"
                 className="max-w-full max-h-full object-contain"
               />
             </div>
@@ -121,7 +141,7 @@ export function ImageUploader({
               className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 transition-colors"
               title="Replace image"
               type="button"
-            > 
+            >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                 <polyline points="17 8 12 3 7 8"></polyline>
@@ -134,7 +154,8 @@ export function ImageUploader({
               Immagine caricata
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              {selectedFile?.name} ({selectedFile ? Math.round(selectedFile.size / 1024) : 0} KB)
+              {/* Display file name only if selectedFile exists */}
+              {selectedFile?.name} {selectedFile ? `(${Math.round(selectedFile.size / 1024)} KB)` : ''}
             </p>
           </div>
         </div>

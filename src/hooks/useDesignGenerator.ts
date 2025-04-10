@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'; // Added useCallback
+import { useState, useCallback, useEffect } from 'react'; // Added useEffect
 import { generateInteriorDesign } from '../lib/gemini';
 import { uploadImage } from '../lib/storage';
 import { createProject, saveDetectedObjects } from '../lib/projectsService';
@@ -16,7 +16,8 @@ export default function useDesignGenerator({
   setIsLoginModalOpen,
   setPendingGenerate
 }: UseDesignGeneratorProps) {
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null); // URL for display/generation
+  const [lastUsedImageFile, setLastUsedImageFile] = useState<File | null>(null); // Store the actual File object
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [designDescription, setDesignDescription] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -56,6 +57,7 @@ export default function useDesignGenerator({
   };
 
   const handleImageUpload = async (file: File) => {
+    setLastUsedImageFile(file); // Store the file object
     try {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -179,6 +181,39 @@ export default function useDesignGenerator({
     setPendingGenerate
   ]);
 
+  // Function to reset state for a new project, pre-filling the last used image
+  const startNewProject = useCallback(() => {
+    // Reset generation results
+    setGeneratedImage(null);
+    setDesignDescription(null);
+    setIsGenerating(false); // Ensure loading state is reset
+
+    // DO NOT reset selections - keep the previous criteria
+    // setSelectedStyle(userId ? null : defaultStyle);
+    // setSelectedRoomType(userId ? null : defaultRoomType);
+    // setSelectedColorTone(userId ? null : 'palette:neutrals');
+    // setSelectedView(userId ? null : 'frontal');
+    // _setSelectedRenderingType(userId ? null : '3d');
+
+    // Ensure the last uploaded image is still displayed
+    if (lastUsedImageFile) {
+      // Convert File back to data URL to display in ImageUploader
+      const reader = new FileReader();
+      reader.readAsDataURL(lastUsedImageFile);
+      reader.onload = () => {
+        setUploadedImage(reader.result as string); // Set the URL state
+      };
+      reader.onerror = () => {
+        console.error("Error reading last used image file:", reader.error);
+        setUploadedImage(null); // Fallback: clear image if reading fails
+        setLastUsedImageFile(null); // Clear the stored file too
+      };
+    } else {
+      setUploadedImage(null); // Clear image if no last used image exists
+    }
+  // Add dependencies for useCallback
+  }, [userId, lastUsedImageFile]); // Include lastUsedImageFile
+
   return {
     uploadedImage,
     generatedImage,
@@ -196,6 +231,7 @@ export default function useDesignGenerator({
     setSelectedColorTone, // Return renamed setter
     setSelectedView,
     setSelectedStyle,
-    setSelectedRenderingType: updateRenderingType // Return the custom setter
+    setSelectedRenderingType: updateRenderingType, // Return the custom setter
+    startNewProject // Return the new function
   };
 }
