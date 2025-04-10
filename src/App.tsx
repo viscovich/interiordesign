@@ -76,7 +76,7 @@ function App() {
     setProjectsRefreshKey(prevKey => prevKey + 1);
   };
 
-  console.log('App.tsx rendering - isLoginModalOpen:', modals.isLoginModalOpen); // DEBUG LOG
+
 
   return (
     <SeoWrapper
