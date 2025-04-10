@@ -352,6 +352,7 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
             <ViewTypeSelector
               value={selectedViewType || project.view_type || ''}
               onChange={setSelectedViewType}
+              renderingType={selectedRenderingType} // Added missing prop
             />
             <RenderingTypeSelector
               value={selectedRenderingType || ''}
@@ -368,7 +369,7 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
           <button
             onClick={handleGenerate}
             disabled={isLoadingGeneration}
-            className="!rounded-button px-6 py-3 bg-custom text-white font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+            className="!rounded-button px-6 py-3 bg-custom text-white font-medium hover:bg-custom-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >
             {isLoadingGeneration ? (
               <div className="flex items-center">

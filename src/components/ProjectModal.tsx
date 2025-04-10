@@ -99,7 +99,7 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
                     disabled={!project.original_image_url}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
                       project.original_image_url
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                        ? 'bg-black hover:bg-custom-800 text-white'
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
                   >

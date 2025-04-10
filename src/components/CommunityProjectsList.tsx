@@ -117,9 +117,9 @@ export function CommunityProjectsList({ refreshKey, newProjectId }: CommunityPro
              <div className="flex justify-center mt-6 gap-2">
                {Array.from({ length: Math.ceil(paginatedProjects.total / paginatedProjects.perPage) }, (_, i) => (
                  <button
-                   key={i + 1}
+                   key={i}
                    onClick={() => handlePageChange(i + 1)}
-                   className={`px-3 py-1 rounded ${paginatedProjects.page === i + 1 ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                   className={`px-3 py-1 rounded ${paginatedProjects.page === i + 1 ? 'bg-black text-white' : 'bg-gray-200'}`}
                  >
                    {i + 1}
                  </button>

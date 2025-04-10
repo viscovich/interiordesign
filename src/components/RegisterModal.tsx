@@ -94,7 +94,7 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
               
               <button
                 onClick={onClose}
-                className="w-full py-2 px-4 bg-blue-600 rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700"
+                className="w-full py-2 px-4 bg-black rounded-md shadow-sm text-sm font-medium text-white hover:bg-custom-800"
               >
                 Close
               </button>
@@ -191,7 +191,7 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
                 type="submit"
                 disabled={loading}
                 className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
-                  ${loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
+                  ${loading ? 'bg-gray-400' : 'bg-black hover:bg-custom-800'}`}
               >
                 {loading ? 'Processing...' : 'Sign Up'}
               </button>

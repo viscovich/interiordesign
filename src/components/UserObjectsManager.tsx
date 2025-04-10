@@ -88,12 +88,12 @@ const UserObjectsManager: React.FC = () => {
       <div className="space-y-4 mb-4">
         <div className="flex justify-between items-center">
           <p className="text-sm text-gray-500">Upload your objects to include in your design</p>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 shadow-md"
-          >
-            <span className="font-bold">+</span> Upload New Object
-          </button>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="px-4 py-2 text-sm bg-black text-white rounded-md hover:bg-custom-800 shadow-md"
+        >
+          Upload Object
+        </button>
         </div>
 
         <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -220,14 +220,14 @@ const UserObjectsManager: React.FC = () => {
           {Array.from({ 
             length: Math.ceil(filteredObjects.length / objectsPerPage) 
           }, (_, i) => (
-            <button
-              key={i + 1}
-              onClick={() => setCurrentPage(i + 1)}
-              className={`px-3 py-1 rounded ${
-                currentPage === i + 1 ? 'bg-blue-500 text-white' : 'bg-gray-200'
-              }`}
-            >
-              {i + 1}
+              <button
+                key={i + 1}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`px-3 py-1 rounded ${
+                  currentPage === i + 1 ? 'bg-black text-white' : 'bg-gray-200'
+                }`}
+              >
+                {i + 1}
             </button>
           ))}
         </div>
