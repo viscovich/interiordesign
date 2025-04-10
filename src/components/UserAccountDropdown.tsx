@@ -17,7 +17,7 @@ interface UserProfile {
 export function UserAccountDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const { user } = useAuth();
+  const { user, signOut } = useAuth(); // Destructure signOut here
 
   const [loading, setLoading] = useState({
     billing: false,
@@ -107,15 +107,10 @@ export function UserAccountDropdown() {
 
             {/* Usage Section */}
             <div className="px-4 py-2 border-b border-gray-100">
-              <h3 className="text-sm font-medium text-gray-900">📊 Usage</h3>
+              <h3 className="text-sm font-medium text-gray-900">📊 Credits</h3>
               <div className="mt-1">
-                <p className="text-sm text-gray-500">Credits used: {userProfile?.credits || 0} / 1000</p>
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full" 
-                    style={{ width: `${Math.min((userProfile?.credits || 0) / 10, 100)}%` }}
-                  ></div>
-                </div>
+                <p className="text-sm text-gray-500">Available: {userProfile?.credits || 0}</p>
+                {/* Progress bar removed */}
               </div>
             </div>
 
@@ -123,12 +118,7 @@ export function UserAccountDropdown() {
             <div className="px-4 py-2 border-b border-gray-100">
               <h3 className="text-sm font-medium text-gray-900">⚙️ Actions</h3>
               <div className="mt-1 space-y-1">
-                <button className="block w-full text-left px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded">
-                  Plan: {userProfile?.current_plan || 'Free'}
-                </button>
-                <button className="block w-full text-left px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded">
-                  Status: {userProfile?.subscription_status || 'None'}
-                </button>
+                {/* Plan and Status buttons removed */}
                 <button 
                   onClick={handleUpgrade}
                   disabled={loading.upgrade}
@@ -141,11 +131,9 @@ export function UserAccountDropdown() {
 
             {/* Account Settings Section */}
             <div className="px-4 py-2">
-              <h3 className="text-sm font-medium text-gray-900">🔧 Account Settings</h3>
+              <h3 className="text-sm font-medium text-gray-900">💳 Subscription</h3>
               <div className="mt-1 space-y-1">
-                <button className="block w-full text-left px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded">
-                  Manage Profile
-                </button>
+                {/* Manage Profile button removed */}
                 <button
                   onClick={handleBillingPortal}
                   disabled={!userProfile?.stripe_customer_id || loading.billing}
@@ -158,7 +146,7 @@ export function UserAccountDropdown() {
                 </button> */}
                 <button
                   onClick={() => {
-                    const { signOut } = useAuth(); // Get signOut directly here or pass it down if needed
+                    // const { signOut } = useAuth(); // Remove this incorrect call
                     signOut();
                     setIsOpen(false); // Close dropdown on sign out
                   }}

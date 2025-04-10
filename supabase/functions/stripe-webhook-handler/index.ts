@@ -1,0 +1,141 @@
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import Stripe from 'https://esm.sh/stripe@12.5.0?target=deno' // Use a specific version compatible with Deno
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+// Initialize Stripe (ensure STRIPE_SECRET_KEY is set in Supabase secrets)
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
+  // Stripe Deno runtime requires this config
+  httpClient: Stripe.createFetchHttpClient(),
+  apiVersion: '2023-10-16', // Use a fixed API version
+})
+
+// Initialize Supabase client (ensure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set)
+// IMPORTANT: Use the SERVICE_ROLE_KEY for backend functions that modify data
+const supabaseAdmin = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', // Use Service Role Key for admin actions
+   {
+    auth: {
+      // Prevent Supabase client from persisting session cookies in the function environment
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false
+    }
+  }
+)
+
+// Get the webhook signing secret from environment variables (ensure STRIPE_WEBHOOK_SECRET is set)
+const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
+
+// Define the Price ID for the test plan and the credits to add
+const TEST_PLAN_PRICE_ID = 'price_1RCGMcHqqEp5PbqKlqBheNM9';
+const CREDITS_FOR_TEST_PLAN = 250;
+
+// --- Database Function Call ---
+// Assumes a PostgreSQL function `add_user_credits(p_stripe_customer_id TEXT, p_credits_to_add INT)` exists
+async function addCreditsToUser(stripeCustomerId: string, creditsToAdd: number) {
+  console.log(`Attempting to add ${creditsToAdd} credits for customer ${stripeCustomerId}`);
+  const { data, error } = await supabaseAdmin.rpc('add_user_credits', {
+    p_stripe_customer_id: stripeCustomerId,
+    p_credits_to_add: creditsToAdd,
+  });
+
+  if (error) {
+    console.error('Error calling add_user_credits RPC:', error);
+    throw new Error(`Failed to add credits: ${error.message}`);
+  }
+
+  console.log('Successfully added credits via RPC:', data);
+  return data;
+}
+// --- End Database Function Call ---
+
+
+serve(async (req: Request) => {
+  const signature = req.headers.get('Stripe-Signature')
+  const body = await req.text() // Read body as text for signature verification
+
+  // Handle CORS preflight request (optional but good practice)
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*', // Adjust as needed for security
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Stripe-Signature',
+      },
+    });
+  }
+
+  // Standard headers for responses
+  const responseHeaders = new Headers({
+    'Access-Control-Allow-Origin': '*', // Adjust as needed
+    'Content-Type': 'application/json',
+  });
+
+  if (!signature || !stripeWebhookSecret) {
+    console.error('Missing Stripe signature or webhook secret.')
+    return new Response(JSON.stringify({ error: 'Webhook configuration error.' }), { status: 400, headers: responseHeaders })
+  }
+
+  let event: Stripe.Event;
+
+  try {
+    // Verify the webhook signature
+    event = await stripe.webhooks.constructEventAsync(
+      body,
+      signature,
+      stripeWebhookSecret
+    )
+    console.log(`Received Stripe event: ${event.type}`);
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    console.error(`Webhook signature verification failed: ${errorMessage}`)
+    return new Response(JSON.stringify({ error: `Webhook signature verification failed: ${errorMessage}` }), { status: 400, headers: responseHeaders })
+  }
+
+  // Handle the specific event type
+  if (event.type === 'invoice.payment_succeeded') {
+    const invoice = event.data.object as Stripe.Invoice;
+
+    // Check if it's a subscription payment and has line items
+    if (invoice.subscription && invoice.lines?.data?.length > 0) {
+      const customerId = invoice.customer as string; // Stripe Customer ID
+      const priceId = invoice.lines.data[0].price?.id; // Price ID from the first line item
+
+      console.log(`Processing invoice.payment_succeeded for customer: ${customerId}, price: ${priceId}`);
+
+      if (!customerId || !priceId) {
+         console.error('Missing customer ID or price ID in invoice line item.');
+         return new Response(JSON.stringify({ error: 'Missing customer or price ID.' }), { status: 400, headers: responseHeaders });
+      }
+
+      // Check if the price ID matches the test plan
+      if (priceId === TEST_PLAN_PRICE_ID) {
+        try {
+          // Add credits using the database function
+          await addCreditsToUser(customerId, CREDITS_FOR_TEST_PLAN);
+          console.log(`Successfully added ${CREDITS_FOR_TEST_PLAN} credits for customer ${customerId}`);
+        } catch (dbError: unknown) {
+           const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown database error';
+           console.error(`Database error adding credits for ${customerId}: ${errorMessage}`);
+           // Return 500 so Stripe retries later
+           return new Response(JSON.stringify({ error: `Database update failed: ${errorMessage}` }), { status: 500, headers: responseHeaders });
+        }
+      } else {
+        // Optional: Handle other plans or log that this plan doesn't grant credits
+        console.log(`Invoice paid for a different price ID (${priceId}), no credits added.`);
+      }
+    } else {
+       console.log('Invoice is not for a subscription or has no line items.');
+    }
+  } else {
+    // Handle other event types if needed, or ignore
+    console.log(`Unhandled event type: ${event.type}`)
+  }
+
+  // Acknowledge receipt of the event to Stripe
+  return new Response(JSON.stringify({ received: true }), { status: 200, headers: responseHeaders })
+})
+
+console.log('Stripe webhook handler function started.');
