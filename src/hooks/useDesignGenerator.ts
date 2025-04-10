@@ -45,7 +45,15 @@ export default function useDesignGenerator({
   const [selectedRoomType, setSelectedRoomType] = useState<any | null>(userId ? null : defaultRoomType);
   const [selectedColorTone, setSelectedColorTone] = useState<string | null>(userId ? null : 'palette:neutrals');
   const [selectedView, setSelectedView] = useState<string | null>(userId ? null : 'frontal');
-  const [selectedRenderingType, setSelectedRenderingType] = useState<string | null>(userId ? null : '3d');
+  const [_selectedRenderingType, _setSelectedRenderingType] = useState<string | null>(userId ? null : '3d'); // Renamed state and setter
+
+  // Custom setter for Rendering Type to enforce View Type for 2D
+  const updateRenderingType = (renderingType: string | null) => {
+    _setSelectedRenderingType(renderingType);
+    if (renderingType === '2d') {
+      setSelectedView('top'); // Force 'Top View' when '2D Plan' is selected (Corrected value)
+    }
+  };
 
   const handleImageUpload = async (file: File) => {
     try {
@@ -76,9 +84,9 @@ export default function useDesignGenerator({
 
   // Wrap handleGenerate in useCallback to ensure stable reference if passed down
   const handleGenerate = useCallback(async (selectedObjects: UserObject[] = []) => {
-    // Updated condition to use selectedColorTone
+    // Updated condition to use selectedColorTone and fixed rendering type reference
     if (!uploadedImage || !selectedStyle || !selectedRoomType ||
-        !selectedColorTone || !selectedView || !selectedRenderingType) {
+        !selectedColorTone || !selectedView || !_selectedRenderingType) {
       toast.error('Please complete all design selections', {
         position: 'top-center',
         duration: 4000
@@ -105,7 +113,7 @@ export default function useDesignGenerator({
         selectedStyle.name,
         selectedRoomType.name,
         selectedColorTone, // Pass the full string ID ('palette:name' or 'color:name')
-        selectedRenderingType,
+        _selectedRenderingType, // Fixed reference
         selectedView,
         userId,
         selectedObjects // Pass selected objects
@@ -158,16 +166,16 @@ export default function useDesignGenerator({
     } finally {
       setIsGenerating(false);
     }
-  // Add dependencies for useCallback
+  // Add dependencies for useCallback, fixed rendering type reference
   }, [
-    uploadedImage, 
-    selectedStyle, 
-    selectedRoomType, 
-    selectedColorTone, 
-    selectedView, 
-    selectedRenderingType, 
-    userId, 
-    setIsLoginModalOpen, 
+    uploadedImage,
+    selectedStyle,
+    selectedRoomType,
+    selectedColorTone,
+    selectedView,
+    _selectedRenderingType, // Fixed reference
+    userId,
+    setIsLoginModalOpen,
     setPendingGenerate
   ]);
 
@@ -180,7 +188,7 @@ export default function useDesignGenerator({
     selectedRoomType,
     selectedColorTone, // Return renamed state
     selectedView,
-    selectedRenderingType,
+    selectedRenderingType: _selectedRenderingType, // Fixed reference in return object
     handleImageUpload,
     resetUpload,
     handleGenerate,
@@ -188,6 +196,6 @@ export default function useDesignGenerator({
     setSelectedColorTone, // Return renamed setter
     setSelectedView,
     setSelectedStyle,
-    setSelectedRenderingType
+    setSelectedRenderingType: updateRenderingType // Return the custom setter
   };
 }

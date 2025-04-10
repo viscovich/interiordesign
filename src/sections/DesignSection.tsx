@@ -93,6 +93,7 @@ export default function DesignSection({
               <ViewTypeSelector
                 value={selectedView || ''}
                 onChange={onViewChange}
+                renderingType={selectedRenderingType} // Pass renderingType prop
               />
               {/* Moved RoomTypeSelector to be always visible */}
               <RoomTypeSelector
