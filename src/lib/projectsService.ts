@@ -275,7 +275,7 @@ export async function regenerateImageWithSubstitution(
   viewType?: string | null,
   renderingType?: string | null,
   colorTone?: string | null
-): Promise<string> {
+): Promise<{ imageData: string; detectedObjects: string[] }> { // <-- Changed return type
 
   // Project is now guaranteed by the signature, removed the null check below
   // if (!project) {
@@ -335,7 +335,8 @@ export async function regenerateImageWithSubstitution(
 
     // 2. Call the Gemini API using the internal function
     // Pass the *original* image URL as the base
-    const { imageData } = await _callGeminiApi(
+    // Capture the full result including detectedObjects
+    const { imageData, detectedObjects } = await _callGeminiApi(
         prompt,
         originalImageUrl, // Use the current image URL passed to the function
         objectImageUrls   // Pass only the replacement object URL if applicable
@@ -346,7 +347,8 @@ export async function regenerateImageWithSubstitution(
     }
 
     console.log('[regenerate] Successfully generated new image variant.');
-    return imageData;
+    // Return both image data and detected objects
+    return { imageData, detectedObjects };
 
   } catch (error) {
     console.error('Error generating new image variant:', error);

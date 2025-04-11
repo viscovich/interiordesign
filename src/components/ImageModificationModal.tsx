@@ -4,7 +4,8 @@ import {
   getImageObjects,
   getUserObjects,
   regenerateImageWithSubstitution,
-  createProject
+  createProject,
+  saveDetectedObjects // <-- Added import
 } from '../lib/projectsService';
 import { useAuth } from '../lib/auth';
 import toast from 'react-hot-toast'; // Import toast
@@ -232,14 +233,15 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
     setIsLoadingGeneration(true);
     setError(null);
     try {
-        let newImageUrl;
-        
+        let regenerationResult; // Changed variable name
+
         if (isObjectReplacement) {
             // Ensure project is not null before calling
             if (!project) {
                 throw new Error("Project data is missing for regeneration.");
             }
-            newImageUrl = await regenerateImageWithSubstitution(
+            // Capture the full result object
+            regenerationResult = await regenerateImageWithSubstitution(
                 project, // Pass project first
                 currentImageUrl,
                 selectedReplacementObject,
@@ -254,7 +256,8 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
                 throw new Error("Project data is missing for regeneration.");
             }
             // Generate new variant with different parameters
-            newImageUrl = await regenerateImageWithSubstitution(
+            // Capture the full result object
+            regenerationResult = await regenerateImageWithSubstitution(
                 project, // Pass project first
                 currentImageUrl,
                 null, // No replacement object
@@ -265,11 +268,14 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
             );
         }
 
+        // Extract imageData and detectedObjects from the result
+        const { imageData: newImageUrl, detectedObjects } = regenerationResult;
+
         // Create new project with the variant
         const newProject = await createProject(
           project.user_id,
           project.original_image_url, // Keep original image
-          newImageUrl,
+          newImageUrl, // Use extracted imageData
           project.style,
           project.room_type,
           project.description, // Keep original description
@@ -277,6 +283,15 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
           selectedColorTone || project.color_tone, // New color tone
           currentImageUrl // Pass the input image URL for variant creation
         );
+
+        // Save the detected objects for the new project
+        if (newProject && detectedObjects && detectedObjects.length > 0) {
+          await saveDetectedObjects(newProject.id, newProject.user_id, detectedObjects);
+          console.log(`Saved ${detectedObjects.length} objects for new project ${newProject.id}`);
+        } else {
+          console.log(`No objects detected or project creation failed, skipping object save for new project.`);
+        }
+
 
         // Success!
         setCurrentImageUrl(newImageUrl); // Optional: update internal state if needed before close

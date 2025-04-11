@@ -155,20 +155,45 @@ export default function useDesignGenerator({
       return project.id;
     } catch (error: unknown) {
       console.error('Generation failed:', error);
-      let errorMessage = 'Failed to generate design';
+      let errorMessage = 'Failed to generate design. Please try again later.'; // Default user-friendly message
       if (error instanceof Error) {
         // Check specifically for the insufficient credits error
         if (error.message.includes('Insufficient credits')) {
           errorMessage = 'Your credit is not enough to proceed.';
-        } else {
-          // Use the original error message for other errors
-          errorMessage = error.message;
+        // Check for API service unavailable errors (like 503)
+        } else if (error.message.includes('Service Unavailable') || error.message.includes('503')) {
+           errorMessage = 'The design service is temporarily unavailable. Please try again later.';
         }
+        // Optionally, you could add more specific checks here
+        // else {
+        //   // Keep a more generic message for other types of errors
+        //   // errorMessage = error.message; // Or keep the default
+        // }
       }
+      // Dismiss any loading toast before showing the error
+      toast.dismiss(loadingToast);
       toast.error(errorMessage, {
         position: 'top-center',
-        duration: 4000
+        duration: 5000 // Increased duration slightly
       });
+
+      // --- Refund Credits on Failure ---
+      // Check if userId exists before attempting refund
+      if (userId) {
+        try {
+          // Assuming useCredit accepts negative values for refunds
+          await useCredit(userId, -5);
+          console.log('[handleGenerate] Credits refunded due to generation failure.');
+          // Optionally notify the user about the refund, though the error message might suffice
+          // toast.info('Credits refunded due to generation error.', { position: 'top-center' });
+        } catch (refundError) {
+          console.error('Failed to refund credits:', refundError);
+          // Handle refund error (e.g., log it, maybe notify admin)
+          // Don't necessarily show another error to the user unless critical
+        }
+      }
+      // ---------------------------------
+
       return false;
     } finally {
       setIsGenerating(false);

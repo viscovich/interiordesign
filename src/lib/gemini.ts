@@ -155,7 +155,8 @@ export function getNewGenerationPrompt(
 - Apply the new visual settings (rendering style, viewpoint, and/or color palette) while keeping the design consistent with the existing one.${objectsInstruction}
 
 **Deliverable:**
-- Generate **one updated image** of the same room design, reflecting the requested changes above in style, color tone, viewpoint, or rendering type.`;
+- **First, list the essential furniture and appliances visible in the updated image.** Use the same format as the initial generation: a plain list starting each item with '- '.
+- **Then, generate one updated image** of the same room design, reflecting the requested changes above in style, color tone, viewpoint, or rendering type.`;
 }
 
 
