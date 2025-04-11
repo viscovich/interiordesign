@@ -36,7 +36,8 @@ function App() {
     setIsLoginModalOpen: modals.setIsLoginModalOpen,
     setPendingGenerate: modals.setPendingGenerate
   });
-  const objects = useUserObjects(user?.id, activeSection);
+  // Remove activeSection argument from useUserObjects call
+  const objects = useUserObjects(user?.id); 
 
   // Removed duplicate handleNewDesign
 

@@ -3,14 +3,16 @@ import { UserObject } from '../lib/userObjectsService';
 import { getUserObjects, deleteUserObject } from '../lib/userObjectsService';
 import toast from 'react-hot-toast';
 
-export default function useUserObjects(userId: string | undefined, activeSection: string) {
+// Remove unused activeSection parameter
+export default function useUserObjects(userId: string | undefined) { 
   const [userObjects, setUserObjects] = useState<UserObject[]>([]);
   const [selectedObjects, setSelectedObjects] = useState<string[]>([]);
   const [loadingObjects, setLoadingObjects] = useState(false);
 
   useEffect(() => {
     const fetchObjects = async () => {
-      if (userId && activeSection === 'objects') {
+      // Fetch objects whenever userId is available, not just in 'objects' section
+      if (userId) { 
         setLoadingObjects(true);
         try {
           const objects = await getUserObjects(userId);
@@ -24,7 +26,8 @@ export default function useUserObjects(userId: string | undefined, activeSection
       }
     };
     fetchObjects();
-  }, [userId, activeSection]);
+  // Dependency array updated to only rely on userId
+  }, [userId]); 
 
   const handleDeleteObject = async (id: string) => {
     if (!userId) return;

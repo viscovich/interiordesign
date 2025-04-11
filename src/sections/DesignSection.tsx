@@ -29,7 +29,7 @@ interface DesignSectionProps {
   onViewChange: (view: string) => void;
   onRenderingTypeChange: (renderingType: string) => void;
   isAuthenticated: boolean;
-  hasObjects: boolean;
+  hasObjects: boolean; // Added hasObjects prop
   userId?: string | null;
   // Add a prop for selected objects if needed from parent, or manage locally
 }
@@ -51,6 +51,7 @@ export default function DesignSection({
   onViewChange,
   onRenderingTypeChange,
   isAuthenticated,
+  hasObjects, // Destructure hasObjects
   userId,
 }: DesignSectionProps) {
   const modals = useModals();
@@ -117,11 +118,13 @@ export default function DesignSection({
                 selectedValue={selectedColorTone || undefined} // Use renamed prop
                 onSelect={onColorToneSelect} // Use renamed handler
               />
-              {/* ObjectSelector */}
-              <ObjectSelector 
-                onSelectionChange={handleObjectSelectionChange}
-                userId={isAuthenticated ? userId || null : null}
-              />
+              {/* ObjectSelector - Conditionally render based on auth and objects */}
+              {isAuthenticated && hasObjects && (
+                <ObjectSelector
+                  onSelectionChange={handleObjectSelectionChange}
+                  userId={userId || null} // Pass userId directly
+                />
+              )}
 
               {/* Generate Button and Validation */}
               <div className="mb-2 pt-4"> {/* Added padding top */}

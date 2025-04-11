@@ -9,7 +9,8 @@ interface ObjectSelectorProps {
 }
 
 export const ObjectSelector: React.FC<ObjectSelectorProps> = ({ onSelectionChange, userId }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  // Start with the accordion open for debugging
+  const [isOpen, setIsOpen] = useState(true); 
   const [searchTerm, setSearchTerm] = useState('');
   const [objects, setObjects] = useState<UserObject[]>([]);
   const [selectedObjects, setSelectedObjects] = useState<UserObject[]>([]);
