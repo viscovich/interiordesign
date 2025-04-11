@@ -1,6 +1,8 @@
 import { supabase } from './supabase';
 import { ImageObject, UserObject, PaginatedProjects, Project } from './projectsService.d'; // Import all types
 import { uploadImage } from './storage'; // Corrected import path and function name
+import { getNewGenerationPrompt, _callGeminiApi } from './gemini'; // Import necessary functions
+import { useCredit } from './userService'; // Import useCredit
 
 // Helper function to convert File to Base64
 const fileToBase64 = (file: File): Promise<string> => {
@@ -88,13 +90,17 @@ export async function createProject(
   roomType: string,
   description: string | null = null,
   viewType: string | null = null,
-  colorTone: string | null = null
+  colorTone: string | null = null,
+  inputImageUrlForVariant?: string | null // New optional parameter
 ) {
+  // Determine the correct URL to save as the "original" for this record
+  const urlToSaveAsOriginal = inputImageUrlForVariant ?? originalImageUrl;
+
   const { data, error } = await supabase
     .from('projects')
     .insert({
       user_id: userId,
-      original_image_url: originalImageUrl,
+      original_image_url: urlToSaveAsOriginal, // Use the determined URL
       generated_image_url: generatedImageUrl,
       style,
       room_type: roomType,
@@ -262,61 +268,89 @@ export async function addUserObject(
 // --- Function for Regeneration ---
 
 export async function regenerateImageWithSubstitution(
+  project: Project, // Moved project parameter first
   originalImageUrl: string,
   replacementObject: UserObject | null,
   objectNameToReplace: string | null,
   viewType?: string | null,
   renderingType?: string | null,
-  colorTone?: string | null,
-  project?: Project | null
+  colorTone?: string | null
 ): Promise<string> {
 
-  if (replacementObject && objectNameToReplace) {
+  // Project is now guaranteed by the signature, removed the null check below
+  // if (!project) {
+  //     throw new Error('Project data is required for regeneration.');
+  // }
+  if (!project.user_id) {
+      throw new Error('Project data is required for regeneration.');
+  }
+  if (!project.user_id) {
+      throw new Error('User ID is missing from project data.');
+  }
+
+  // Deduct credits for this generation attempt
+  await useCredit(project.user_id, 5); // Assuming 5 credits per variant/replacement
+
+  const isObjectReplacement = !!(replacementObject && objectNameToReplace);
+  const objectImageUrls: string[] = [];
+
+  if (isObjectReplacement) {
     // Object replacement flow
-    if (!replacementObject.asset_url) {
-      throw new Error('Replacement object is missing asset URL.');
+    const replacementUrl = replacementObject.thumbnail_url || replacementObject.asset_url;
+    if (!replacementUrl) {
+      console.warn(`Replacement object ${replacementObject.id} is missing asset/thumbnail URL.`);
+      // Decide if this is an error or just proceed without the image
+      // throw new Error('Replacement object is missing image URL.');
+    } else {
+        objectImageUrls.push(replacementUrl);
     }
-    console.log('Replacing object with params:', {
+    console.log('[regenerate] Replacing object with params:', {
       objectNameToReplace,
-      replacementObject,
-      viewType,
-      renderingType,
-      colorTone
+      replacementObjectId: replacementObject.id,
+      newViewType: viewType,
+      newRenderingType: renderingType,
+      newColorTone: colorTone
     });
   } else {
-    // Generate new variant with different parameters
-    console.log('Generating new variant with params:', {
-      viewType,
-      renderingType, 
-      colorTone
+    // Generate new variant with different parameters (no object replacement)
+    console.log('[regenerate] Generating new variant with params:', {
+      newViewType: viewType,
+      newRenderingType: renderingType,
+      newColorTone: colorTone
     });
   }
 
   try {
-    // Import the gemini service dynamically to avoid circular dependencies
-    const { generateInteriorDesign } = await import('./gemini');
-    
-    if (!project) {
-      throw new Error('Project data is required for generation');
-    }
+    // 1. Generate the specific prompt for regeneration/variant
+    const prompt = getNewGenerationPrompt(
+      project.style, // Base style from the original project
+      renderingType || '3d', // New rendering type (default to 3d if null)
+      project.room_type, // Room type from the original project
+      (colorTone || project.color_tone) ?? undefined, // Convert null to undefined
+      (viewType || project.view_type) ?? undefined,   // Convert null to undefined
+      isObjectReplacement // Include object instruction if replacing
+    );
 
-    const { imageData } = await generateInteriorDesign(
-      originalImageUrl,
-      project.style,
-      project.room_type,
-      colorTone || project.color_tone || '',
-      renderingType || '3d',
-      viewType || 'frontal',
-      project.user_id
+    console.log(`[regenerate] Generated prompt: "${prompt.substring(0, 100)}..."`);
+
+    // 2. Call the Gemini API using the internal function
+    // Pass the *original* image URL as the base
+    const { imageData } = await _callGeminiApi(
+        prompt,
+        originalImageUrl, // Use the current image URL passed to the function
+        objectImageUrls   // Pass only the replacement object URL if applicable
     );
 
     if (!imageData) {
-      throw new Error('Image generation failed - no image data returned');
+      throw new Error('Image generation failed - no image data returned from _callGeminiApi');
     }
-    
+
+    console.log('[regenerate] Successfully generated new image variant.');
     return imageData;
+
   } catch (error) {
     console.error('Error generating new image variant:', error);
-    throw new Error('Failed to generate new image variant');
+    // Rethrow or handle specific errors
+    throw new Error(`Failed to generate new image variant: ${error instanceof Error ? error.message : String(error)}`);
   }
 }

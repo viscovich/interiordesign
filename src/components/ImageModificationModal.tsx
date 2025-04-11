@@ -84,12 +84,30 @@ const SubstitutionPanel: React.FC<SubstitutionPanelProps> = ({ selectedObjectNam
     // We need a reliable way to map the recognized 'object_name' (e.g., "Refrigerator")
     // to the user-defined 'object_type' (e.g., "Refrigerator").
     // For now, we'll assume a direct match or a mapping function exists.
-    // Let's refine the assumption: We filter user library by object_type that matches the selectedObjectName.
-    const objectTypeToFilter = selectedObjectName; // This is the weak point - needs better mapping if names differ from types
-    const compatibleObjects = userObjectLibrary.filter(obj => obj.object_type.toLowerCase() === objectTypeToFilter.toLowerCase());
+    // --- Filtering Logic ---
+    // Filter user library based on keyword matching in type or name.
+    const compatibleObjects = userObjectLibrary.filter(obj => {
+        if (!selectedObjectName) return false;
+
+        // 1. Extract keyword (e.g., last word, lowercase)
+        const nameParts = selectedObjectName.toLowerCase().split(' ');
+        const keyword = nameParts[nameParts.length - 1];
+
+        // Handle cases like "Area rug" -> "rug"
+        const keywordSingular = keyword.endsWith('s') ? keyword.slice(0, -1) : keyword; // Basic singularization
+
+        // 2. Apply new filter logic (check type against keyword/singular, check name contains keyword/singular)
+        const typeMatch = obj.object_type.toLowerCase() === keyword || obj.object_type.toLowerCase() === keywordSingular;
+        const nameMatch = obj.object_name.toLowerCase().includes(keyword) || obj.object_name.toLowerCase().includes(keywordSingular);
+
+        return typeMatch || nameMatch;
+    });
 
     // Find the selected replacement object details to display dimensions
     const currentReplacementDetails = userObjectLibrary.find(obj => obj.id === selectedReplacementObject?.id);
+
+    // Determine the type/keyword being filtered for the message
+    const keywordForDisplay = selectedObjectName ? selectedObjectName.toLowerCase().split(' ').pop() : 'selected type';
 
     return (
         <div className="w-72 p-4 border-l border-gray-200 bg-gray-50 overflow-y-auto flex-shrink-0 flex flex-col"> {/* Fixed width */}
@@ -105,7 +123,7 @@ const SubstitutionPanel: React.FC<SubstitutionPanelProps> = ({ selectedObjectNam
 
             <h3 className="text-sm font-medium mb-2 text-gray-600">REPLACE WITH</h3>
             {compatibleObjects.length === 0 && (
-                <p className="text-xs text-gray-500">No compatible objects of type '{objectTypeToFilter}' found in your library. You can upload compatible objects via the main dashboard.</p>
+                 <p className="text-xs text-gray-500">No compatible objects matching '{keywordForDisplay}' found in your library. You can upload compatible objects via the main dashboard.</p>
             )}
             <div className="grid grid-cols-2 gap-3 flex-grow"> {/* Grid takes remaining space */}
                 {compatibleObjects.map((obj) => (
@@ -217,25 +235,33 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
         let newImageUrl;
         
         if (isObjectReplacement) {
+            // Ensure project is not null before calling
+            if (!project) {
+                throw new Error("Project data is missing for regeneration.");
+            }
             newImageUrl = await regenerateImageWithSubstitution(
+                project, // Pass project first
                 currentImageUrl,
                 selectedReplacementObject,
                 selectedObjectName,
                 selectedViewType || project.view_type,
                 selectedRenderingType,
                 selectedColorTone || project.color_tone,
-                project
             );
         } else {
+            // Ensure project is not null before calling
+            if (!project) {
+                throw new Error("Project data is missing for regeneration.");
+            }
             // Generate new variant with different parameters
             newImageUrl = await regenerateImageWithSubstitution(
+                project, // Pass project first
                 currentImageUrl,
-                null,
-                null,
+                null, // No replacement object
+                null, // No object name to replace
                 selectedViewType || project.view_type,
                 selectedRenderingType,
                 selectedColorTone || project.color_tone,
-                project
             );
         }
 
@@ -248,9 +274,10 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
           project.room_type,
           project.description, // Keep original description
           selectedViewType || project.view_type, // New view type
-          selectedColorTone || project.color_tone // New color tone
+          selectedColorTone || project.color_tone, // New color tone
+          currentImageUrl // Pass the input image URL for variant creation
         );
-        
+
         // Success!
         setCurrentImageUrl(newImageUrl); // Optional: update internal state if needed before close
         setSelectedObjectName(null);

@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'; // Added useEffect
 import { generateInteriorDesign } from '../lib/gemini';
 import { uploadImage } from '../lib/storage';
 import { createProject, saveDetectedObjects } from '../lib/projectsService';
+import { useCredit } from '../lib/userService'; // Import useCredit
 import { UserObject } from '../lib/userObjectsService'; // Added UserObject import
 import toast from 'react-hot-toast';
 
@@ -109,6 +110,10 @@ export default function useDesignGenerator({
 
     setIsGenerating(true);
     try {
+      // Deduct credits before calling the generation function
+      await useCredit(userId, 5); // Assuming 5 credits per generation
+      console.log('[handleGenerate] Credits deducted.');
+
       toast.dismiss(loadingToast);
       const { description, imageData, detectedObjects } = await generateInteriorDesign(
         uploadedImage,
