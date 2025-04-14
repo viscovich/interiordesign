@@ -4,7 +4,8 @@ import type { User } from '@supabase/supabase-js';
 import { getProjectsByUser, deleteProject } from '../lib/projectsService';
 import toast from 'react-hot-toast';
 import { ProjectModal } from './ProjectModal';
-import { TrashIcon, PencilSquareIcon, EyeIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, PencilSquareIcon, EyeIcon, PhotoIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import ImageFullscreenModal from './ImageFullscreenModal';
 
 interface ProjectsListProps {
   user: User | null;
@@ -15,6 +16,7 @@ interface ProjectsListProps {
 
 export function ProjectsList({ user, onModifyProject, refreshKey, newProjectId }: ProjectsListProps) {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [fullscreenImageUrl, setFullscreenImageUrl] = useState<string | null>(null);
   const [paginatedProjects, setPaginatedProjects] = useState<PaginatedProjects>({
     projects: [],
     total: 0,
@@ -76,6 +78,31 @@ export function ProjectsList({ user, onModifyProject, refreshKey, newProjectId }
     setPaginatedProjects(prev => ({ ...prev, page: newPage }));
   };
 
+  // Download image utility
+  const handleDownloadImage = async (imageUrl: string, filename: string) => {
+    try {
+      // Try fetch as blob (works for same-origin or CORS-enabled)
+      const response = await fetch(imageUrl, { mode: "cors" });
+      if (!response.ok) throw new Error("Network error");
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+      }, 100);
+    } catch (error) {
+      // Fallback: open image in new tab for manual download
+      window.open(imageUrl, "_blank", "noopener");
+      toast("Immagine aperta in una nuova scheda per il download manuale.", { icon: "⬇️" });
+    }
+  };
+
   return (
     <div className="projects-list">
       <h2 className="text-2xl font-bold mb-6">My Projects</h2>
@@ -89,19 +116,23 @@ export function ProjectsList({ user, onModifyProject, refreshKey, newProjectId }
                 key={project.id}
                 className="relative p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                <div
-                  className="cursor-pointer"
-                  onClick={() => setSelectedProject(project)}
-                >
-                  <div className="flex flex-col space-y-2">
-                    {(project.thumbnail_url || project.generated_image_url) && (
-                      <img
-                        src={project.thumbnail_url || project.generated_image_url || ''} // Use thumbnail, fallback to generated, then empty string
-                        alt={`Generated ${project.room_type}`}
-                        className="w-full h-48 object-cover rounded-lg mb-2"
-                        loading="lazy" // Add lazy loading for potentially many images
-                      />
-                    )}
+                <div className="flex flex-col space-y-2">
+                  {(project.thumbnail_url || project.generated_image_url) && (
+                    <img
+                      src={project.thumbnail_url || project.generated_image_url || ''}
+                      alt={`Generated ${project.room_type}`}
+                      className="w-full h-48 object-cover rounded-lg mb-2 cursor-pointer"
+                      loading="lazy"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFullscreenImageUrl(project.generated_image_url || project.original_image_url || '');
+                      }}
+                    />
+                  )}
+                  <div
+                    className="cursor-pointer"
+                    onClick={() => setSelectedProject(project)}
+                  >
                     <div className="space-y-1">
                       <div className="flex justify-between items-center">
                         <h3 className="font-bold text-lg">{project.room_type}</h3>
@@ -115,6 +146,30 @@ export function ProjectsList({ user, onModifyProject, refreshKey, newProjectId }
                             aria-label="View project details"
                           >
                             <EyeIcon className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFullscreenImageUrl(project.generated_image_url || project.original_image_url || '');
+                            }}
+                            className="p-1 text-gray-400 hover:text-green-600 transition-colors"
+                            aria-label="View image fullscreen"
+                          >
+                            <PhotoIcon className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDownloadImage(
+                                project.generated_image_url || '',
+                                `${project.room_type || 'project'}_generated.jpg`
+                              );
+                            }}
+                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                            aria-label="Download generated image"
+                            disabled={!project.generated_image_url}
+                          >
+                            <ArrowDownTrayIcon className="w-5 h-5" />
                           </button>
                           <button
                             onClick={(e) => {
@@ -167,6 +222,12 @@ export function ProjectsList({ user, onModifyProject, refreshKey, newProjectId }
         project={selectedProject}
         onClose={() => setSelectedProject(null)}
       />
+      {fullscreenImageUrl && (
+        <ImageFullscreenModal
+          imageUrl={fullscreenImageUrl}
+          onClose={() => setFullscreenImageUrl(null)}
+        />
+      )}
     </div>
   );
 }

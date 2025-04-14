@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import type { Project } from '../lib/projectsService.d';
 import { ArrowDownTrayIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
@@ -12,6 +12,12 @@ interface ProjectModalProps {
 
 export function ProjectModal({ project, onClose }: ProjectModalProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (project && scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
+  }, [project]);
 
   const handleDownload = async (imageUrl: string, filename: string) => {
     try {
@@ -55,101 +61,65 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
 
           <motion.div
             key="modal-content"
-            initial={{ scale: 0.95, opacity: 0 }}
+            initial={{ scale: 0.98, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            // Main container is flex-col, handles max-height and overflow for the description
-            className="bg-white rounded-lg max-w-7xl w-full max-h-[90vh] overflow-hidden shadow-xl flex flex-col"
+            exit={{ scale: 0.98, opacity: 0 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="bg-white rounded-lg max-w-5xl w-full max-h-[95vh] overflow-hidden shadow-2xl flex flex-col"
           >
-            {/* Top Row: Title/Date + Buttons */}
-            <div className="flex justify-between items-start p-8 flex-shrink-0">
-              {/* Left side: Title/Style/Date */}
-              <div className="mb-0"> {/* Removed mb-6 */}
-                <h1 className="text-2xl font-bold text-gray-900">{project.room_type}</h1>
-                  {/* Changed p to h2 */}
-                  <h2 className="text-base text-gray-500">{project.style}</h2>
-                  <p className="text-gray-500 text-sm mt-1">
-                    {project.created_at &&
-                      new Date(project.created_at).toLocaleDateString()}
-                  </p>
-              </div>
-              {/* Right side: Download Buttons */}
-              <div className="flex justify-end gap-3 flex-wrap">
-                <button
-                  onClick={() =>
-                      handleDownload(
-                        project.original_image_url,
-                        `${project.room_type}_original.jpg`
-                      )
-                    }
-                    disabled={!project.original_image_url}
-                    // Updated styling: bg-black, text-white, rounded-lg
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-                      project.original_image_url
-                        ? 'bg-black hover:bg-gray-800 text-white' // Adjusted hover
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
-                    <ArrowDownTrayIcon className="h-5 w-5" />
-                    Download Original
-                  </button>
-                  <button
-                    onClick={() =>
-                      project.generated_image_url &&
-                      handleDownload(
-                        project.generated_image_url,
-                        `${project.room_type}_generated.jpg`
-                      )
-                    }
-                    disabled={!project.generated_image_url}
-                    // Updated styling: bg-black, text-white, rounded-lg
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-                      project.generated_image_url
-                        ? 'bg-black hover:bg-gray-800 text-white' // Adjusted hover and color
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
-                    <ArrowDownTrayIcon className="h-5 w-5" />
-                    Download Generated
-                  </button>
-                </div>
-
-            </div>
-
-            {/* Image Section */}
-            <div className="px-8 mb-4 flex-shrink-0">
-              {project.original_image_url && project.generated_image_url ? (
-                <div className="overflow-hidden">
-                  <ImageComparison
-                    originalImage={project.original_image_url}
-                      generatedImage={project.generated_image_url}
-                    />
-                  </div>
-                ) : (
-                  <div className="bg-gray-100 rounded-lg p-8 text-center">
-                    <p className="text-gray-500">Image comparison not available</p>
-                  </div>
-                )}
-
-            </div>
-
-            {/* Description Section (Scrollable) */}
-            <div className="flex-1 overflow-y-auto px-8 pb-8">
+            {/* Scrollable description with auto-scroll to top on open */}
+            <div
+              className="flex-1 flex flex-col items-center px-4 py-0 overflow-y-auto"
+              ref={scrollRef}
+            >
               {project.description && (
-                <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
-                  <h3 className="text-lg font-semibold p-4 pb-2 text-gray-800">Description</h3>
-                  <div className="p-4 pt-0">
-                      <div className="prose max-w-none text-gray-700 leading-relaxed">
-                        <ReactMarkdown>{project.description}</ReactMarkdown>
-                      </div>
-                    </div>
+                <div className="bg-gray-50 rounded-lg border border-gray-200 w-full max-w-5xl mx-auto px-12 py-8 shadow-lg">
+                  <div className="prose max-w-none text-gray-700 leading-relaxed text-lg">
+<ReactMarkdown>
+  {(() => {
+    let desc = project.description || "";
+    // Rimuovi eventuali spazi iniziali/finali e linee vuote in eccesso
+    desc = desc.trim().replace(/\n{3,}/g, "\n\n");
+    // Correggi "** " (due asterischi seguiti da spazio) in "**" per il markdown bold
+    desc = desc.replace(/(\*\*)\s+/g, "$1");
+    // Assicura che inizi con una riga vuota per il markdown
+    if (desc && !desc.startsWith('\n')) desc = '\n' + desc;
+    return desc;
+  })()}
+</ReactMarkdown>
                   </div>
+                </div>
               )}
             </div>
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+
+// AccordionDescription component
+function AccordionDescription({ description }: { description: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="bg-gray-50 rounded-lg border border-gray-200">
+      <button
+        className="w-full flex justify-between items-center p-4 pb-2 text-gray-800 text-lg font-semibold focus:outline-none"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        Description
+        <span className="ml-2">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div className="p-4 pt-0 max-h-60 overflow-y-auto">
+          <div className="prose max-w-none text-gray-700 leading-relaxed">
+            <ReactMarkdown>{description}</ReactMarkdown>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
