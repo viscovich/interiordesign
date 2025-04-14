@@ -94,11 +94,12 @@ export function ProjectsList({ user, onModifyProject, refreshKey, newProjectId }
                   onClick={() => setSelectedProject(project)}
                 >
                   <div className="flex flex-col space-y-2">
-                    {project.generated_image_url && (
-                      <img 
-                        src={project.generated_image_url} 
+                    {(project.thumbnail_url || project.generated_image_url) && (
+                      <img
+                        src={project.thumbnail_url || project.generated_image_url || ''} // Use thumbnail, fallback to generated, then empty string
                         alt={`Generated ${project.room_type}`}
                         className="w-full h-48 object-cover rounded-lg mb-2"
+                        loading="lazy" // Add lazy loading for potentially many images
                       />
                     )}
                     <div className="space-y-1">

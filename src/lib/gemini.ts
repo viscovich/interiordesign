@@ -166,7 +166,7 @@ async function _callGeminiApi(
   mainImageUrl: string,
   objectImageUrls: string[] = []
 ): Promise<{ description: string; imageData: string; detectedObjects: string[] }> {
-  console.log(`[_callGeminiApi] Calling Gemini with prompt starting: "${prompt.substring(0, 100)}..." and ${objectImageUrls.length} object images.`);
+  console.log(`[_callGeminiApi] Calling Gemini with prompt starting: "${prompt.substring(0, 3000)}..." and ${objectImageUrls.length} object images.`);
 
   const model = genAI.getGenerativeModel({
     model: "gemini-2.0-flash-exp-image-generation",

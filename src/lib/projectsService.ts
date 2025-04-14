@@ -91,6 +91,7 @@ export async function createProject(
   description: string | null = null,
   viewType: string | null = null,
   colorTone: string | null = null,
+  thumbnailUrl: string, // Added thumbnail URL parameter
   inputImageUrlForVariant?: string | null // New optional parameter
 ) {
   // Determine the correct URL to save as the "original" for this record
@@ -106,7 +107,8 @@ export async function createProject(
       room_type: roomType,
       description,
       view_type: viewType,
-      color_tone: colorTone
+      color_tone: colorTone,
+      thumbnail_url: thumbnailUrl // Added thumbnail URL to insert
     })
     .select()
     .single();

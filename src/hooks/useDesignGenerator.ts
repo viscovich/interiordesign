@@ -6,6 +6,39 @@ import { useCredit } from '../lib/userService'; // Import useCredit
 import { UserObject } from '../lib/userObjectsService'; // Added UserObject import
 import toast from 'react-hot-toast';
 
+// Helper function to generate thumbnail using Canvas
+const generateThumbnail = (
+  imageDataUrl: string,
+  targetWidth: number = 400, // Increased target width to 400px
+  quality: number = 0.8
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const aspectRatio = img.height / img.width;
+      const targetHeight = targetWidth * aspectRatio;
+
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        return reject(new Error('Could not get canvas context'));
+      }
+
+      ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+      resolve(canvas.toDataURL('image/jpeg', quality)); // Use JPEG for smaller size
+    };
+    img.onerror = (error) => {
+      console.error('Error loading image for thumbnail generation:', error);
+      reject(error);
+    };
+    img.src = imageDataUrl;
+  });
+};
+
+
 interface UseDesignGeneratorProps {
   userId: string | undefined;
   setIsLoginModalOpen: (isOpen: boolean) => void;
@@ -126,10 +159,36 @@ export default function useDesignGenerator({
         selectedObjects // Pass selected objects
       );
 
-      const generatedImageUrl = await uploadImage(
-        imageData,
-        `generated/${Date.now()}.jpg`
-      );
+      // --- Thumbnail Generation and Upload ---
+      let thumbnailUrl = ''; // Initialize thumbnail URL
+      const timestamp = Date.now();
+      const baseFileName = `${timestamp}.jpg`;
+      const fullImagePath = `generated/${baseFileName}`;
+      const thumbnailPath = `thumbnails/generated/${baseFileName}`;
+
+      try {
+        const thumbnailDataUrl = await generateThumbnail(imageData);
+        // Upload both images in parallel for efficiency
+        const [generatedImageUrlResult, thumbnailUrlResult] = await Promise.all([
+          uploadImage(imageData, fullImagePath),
+          uploadImage(thumbnailDataUrl, thumbnailPath)
+        ]);
+        thumbnailUrl = thumbnailUrlResult; // Store the thumbnail URL
+        console.log('Uploaded full image:', generatedImageUrlResult);
+        console.log('Uploaded thumbnail:', thumbnailUrl);
+      } catch (uploadError) {
+        console.error("Error during image/thumbnail upload:", uploadError);
+        // Decide how to handle: proceed without thumbnail? Show error?
+        // For now, let's proceed but log the error
+        toast.error('Failed to generate or upload image thumbnail.', { position: 'top-center' });
+        // Still upload the main image if thumbnail failed
+        const generatedImageUrl = await uploadImage(imageData, fullImagePath);
+        thumbnailUrl = generatedImageUrl; // Fallback: use main image URL if thumbnail fails? Or null? Let's use main for now.
+      }
+      // --- End Thumbnail Logic ---
+
+      // Use the URL from the upload result (potentially just the main image if thumbnail failed)
+      const generatedImageUrl = await uploadImage(imageData, fullImagePath); // This might be redundant if Promise.all succeeded, but safe fallback
 
       const project = await createProject(
         userId,
@@ -139,7 +198,8 @@ export default function useDesignGenerator({
         selectedRoomType.name,
         description,
         selectedView,
-        selectedColorTone // Pass the full string ID
+        selectedColorTone, // Pass the full string ID
+        thumbnailUrl // Pass the generated thumbnail URL
       );
 
       if (detectedObjects && detectedObjects.length > 0) {

@@ -8,6 +8,7 @@ export interface Project {
   description: string | null;
   view_type: string | null;
   color_tone: string | null;
+  thumbnail_url: string | null; // Added thumbnail URL
   created_at: string;
   updated_at: string;
 }
