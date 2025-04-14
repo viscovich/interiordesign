@@ -12,7 +12,7 @@ export default function useUserObjects(userId: string | undefined) {
   useEffect(() => {
     const fetchObjects = async () => {
       // Fetch objects whenever userId is available, not just in 'objects' section
-      if (userId) { 
+      if (userId) {
         setLoadingObjects(true);
         try {
           const objects = await getUserObjects(userId);
@@ -23,11 +23,13 @@ export default function useUserObjects(userId: string | undefined) {
         } finally {
           setLoadingObjects(false);
         }
+      } else {
+        setUserObjects([]); // Clear objects if userId becomes undefined (e.g., logout)
       }
     };
     fetchObjects();
   // Dependency array updated to only rely on userId
-  }, [userId]); 
+  }, [userId]);
 
   const handleDeleteObject = async (id: string) => {
     if (!userId) return;

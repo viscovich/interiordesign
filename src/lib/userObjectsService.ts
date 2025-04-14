@@ -18,7 +18,10 @@ export const getUserObjects = async (userId: string): Promise<UserObject[]> => {
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching user objects:', error); // Keep basic error log
+    throw error;
+  }
   return data || [];
 };
 

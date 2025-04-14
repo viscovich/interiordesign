@@ -10,6 +10,7 @@ import { RegisterModal } from './components/RegisterModal';
 import ImageModificationModal from './components/ImageModificationModal';
 import { UserAccountDropdown } from './components/UserAccountDropdown';
 import useUserObjects from './hooks/useUserObjects';
+import { UserObject } from './lib/userObjectsService'; // Import UserObject type
 import useDesignGenerator from './hooks/useDesignGenerator';
 import useModals from './hooks/useModals';
 import HeroSection from './sections/HeroSection';
@@ -58,8 +59,10 @@ function App() {
 
   const [newProjectId, setNewProjectId] = useState<string | null>(null);
 
-  const handleGenerate = async () => {
-    const projectId = await design.handleGenerate();
+  // Update handleGenerate to accept selectedObjects
+  const handleGenerate = async (selectedObjects: UserObject[]) => { 
+    // Pass selectedObjects to the hook's handleGenerate method
+    const projectId = await design.handleGenerate(selectedObjects); 
     console.log('Generation result:', projectId);
     if (projectId) {
       setNewProjectId(projectId);
@@ -68,10 +71,12 @@ function App() {
     }
   };
 
-  // Handle pending generation after login
+  // Handle pending generation after login - NOTE: This won't have selected objects!
+  // This flow might need rethinking if objects are required for pending generations.
+  // For now, we'll pass an empty array.
   React.useEffect(() => {
     if (user && modals.pendingGenerate) {
-      handleGenerate();
+      handleGenerate([]); // Pass empty array for pending generation
       modals.setPendingGenerate(false);
     }
   }, [user, modals.pendingGenerate, handleGenerate]); // Added handleGenerate dependency
@@ -183,8 +188,14 @@ function App() {
             )}
 
             {/* Logged-in view sections */}
-            {activeSection === 'design' && user && (
-              <DesignSection
+            {activeSection === 'design' && user && (() => { // Remove console logs
+              const hasObjectsValue = objects.userObjects.length > 0;
+              // console.log('[App.tsx] Rendering DesignSection:');
+              // console.log('  - User:', user);
+              // console.log('  - objects.userObjects:', objects.userObjects);
+              // console.log('  - hasObjects prop:', hasObjectsValue);
+              return (
+                <DesignSection
                 uploadedImage={design.uploadedImage}
                 isGenerating={design.isGenerating}
                 selectedStyle={design.selectedStyle}
@@ -200,10 +211,12 @@ function App() {
                 onColorToneSelect={design.setSelectedColorTone}
                 onViewChange={design.setSelectedView}
                 onRenderingTypeChange={design.setSelectedRenderingType}
-                isAuthenticated={!!user}
-                hasObjects={objects.userObjects.length > 0}
-              />
-              )}
+                  isAuthenticated={!!user}
+                  hasObjects={hasObjectsValue}
+                  userId={user?.id} // Ensure userId is passed
+                />
+              );
+            })()}
 
               {/* ResultsSection removed from main flow based on activeSection */}
               {/* {design.generatedImage && activeSection === 'results' && (
@@ -223,8 +236,18 @@ function App() {
                 />
               )}
 
-              {activeSection === 'objects' && user && (
+              {/* Render UserObjectsManager only if authenticated AND has objects */}
+              {activeSection === 'objects' && user && objects.userObjects.length > 0 && (
                 <UserObjectsManager />
+              )}
+
+              {/* Optional: Show a message if authenticated but has no objects */}
+              {activeSection === 'objects' && user && objects.userObjects.length === 0 && (
+                <div className="text-center py-12 text-gray-500">
+                  <h2 className="text-2xl font-semibold mb-4">My Objects</h2>
+                  <p>You haven't uploaded any objects yet.</p>
+                  {/* Consider adding a button/link to upload objects here */}
+                </div>
               )}
 
               {activeSection === 'community' && user && (

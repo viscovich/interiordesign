@@ -158,7 +158,7 @@ export default function DesignSection({
                   onClick={async () => {
                     try {
                       // Pass selectedObjects to onGenerate
-                      const success = await onGenerate(selectedObjects); 
+                      const success = await onGenerate(selectedObjects);
                       if (success) {
                         // Scroll to projects section on success
                         document.getElementById('projects-section')?.scrollIntoView({ behavior: 'smooth' });
