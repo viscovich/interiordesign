@@ -7,6 +7,7 @@ import {
     createProject,
     saveDetectedObjects
 } from '../lib/projectsService';
+import { uploadImage } from '../lib/storage'; // Import uploadImage
 import { useAuth } from '../lib/auth';
 import toast from 'react-hot-toast';
 // Import the selector components
@@ -22,6 +23,39 @@ interface ImageModificationModalProps {
     project: Project | null;
     onGenerationComplete?: () => void;
 }
+
+// Helper function to generate thumbnail using Canvas (Copied from useDesignGenerator)
+const generateThumbnail = (
+  imageDataUrl: string,
+  targetWidth: number = 400, // Increased target width to 400px
+  quality: number = 0.8
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const aspectRatio = img.height / img.width;
+      const targetHeight = targetWidth * aspectRatio;
+
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        return reject(new Error('Could not get canvas context'));
+      }
+
+      ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+      resolve(canvas.toDataURL('image/jpeg', quality)); // Use JPEG for smaller size
+    };
+    img.onerror = (error) => {
+      console.error('Error loading image for thumbnail generation:', error);
+      reject(error);
+    };
+    img.src = imageDataUrl;
+  });
+};
+
 
 const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen, onClose, project, onGenerationComplete }) => {
     const { user } = useAuth();
@@ -156,19 +190,55 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
                 colorToneToSend // Sending selected or original tone
             );
 
-            const { imageData: newImageUrl, detectedObjects } = regenerationResult;
+            const { imageData: newImageDataUrl, detectedObjects } = regenerationResult; // Renamed to newImageDataUrl
 
-            // Create new project entry
+            // --- Thumbnail Generation and Upload ---
+            let generatedImageUrl = ''; // Initialize URLs
+            let thumbnailUrl = '';
+            const timestamp = Date.now();
+            const baseFileName = `${timestamp}_variant.jpg`; // Indicate it's a variant
+            const fullImagePath = `generated/${baseFileName}`;
+            const thumbnailPath = `thumbnails/generated/${baseFileName}`;
+
+            try {
+                const thumbnailDataUrl = await generateThumbnail(newImageDataUrl);
+                // Upload both images in parallel
+                const [generatedImageUrlResult, thumbnailUrlResult] = await Promise.all([
+                    uploadImage(newImageDataUrl, fullImagePath),
+                    uploadImage(thumbnailDataUrl, thumbnailPath)
+                ]);
+                generatedImageUrl = generatedImageUrlResult; // Store the full image URL
+                thumbnailUrl = thumbnailUrlResult; // Store the thumbnail URL
+                console.log('Uploaded variant full image:', generatedImageUrl);
+                console.log('Uploaded variant thumbnail:', thumbnailUrl);
+            } catch (uploadError) {
+                console.error("Error during variant image/thumbnail upload:", uploadError);
+                toast.error('Failed to upload variant image or thumbnail.', { position: 'top-center' });
+                // Attempt to upload just the main image as a fallback
+                try {
+                    generatedImageUrl = await uploadImage(newImageDataUrl, fullImagePath);
+                    thumbnailUrl = generatedImageUrl; // Fallback: use main image URL if thumbnail fails
+                    console.log('Fallback: Uploaded variant full image only:', generatedImageUrl);
+                } catch (fallbackUploadError) {
+                     console.error("Fallback image upload also failed:", fallbackUploadError);
+                     throw new Error("Failed to upload generated image."); // Throw if even fallback fails
+                }
+            }
+            // --- End Thumbnail Logic ---
+
+
+            // Create new project entry using the uploaded URLs
             const newProject = await createProject(
                 project.user_id,
-                project.original_image_url,
-                newImageUrl,
+                project.original_image_url, // Keep original source project's image
+                generatedImageUrl,          // Use the *uploaded* full image URL
                 project.style,
                 project.room_type,
                 project.description,
                 viewTypeToSend,
-                colorToneToSend, // Save the used tone
-                currentImageUrl
+                colorToneToSend,            // Save the used tone
+                thumbnailUrl,               // Pass the *uploaded* thumbnail URL
+                currentImageUrl             // Pass the parent image URL for the new field
             );
 
             // Save detected objects for the new project
