@@ -15,9 +15,13 @@ export function UserObjectsList({ objects, selectedObjects, onSelectObject, onDe
       {objects.map((object) => (
         <div
           key={object.id}
-          className={`bg-white rounded-lg shadow overflow-hidden transform hover:scale-105 transition-transform duration-200 ${ // Removed px-4 from here
+          className={`bg-white rounded-lg shadow overflow-hidden transform hover:scale-105 transition-transform duration-200 cursor-pointer ${
             selectedObjects.includes(object.id) ? 'ring-2 ring-blue-500' : ''
           }`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelectObject(object.id);
+          }}
         >
           {(object.thumbnail_url || object.asset_url) && (
             <img 

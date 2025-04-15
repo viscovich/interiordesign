@@ -234,28 +234,27 @@ async function _callGeminiApi(
     console.log(`[_callGeminiApi] Processed response: description=${description ? 'present' : 'missing'}, imageData=${imageData ? 'present' : 'missing'}`);
 
     if (!description && !imageData) {
-      throw new Error("Incomplete response: Both description and image data are missing");
+      throw new Error("503: Service Unavailable - Both description and image data are missing");
     } else if (!description) {
-      // Allow missing description for variant generation? Maybe not.
       console.warn("API response missing description text.");
-      // throw new Error("Incomplete response: Description is missing");
     } else if (!imageData) {
-      throw new Error("Incomplete response: Image data is missing");
+      throw new Error("imageData=missing: Model is overloaded, try again later");
     }
 
     // Return detectedObjects even if description is missing, might be useful
     return { description, imageData, detectedObjects };
 
   } catch (error) {
-    console.error("Errore nella chiamata API Gemini:", error);
+    console.error("Gemini API Error:", error);
     console.error("Error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
-    if (error instanceof Error &&
-        error.name === 'GoogleGenerativeAIFetchError' &&
-        error.message.includes('503')) {
-      throw new Error("Servizio Gemini sovraccarico o temporaneamente non disponibile.");
+    if (error instanceof Error) {
+      if (error.name === 'GoogleGenerativeAIFetchError' && error.message.includes('503')) {
+        throw new Error("503: Service Unavailable - Model is currently overloaded");
+      } else if (error.message.includes('Failed to fetch')) {
+        throw new Error("500: Server Error - Failed to connect to API");
+      }
     }
-    // Rethrow a generic error for other issues
-    throw new Error(`Failed to generate image via Gemini API: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(`Failed to generate design: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 

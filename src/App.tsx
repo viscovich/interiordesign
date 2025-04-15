@@ -24,6 +24,7 @@ import PortfolioSection from './sections/PortfolioSection';
 import FAQSection from './sections/FAQSection';
 import UserObjectsManager from './components/UserObjectsManager';
 import CommunityProjectsSection from './sections/CommunityProjectsSection'; // Reverted import path
+import ErrorModal from './components/ErrorModal';
 
 function App() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -400,6 +401,12 @@ function App() {
           onClose={modals.handleCloseModificationModal}
           project={modals.projectToModify}
           onGenerationComplete={triggerProjectsRefresh} // Pass refresh trigger function
+        />
+        <ErrorModal
+          isOpen={design.errorModal.isOpen}
+          onClose={() => design.setErrorModal({...design.errorModal, isOpen: false})}
+          title={design.errorModal.title}
+          message={design.errorModal.message}
         />
     </SeoWrapper> // Added missing closing tag
   );

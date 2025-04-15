@@ -55,6 +55,12 @@ export default function useDesignGenerator({
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [designDescription, setDesignDescription] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [errorModal, setErrorModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    retryHandler: undefined as (() => void) | undefined
+  });
 
   // Default style object for Modern
   const defaultStyle = {
@@ -215,27 +221,55 @@ export default function useDesignGenerator({
       return project.id;
     } catch (error: unknown) {
       console.error('Generation failed:', error);
-      let errorMessage = 'Failed to generate design. Please try again later.'; // Default user-friendly message
+      let errorMessage = 'Failed to generate design. Please try again later.';
+      let showModal = false;
+      let modalTitle = 'Generation Error';
+      let modalMessage = errorMessage;
+      let retryHandler: (() => void) | undefined = undefined;
+
+      console.log('Raw error:', error); // Debug log
       if (error instanceof Error) {
-        // Check specifically for the insufficient credits error
+        console.log('Error message:', error.message); // Debug log
         if (error.message.includes('Insufficient credits')) {
           errorMessage = 'Your credit is not enough to proceed.';
-        // Check for API service unavailable errors (like 503)
         } else if (error.message.includes('Service Unavailable') || error.message.includes('503')) {
-           errorMessage = 'The design service is temporarily unavailable. Please try again later.';
+          errorMessage = 'The design service is temporarily unavailable.';
+          modalMessage = 'Our design model is currently overloaded. Please try again in a few minutes.';
+          showModal = true;
+          retryHandler = () => handleGenerate();
+        } else if (error.message.includes('imageData=missing')) {
+          console.log('Handling imageData=missing error'); // Debug log
+          errorMessage = 'Model is overloaded, try later';
+          modalTitle = 'Model Overloaded';
+          modalMessage = 'The AI model is currently at capacity. Please try your request again later.';
+          showModal = true;
+          retryHandler = () => handleGenerate();
+        } else if (error.message.includes('500') || error.message.includes('Failed to fetch')) {
+          showModal = true;
+          modalMessage = 'There was a problem connecting to our servers. Please check your internet connection and try again.';
         }
-        // Optionally, you could add more specific checks here
-        // else {
-        //   // Keep a more generic message for other types of errors
-        //   // errorMessage = error.message; // Or keep the default
-        // }
       }
-      // Dismiss any loading toast before showing the error
+
       toast.dismiss(loadingToast);
-      toast.error(errorMessage, {
-        position: 'top-center',
-        duration: 5000 // Increased duration slightly
-      });
+      
+      // First ensure loading state remains until error is fully handled
+      try {
+        if (showModal) {
+          setErrorModal({
+            isOpen: true,
+            title: modalTitle,
+            message: modalMessage,
+            retryHandler
+          });
+        } else {
+          toast.error(errorMessage, {
+            position: 'top-center',
+            duration: 5000
+          });
+        }
+      } finally {
+        setIsGenerating(false);
+      }
 
       // --- Refund Credits on Failure ---
       // Check if userId exists before attempting refund
@@ -255,8 +289,6 @@ export default function useDesignGenerator({
       // ---------------------------------
 
       return false;
-    } finally {
-      setIsGenerating(false);
     }
   // Add dependencies for useCallback, fixed rendering type reference
   }, [
@@ -322,6 +354,8 @@ export default function useDesignGenerator({
     setSelectedView,
     setSelectedStyle,
     setSelectedRenderingType: updateRenderingType, // Return the custom setter
-    startNewProject // Return the new function
+    startNewProject, // Return the new function
+    errorModal,
+    setErrorModal
   };
 }
