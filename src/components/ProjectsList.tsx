@@ -4,8 +4,9 @@ import type { User } from '@supabase/supabase-js';
 import { getProjectsByUser, deleteProject } from '../lib/projectsService';
 import toast from 'react-hot-toast';
 import { ProjectModal } from './ProjectModal';
-import { TrashIcon, PencilSquareIcon, EyeIcon, PhotoIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, PencilSquareIcon, DocumentTextIcon, PhotoIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import ImageFullscreenModal from './ImageFullscreenModal';
+import { ImageComparison } from './ImageComparison';
 
 interface ProjectsListProps {
   user: User | null;
@@ -17,6 +18,8 @@ interface ProjectsListProps {
 export function ProjectsList({ user, onModifyProject, refreshKey, newProjectId }: ProjectsListProps) {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [fullscreenImageUrl, setFullscreenImageUrl] = useState<string | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
+  const [comparisonImages, setComparisonImages] = useState<{original: string; generated: string} | null>(null);
   const [paginatedProjects, setPaginatedProjects] = useState<PaginatedProjects>({
     projects: [],
     total: 0,
@@ -140,22 +143,26 @@ export function ProjectsList({ user, onModifyProject, refreshKey, newProjectId }
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setSelectedProject(project);
+                              setComparisonImages({
+                                original: project.original_image_url || '',
+                                generated: project.generated_image_url || ''
+                              });
+                              setShowComparison(true);
                             }}
-                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                            aria-label="View project details"
+                            className="p-1 text-gray-400 hover:text-green-600 transition-colors"
+                            aria-label="Compare original and generated images"
                           >
-                            <EyeIcon className="w-5 h-5" />
+                            <PhotoIcon className="w-5 h-5" />
                           </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setFullscreenImageUrl(project.generated_image_url || project.original_image_url || '');
+                              setSelectedProject(project);
                             }}
-                            className="p-1 text-gray-400 hover:text-green-600 transition-colors"
-                            aria-label="View image fullscreen"
+                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                            aria-label="View project description"
                           >
-                            <PhotoIcon className="w-5 h-5" />
+                            <DocumentTextIcon className="w-5 h-5" />
                           </button>
                           <button
                             onClick={(e) => {
@@ -227,6 +234,23 @@ export function ProjectsList({ user, onModifyProject, refreshKey, newProjectId }
           imageUrl={fullscreenImageUrl}
           onClose={() => setFullscreenImageUrl(null)}
         />
+      )}
+      {showComparison && comparisonImages && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="relative w-full max-w-5xl">
+            <button 
+              onClick={() => setShowComparison(false)}
+              className="absolute -top-10 right-0 text-white hover:text-gray-300"
+            >
+              ✕ Close
+            </button>
+            <ImageComparison 
+              originalImage={comparisonImages.original}
+              generatedImage={comparisonImages.generated}
+              className="max-h-[90vh]"
+            />
+          </div>
+        </div>
       )}
     </div>
   );
