@@ -84,7 +84,7 @@ const UserObjectsManager: React.FC = () => {
 
   return (
     <div className="space-y-4 p-8"> {/* Increased padding to p-8 */}
-      <h2 className="text-lg font-semibold mb-4">Select Objects</h2>
+      <h2 className="text-lg font-semibold mb-4">My Objects</h2>
       <div className="space-y-4 mb-4">
         <div className="flex justify-between items-center">
           <p className="text-sm text-gray-500">Upload your objects to include in your design</p>
@@ -191,24 +191,11 @@ const UserObjectsManager: React.FC = () => {
                   className="w-full h-auto max-h-[70vh] object-contain rounded-lg"
                 />
               </div>
-              <div className="flex-1 space-y-4">
+              <div className="flex-1">
                 <div>
                   <h3 className="font-bold text-lg">Type:</h3>
                   <p>{selectedObject.object_type}</p>
                 </div>
-                <button
-                  onClick={() => {
-                    handleSelectObject(selectedObject.id);
-                    setSelectedObject(null);
-                  }}
-                  className={`px-4 py-2 rounded-md ${
-                    selectedObjects.includes(selectedObject.id)
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-200 text-gray-800'
-                  }`}
-                >
-                  {selectedObjects.includes(selectedObject.id) ? 'Selected' : 'Select'}
-                </button>
               </div>
             </div>
           </div>

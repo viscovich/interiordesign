@@ -43,6 +43,17 @@ const SeoWrapper: React.FC<SeoWrapperProps> = ({
             "applicationCategory": "DesignApplication"
           })}
         </script>
+
+        {/* Google Analytics */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-B0CJJ07B1D"></script>
+        <script>
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-B0CJJ07B1D');
+          `}
+        </script>
       </Helmet>
       {children}
     </>
