@@ -9,8 +9,8 @@ interface ObjectSelectorProps {
 }
 
 export const ObjectSelector: React.FC<ObjectSelectorProps> = ({ onSelectionChange, userId }) => {
-  // Start with the accordion open for debugging
-  const [isOpen, setIsOpen] = useState(true); 
+  // Start with the accordion closed by default
+  const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [objects, setObjects] = useState<UserObject[]>([]);
   const [selectedObjects, setSelectedObjects] = useState<UserObject[]>([]);
@@ -101,7 +101,7 @@ export const ObjectSelector: React.FC<ObjectSelectorProps> = ({ onSelectionChang
         onClick={handleToggleAccordion}
         className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 focus:outline-none"
       >
-        <span className="text-lg font-medium">Objects ({selectedObjects.length}/3)</span>
+        <span className="text-lg font-medium">Add Optional Objects from your Library ({selectedObjects.length}/3)</span>
         {isOpen ? (
           <ChevronUpIcon className="h-5 w-5 text-gray-500" />
         ) : (
@@ -127,13 +127,13 @@ export const ObjectSelector: React.FC<ObjectSelectorProps> = ({ onSelectionChang
           )}
 
           {!isLoading && !error && objects.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div className="flex overflow-x-auto space-x-4 pb-2"> {/* Changed to flex layout with horizontal scroll */}
               {objects.map((object) => (
                 <div
                   key={object.id}
                   onClick={() => handleObjectSelect(object)}
                   className={`
-                    cursor-pointer border rounded-lg overflow-hidden transition-all duration-200
+                    cursor-pointer border rounded-lg overflow-hidden transition-all duration-200 min-w-[120px] {/* Added min-width */}
                     ${isSelected(object.id) ? 'border-custom ring-2 ring-custom' : 'border-gray-200 hover:shadow-md'}
                   `}
                 >
