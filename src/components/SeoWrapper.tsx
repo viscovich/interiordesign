@@ -38,7 +38,7 @@ const SeoWrapper: React.FC<SeoWrapperProps> = ({
             "@context": "https://schema.org",
             "@type": "WebApplication",
             "name": "DreamCasa AI",
-            "description": "Transform your spaces with artificial intelligence",
+            "description": "Transform your spaces with AI-generated designs.",
             "url": window.location.origin,
             "applicationCategory": "DesignApplication"
           })}

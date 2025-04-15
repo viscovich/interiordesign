@@ -28,6 +28,7 @@ import CommunityProjectsSection from './sections/CommunityProjectsSection'; // R
 function App() {
   const { user, loading: authLoading, signOut } = useAuth();
   const [activeSection, setActiveSection] = React.useState<string>('design');
+  const [showFullHome, setShowFullHome] = React.useState(false);
   const [projectsRefreshKey, setProjectsRefreshKey] = React.useState(0); // State for triggering refresh
 
   // Custom hooks
@@ -98,7 +99,16 @@ function App() {
         <nav className="container max-w-8xl mx-auto px-4 sm:px-6 lg:px-8"> {/* Matched padding */}
           <div className="flex items-center justify-between h-16"> {/* Matched height */}
             <div className="flex items-center"> {/* Kept flex items-center */}
-              <img src="/images/Dreamcasa3-removebg-preview.png" alt="DreamCasa AI Logo" className="h-8 w-auto" /> {/* Matched height */}
+              <img 
+                src="/images/Dreamcasa3-removebg-preview.png" 
+                alt="DreamCasa AI Logo" 
+                className="h-8 w-auto cursor-pointer"
+                onClick={() => {
+                  setActiveSection('design');
+                  setShowFullHome(true);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              />
               <span className="ml-2 text-xl font-semibold text-custom">DreamCasa AI</span> {/* Matched font weight */}
             </div>
             {/* Right side of header */}
@@ -147,6 +157,7 @@ function App() {
             activeSection={activeSection}
             setActiveSection={setActiveSection}
             onNewProjectClick={handleNewDesign} // Pass the handler down
+            setShowFullHome={setShowFullHome} // Pass the showFullHome setter
           />
         )}
 
@@ -155,7 +166,7 @@ function App() {
           {/* Render sections based on activeSection and user status */}
           {/* Wrap sections in a div with padding */}
           <div className="p-8">
-            {!user && (
+            {(showFullHome || !user) && (
               <> {/* Keep logged-out view as is */}
                 <HeroSection // Keep logged-out view as is
                   onScrollToDesign={handleScrollToDesign} // Keep logged-out view as is
@@ -187,8 +198,8 @@ function App() {
               </> // Keep logged-out view as is
             )}
 
-            {/* Logged-in view sections */}
-            {activeSection === 'design' && user && (() => { // Remove console logs
+            {/* Logged-in view sections - only show when not showing full home */}
+            {!showFullHome && activeSection === 'design' && user && (() => { // Remove console logs
               const hasObjectsValue = objects.userObjects.length > 0;
               // console.log('[App.tsx] Rendering DesignSection:');
               // console.log('  - User:', user);
@@ -265,24 +276,91 @@ function App() {
               <div>
                 <img src="/images/Dreamcasa3-removebg-preview.png" alt="DreamCasa AI Logo" className="h-8 mb-4 brightness-0 invert" /> {/* Restored invert/brightness */}
                 <span className="text-white text-lg font-bold block mb-2">DreamCasa AI</span> {/* Restored styles */}
-                <p className="text-gray-400">Transform your spaces with artificial intelligence</p> {/* Restored styles */}
+                <p className="text-gray-400">Transform your spaces with AI</p> {/* Restored styles */}
               </div>
               {/* Column 2: Product Links */}
               <div>
                 <h4 className="text-lg font-semibold mb-4">Product</h4> {/* Restored styles */}
                 <ul className="space-y-2">
-                  <li><a href="#features" className="text-gray-400 hover:text-white">Features</a></li> {/* Restored styles */}
-                  <li><a href="#pricing" className="text-gray-400 hover:text-white">Pricing</a></li> {/* Restored styles */}
-                  <li><a href="#portfolio" className="text-gray-400 hover:text-white">Portfolio</a></li> {/* Restored styles */}
+                  <li>
+                    {user ? (
+                      <a 
+                        href="#" 
+                        className="text-gray-400 hover:text-white"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setActiveSection('design');
+                          setShowFullHome(true);
+                          document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                      >
+                        Features
+                      </a>
+                    ) : (
+                      <a href="#features" className="text-gray-400 hover:text-white">Features</a>
+                    )}
+                  </li>
+                  <li>
+                    {user ? (
+                      <a 
+                        href="#" 
+                        className="text-gray-400 hover:text-white"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setActiveSection('design');
+                          setShowFullHome(true);
+                          document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                      >
+                        Pricing
+                      </a>
+                    ) : (
+                      <a href="#pricing" className="text-gray-400 hover:text-white">Pricing</a>
+                    )}
+                  </li>
+                  <li>
+                    {user ? (
+                      <a 
+                        href="#" 
+                        className="text-gray-400 hover:text-white"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setActiveSection('design');
+                          setShowFullHome(true);
+                          document.getElementById('portfolio')?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                      >
+                        Portfolio
+                      </a>
+                    ) : (
+                      <a href="#portfolio" className="text-gray-400 hover:text-white">Portfolio</a>
+                    )}
+                  </li>
                 </ul>
               </div>
               {/* Column 3: Support Links */}
               <div>
                 <h4 className="text-lg font-semibold mb-4">Support</h4> {/* Restored styles */}
                 <ul className="space-y-2">
-                  <li><a href="#faq" className="text-gray-400 hover:text-white">FAQ</a></li> {/* Restored styles */}
-                  <li><a href="#" className="text-gray-400 hover:text-white">Contact</a></li> {/* Restored styles */}
-                  <li><a href="#" className="text-gray-400 hover:text-white">Documentation</a></li> {/* Restored styles */}
+                  <li>
+                    {user ? (
+                      <a 
+                        href="#" 
+                        className="text-gray-400 hover:text-white"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setActiveSection('design');
+                          setShowFullHome(true);
+                          document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                      >
+                        FAQ
+                      </a>
+                    ) : (
+                      <a href="#faq" className="text-gray-400 hover:text-white">FAQ</a>
+                    )}
+                  </li>
+                  <li><a href="#" className="text-gray-400 hover:text-white">Contact</a></li>
                 </ul>
               </div>
               {/* Column 4: Social Links (Removed as it wasn't in original dark footer) */}
