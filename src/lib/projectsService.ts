@@ -1,8 +1,9 @@
 import { supabase } from './supabase';
 import { ImageObject, UserObject, PaginatedProjects, Project } from './projectsService.d'; // Import all types
 import { uploadImage } from './storage'; // Corrected import path and function name
-import { getNewGenerationPrompt, _callGeminiApi } from './gemini'; // Import necessary functions
+import { getNewGenerationPrompt, _callGeminiApi, urlToInlineDataPart } from './gemini'; // Import necessary functions
 import { useCredit } from './userService'; // Import useCredit
+import { InlineDataPart } from '@google/generative-ai';
 
 // Helper function to convert File to Base64
 const fileToBase64 = (file: File): Promise<string> => {
@@ -270,41 +271,37 @@ export async function addUserObject(
 // --- Function for Regeneration ---
 
 export async function regenerateImageWithSubstitution(
-  project: Project, // Moved project parameter first
+  project: Project,
   originalImageUrl: string,
   replacementObject: UserObject | null,
   objectNameToReplace: string | null,
   viewType?: string | null,
   renderingType?: string | null,
   colorTone?: string | null
-): Promise<{ imageData: string; detectedObjects: string[] }> { // <-- Changed return type
-
-  // Project is now guaranteed by the signature, removed the null check below
-  // if (!project) {
-  //     throw new Error('Project data is required for regeneration.');
-  // }
+): Promise<{ imageData: string; detectedObjects: string[] }> {
   if (!project.user_id) {
-      throw new Error('Project data is required for regeneration.');
-  }
-  if (!project.user_id) {
-      throw new Error('User ID is missing from project data.');
+    throw new Error('Project data is required for regeneration.');
   }
 
   // Deduct credits for this generation attempt
-  await useCredit(project.user_id, 5); // Assuming 5 credits per variant/replacement
+  await useCredit(project.user_id, 5);
 
   const isObjectReplacement = !!(replacementObject && objectNameToReplace);
-  const objectImageUrls: string[] = [];
+  let objectImageParts: InlineDataPart[] = [];
 
   if (isObjectReplacement) {
-    // Object replacement flow
-    const replacementUrl = replacementObject.thumbnail_url || replacementObject.asset_url;
-    if (!replacementUrl) {
-      console.warn(`Replacement object ${replacementObject.id} is missing asset/thumbnail URL.`);
-      // Decide if this is an error or just proceed without the image
-      // throw new Error('Replacement object is missing image URL.');
-    } else {
-        objectImageUrls.push(replacementUrl);
+    try {
+      const replacementUrl = replacementObject.thumbnail_url || replacementObject.asset_url;
+      if (!replacementUrl) {
+        console.warn(`Replacement object ${replacementObject.id} is missing asset/thumbnail URL.`);
+      } else {
+        console.log('Converting replacement object image to inline data:', replacementUrl);
+        const imagePart = await urlToInlineDataPart(replacementUrl);
+        objectImageParts = [imagePart];
+      }
+    } catch (error) {
+      console.error('Error converting replacement image:', error);
+      throw new Error('Failed to process replacement object image');
     }
     console.log('[regenerate] Replacing object with params:', {
       objectNameToReplace,
@@ -314,7 +311,6 @@ export async function regenerateImageWithSubstitution(
       newColorTone: colorTone
     });
   } else {
-    // Generate new variant with different parameters (no object replacement)
     console.log('[regenerate] Generating new variant with params:', {
       newViewType: viewType,
       newRenderingType: renderingType,
@@ -323,25 +319,24 @@ export async function regenerateImageWithSubstitution(
   }
 
   try {
-    // 1. Generate the specific prompt for regeneration/variant
     const prompt = getNewGenerationPrompt(
-      project.style, // Base style from the original project
-      renderingType || '3d', // New rendering type (default to 3d if null)
-      project.room_type, // Room type from the original project
-      (colorTone || project.color_tone) ?? undefined, // Convert null to undefined
-      (viewType || project.view_type) ?? undefined,   // Convert null to undefined
-      isObjectReplacement // Include object instruction if replacing
+      project.style,
+      renderingType || '3d',
+      project.room_type,
+      (colorTone || project.color_tone) ?? undefined,
+      (viewType || project.view_type) ?? undefined,
+      isObjectReplacement
     );
 
     console.log(`[regenerate] Generated prompt: "${prompt.substring(0, 100)}..."`);
 
-    // 2. Call the Gemini API using the internal function
-    // Pass the *original* image URL as the base
-    // Capture the full result including detectedObjects
+    // Convert main image to inline data
+    const mainImagePart = await urlToInlineDataPart(originalImageUrl);
+    
     const { imageData, detectedObjects } = await _callGeminiApi(
-        prompt,
-        originalImageUrl, // Use the current image URL passed to the function
-        objectImageUrls   // Pass only the replacement object URL if applicable
+      prompt,
+      originalImageUrl, // Still pass URL for backward compatibility
+      objectImageParts  // Pass pre-processed inline data
     );
 
     if (!imageData) {

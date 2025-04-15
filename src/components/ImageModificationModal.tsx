@@ -81,9 +81,10 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
             setError(null); // Clear errors on open
             setIsLoadingGeneration(false);
             // Initialize selectors with project values or defaults
-            setSelectedViewType(project.view_type || null);
-            setSelectedColorTone(project.color_tone || null); // Reset color tone
-            setSelectedRenderingType(null); // Reset rendering type choice
+            // Initialize all selectors from project values
+            setSelectedViewType(project.view_type || 'frontal'); // Default to frontal if not set
+            setSelectedColorTone(project.color_tone || 'palette:neutral'); // Default to neutral palette
+            setSelectedRenderingType(project.rendering_type || '3d'); // Default to 3d if not set
 
             fetchRecognizedObjects(); // Call fetch
             fetchUserLibrary();
@@ -162,7 +163,13 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
 
         // Determine what to send for generation
         const activeReplacementObject = selectedObjectName ? selectedReplacementsMap[selectedObjectName] : null;
-        const isObjectReplacement = !!(selectedObjectName && activeReplacementObject);
+            const isObjectReplacement = !!(selectedObjectName && activeReplacementObject);
+            if (isObjectReplacement) {
+                console.log('Replacement object image URLs:', {
+                    thumbnail: activeReplacementObject.thumbnail_url,
+                    asset: activeReplacementObject.asset_url
+                });
+            }
 
         setIsLoadingGeneration(true);
         setError(null); // Clear errors before generation

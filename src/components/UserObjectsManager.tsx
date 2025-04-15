@@ -24,15 +24,41 @@ const UserObjectsManager: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const { data: userObjects } = await searchObjects(
+      console.log('Fetching objects with params:', {
+        userId: user.id,
+        nameFilter,
+        typeFilter, 
+        currentPage,
+        objectsPerPage
+      });
+      
+      // Get all objects without pagination to have complete filtered list
+      const { data: allUserObjects } = await searchObjects(
+        user.id,
+        nameFilter,
+        typeFilter,
+        1, // page 1
+        1000 // large page size to get all
+      );
+
+      // Then get paginated results for display
+      const { data: pagedObjects, count } = await searchObjects(
         user.id,
         nameFilter,
         typeFilter,
         currentPage,
         objectsPerPage
       );
-      setAllObjects(userObjects);
-      setFilteredObjects(userObjects);
+      
+      console.log('Received objects:', {
+        totalCount: count,
+        allObjects: allUserObjects.length,
+        returnedObjects: pagedObjects.length,
+        totalPages: Math.ceil(count / objectsPerPage)
+      });
+      
+      setAllObjects(allUserObjects);
+      setFilteredObjects(allUserObjects);
     } catch (err) {
       setError('Failed to load objects. Please try again.');
       console.error('Error fetching objects:', err);
@@ -202,23 +228,30 @@ const UserObjectsManager: React.FC = () => {
         </div>
       )}
 
-      {filteredObjects.length > objectsPerPage && (
-        <div className="flex justify-center mt-6 gap-2">
-          {Array.from({ 
-            length: Math.ceil(filteredObjects.length / objectsPerPage) 
-          }, (_, i) => (
-              <button
-                key={i + 1}
-                onClick={() => setCurrentPage(i + 1)}
-                className={`px-3 py-1 rounded ${
-                  currentPage === i + 1 ? 'bg-black text-white' : 'bg-gray-200'
-                }`}
-              >
-                {i + 1}
-            </button>
-          ))}
+      <div className="flex flex-col items-center mt-6 gap-4">
+        <div className="text-sm text-gray-500">
+          Showing {currentObjects.length} of {filteredObjects.length} objects
         </div>
-      )}
+        {filteredObjects.length > objectsPerPage && (
+          <div className="flex gap-2">
+            {Array.from({ 
+              length: Math.ceil(filteredObjects.length / objectsPerPage) 
+            }, (_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`px-3 py-1 rounded-md text-sm ${
+                    currentPage === i + 1 
+                      ? 'bg-black text-white font-medium' 
+                      : 'bg-gray-100 hover:bg-gray-200'
+                  }`}
+                >
+                  {i + 1}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

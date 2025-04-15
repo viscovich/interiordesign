@@ -6,7 +6,7 @@ const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 // Helper to fetch and convert image URL to InlineDataPart
-async function urlToInlineDataPart(url: string): Promise<InlineDataPart> {
+export async function urlToInlineDataPart(url: string): Promise<InlineDataPart> {
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Failed to fetch image: ${response.statusText}`);
@@ -138,7 +138,7 @@ export function getNewGenerationPrompt(
   const viewPrompt = newView && viewMap[newView] ? ` Set the point of view ${viewMap[newView]}.` : '';
 
   const objectsInstruction = includeObjectsInstruction
-    ? "\nIf new objects are attached, integrate them naturally into the existing layout, replacing the original ones where appropriate."
+    ? "\nIMPORTANT: You MUST replace the original object(s) with the attached replacement image(s). Remove the original object completely and integrate the new object naturally into the scene. The replacement object should match the style and perspective of the original design."
     : '';
 
   return `**Goal:** Update the previously generated ${roomType} design by changing certain visual aspects, without altering the underlying architectural layout or furniture arrangement.
@@ -164,9 +164,9 @@ export function getNewGenerationPrompt(
 async function _callGeminiApi(
   prompt: string,
   mainImageUrl: string,
-  objectImageUrls: string[] = []
+  objectImageParts: InlineDataPart[] = []
 ): Promise<{ description: string; imageData: string; detectedObjects: string[] }> {
-  console.log(`[_callGeminiApi] Calling Gemini with prompt starting: "${prompt.substring(0, 3000)}..." and ${objectImageUrls.length} object images.`);
+  console.log(`[_callGeminiApi] Calling Gemini with prompt starting: "${prompt.substring(0, 3000)}..." and ${objectImageParts.length} object images.`);
 
   const model = genAI.getGenerativeModel({
     model: "gemini-2.0-flash-exp-image-generation",
@@ -178,18 +178,7 @@ async function _callGeminiApi(
   // Fetch and prepare main image data
   const mainImagePart = await urlToInlineDataPart(mainImageUrl);
 
-  // Fetch and prepare selected object image data
-  const objectImageParts: InlineDataPart[] = [];
-  for (const url of objectImageUrls) {
-    try {
-      const objectImagePart = await urlToInlineDataPart(url);
-      objectImageParts.push(objectImagePart);
-    } catch (error) {
-      console.error(`Error fetching object image from URL ${url}:`, error);
-      // Decide if we should throw or continue without the image
-      // For now, let's continue but log the error
-    }
-  }
+  // objectImageParts is now passed directly as parameter
 
   try {
     console.log(`[_callGeminiApi] Preparing contents...`);
@@ -201,7 +190,7 @@ async function _callGeminiApi(
     console.log(`[_callGeminiApi] Request contents length: ${contents.length}`);
 
     const response = await model.generateContent(contents);
-    console.log(`[_callGeminiApi] Raw API response received.`); // Avoid logging full response
+    console.log(`[_callGeminiApi] Raw API response:`, JSON.stringify(response, null, 2));
 
     const parts = response.response?.candidates?.[0]?.content?.parts || [];
     console.log(`[_callGeminiApi] Response parts count: ${parts.length}`);
@@ -285,14 +274,24 @@ export async function generateInteriorDesign(
   );
   console.log(`[generateInteriorDesign - Initial] Generated initial prompt.`);
 
-  // 2. Prepare object image URLs (if any)
-  const objectImageUrls = selectedObjects
-    .map(obj => obj.thumbnail_url || obj.asset_url)
-    .filter((url): url is string => !!url); // Filter out null/undefined URLs
+  // 2. Prepare object image data (if any)
+  const objectImageParts: InlineDataPart[] = [];
+  for (const obj of selectedObjects) {
+    const url = obj.thumbnail_url || obj.asset_url;
+    if (url) {
+      try {
+        const imagePart = await urlToInlineDataPart(url);
+        objectImageParts.push(imagePart);
+      } catch (error) {
+        console.error(`Error converting object image to inline data: ${url}`, error);
+        // Continue with other images if one fails
+      }
+    }
+  }
 
   // 3. Call the internal API function
   // Note: We are NOT deducting credits here anymore, assuming it's handled upstream.
-  return await _callGeminiApi(prompt, imageUrl, objectImageUrls);
+  return await _callGeminiApi(prompt, imageUrl, objectImageParts);
 }
 
 

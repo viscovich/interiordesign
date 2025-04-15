@@ -32,24 +32,39 @@ export const searchObjects = async (
   page: number = 1,
   pageSize: number = 10
 ): Promise<{data: UserObject[], count: number}> => {
-  let request = supabase
+  // First get total count of matching objects
+  let countRequest = supabase
     .from('user_objects')
-    .select('*', { count: 'exact' })
+    .select('*', { count: 'exact', head: true })
     .eq('user_id', userId);
 
   if (query) {
-    request = request.or(`object_name.ilike.%${query}%,object_type.ilike.%${query}%`);
+    countRequest = countRequest.or(`object_name.ilike.%${query}%,object_type.ilike.%${query}%`);
   }
 
   if (category) {
-    request = request.eq('object_type', category);
+    countRequest = countRequest.eq('object_type', category);
   }
 
-  request = request
+  const { count } = await countRequest;
+
+  // Then get paginated results
+  let dataRequest = supabase
+    .from('user_objects')
+    .select('*')
+    .eq('user_id', userId);
+
+  if (query) {
+    dataRequest = dataRequest.or(`object_name.ilike.%${query}%,object_type.ilike.%${query}%`);
+  }
+
+  if (category) {
+    dataRequest = dataRequest.eq('object_type', category);
+  }
+
+  const { data, error } = await dataRequest
     .order('created_at', { ascending: false })
     .range((page - 1) * pageSize, page * pageSize - 1);
-
-  const { data, error, count } = await request;
 
   if (error) throw error;
   return { data: data || [], count: count || 0 };
