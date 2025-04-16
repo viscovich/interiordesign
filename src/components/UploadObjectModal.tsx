@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useAuth } from '../lib/auth'; // Assuming you have an auth context/hook
-import { uploadImage } from '../lib/storage';
-import { addUserObject } from '../lib/userObjectsService'; // Corrected import path
+// Removed unused uploadImage import from here as addUserObject handles it
+import { addUserObject } from '../lib/projectsService'; // Import from the correct service
 
 interface UploadObjectModalProps {
   isOpen: boolean;
@@ -66,50 +66,24 @@ const UploadObjectModal: React.FC<UploadObjectModalProps> = ({ isOpen, onClose, 
     setError(null);
 
     try {
-      // 1. Read file as Data URL for upload function
-      const reader = new FileReader();
-      reader.readAsDataURL(selectedFile);
-      reader.onload = async () => {
-        try {
-          const imageDataUrl = reader.result as string;
-          if (!imageDataUrl) {
-            throw new Error('Could not read file data.');
-          }
+      // Call addUserObject directly, passing the required parameters including the File
+      // addUserObject will handle conversion, upload, description generation, and DB insert
+      await addUserObject(
+        user.id,
+        objectName,
+        objectType,
+        selectedFile // Pass the File object directly
+        // dimensions can be added here if collected from the form
+      );
 
-          // 2. Upload image to S3
-          // Construct a unique path, e.g., user_id/timestamp_filename
-          const timestamp = Date.now();
-          const filePath = `${user.id}/objects/${timestamp}_${selectedFile.name}`;
-          const assetUrl = await uploadImage(imageDataUrl, filePath);
+      // Success
+      onUploadSuccess(); // Trigger list refresh
+      handleClose(); // Close modal and reset form
 
-          // 3. Add object metadata to Supabase
-          // Note: The addUserObject function expects an object argument
-          await addUserObject({
-            user_id: user.id,
-            object_name: objectName,
-            object_type: objectType,
-            asset_url: assetUrl,
-            // thumbnail_url and dimensions are optional
-          });
-
-          // 4. Success
-          setIsLoading(false);
-          onUploadSuccess(); // Trigger list refresh
-          handleClose(); // Close modal and reset form
-        } catch (uploadError) {
-          console.error('Upload or DB error:', uploadError);
-          setError(`Failed to upload object. ${uploadError instanceof Error ? uploadError.message : 'Please try again.'}`);
-          setIsLoading(false);
-        }
-      };
-      reader.onerror = (error) => {
-        console.error('File reading error:', error);
-        setError('Failed to read file data.');
-        setIsLoading(false);
-      };
     } catch (err) {
-      console.error('Form submission error:', err);
-      setError('An unexpected error occurred.');
+      // Catch errors from addUserObject (which includes upload, description gen, db insert)
+      console.error('Error adding user object:', err);
+      setError(`Failed to add object. ${err instanceof Error ? err.message : 'Please try again.'}`);
       setIsLoading(false);
     }
   };

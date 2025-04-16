@@ -1,7 +1,8 @@
 import { supabase } from './supabase';
 import { ImageObject, UserObject, PaginatedProjects, Project } from './projectsService.d'; // Import all types
 import { uploadImage } from './storage'; // Corrected import path and function name
-import { getNewGenerationPrompt, _callGeminiApi, urlToInlineDataPart } from './gemini'; // Import necessary functions
+// Import necessary functions & generateObjectDescription
+import { getNewGenerationPrompt, _callGeminiApi, urlToInlineDataPart, generateObjectDescription } from './gemini'; 
 import { useCredit } from './userService'; // Import useCredit
 import { InlineDataPart } from '@google/generative-ai';
 
@@ -158,7 +159,7 @@ export async function saveImageObjects(projectId: string, userId: string, object
   const objectsToInsert = objectNames.map(name => ({
     project_id: projectId,
     user_id: userId, // Ensure user_id is passed correctly
-    object_name: name,
+    object_name: name, // This now holds the detailed description
   }));
 
   const { data, error } = await supabase
@@ -188,7 +189,7 @@ export async function saveDetectedObjects(projectId: string, userId: string, det
   }
 
   try {
-    // Directly use the passed-in detectedObjects
+    // Directly use the passed-in detectedObjects (which are detailed descriptions)
     console.log('Saving detected objects:', detectedObjects);
     
     if (detectedObjects && detectedObjects.length > 0) {
@@ -241,6 +242,19 @@ export async function addUserObject(
   // 3. Upload image using storage service
   const assetUrl = await uploadImage(base64Data, storagePath);
 
+  // 3.5 Generate description from the uploaded image URL
+  let description = 'Description generation failed or skipped'; // Default description
+  try {
+    console.log(`[addUserObject] Attempting to generate description for asset: ${assetUrl}`); // Log before call
+    description = await generateObjectDescription(assetUrl);
+    console.log(`[addUserObject] generateObjectDescription returned: "${description}"`); // Log after call
+  } catch (descError) {
+    // This logs if generateObjectDescription throws an error that bubbles up
+    console.error(`[addUserObject] Error caught calling generateObjectDescription for ${objectName} at ${assetUrl}`, descError);
+    // Keep the default error description
+  }
+
+
   // 4. Insert metadata into the user_objects table
   const { data, error } = await supabase
     .from('user_objects')
@@ -249,6 +263,7 @@ export async function addUserObject(
       object_name: objectName,
       object_type: objectType,
       asset_url: assetUrl,
+      description: description, // Add the generated description
       // thumbnail_url: null, // Generate later?
       dimensions: dimensions,
     })
@@ -272,9 +287,9 @@ export async function addUserObject(
 
 export async function regenerateImageWithSubstitution(
   project: Project,
-  originalImageUrl: string,
-  replacementObject: UserObject | null,
-  objectNameToReplace: string | null,
+  originalImageUrl: string, // Image containing the object to replace
+  replacementObject: UserObject | null, // The new object to insert (contains its description)
+  objectToReplaceIdentifier: string | null, // Identifier (e.g., simple name like "Sofa") of the object TO REPLACE
   viewType?: string | null,
   renderingType?: string | null,
   colorTone?: string | null
@@ -282,62 +297,117 @@ export async function regenerateImageWithSubstitution(
   if (!project.user_id) {
     throw new Error('Project data is required for regeneration.');
   }
+  // Check: if replacing, both replacement object and identifier of object to replace are needed
+  if (replacementObject && !objectToReplaceIdentifier) {
+    throw new Error('Identifier of the object to replace is required when providing a replacement object.');
+  }
 
   // Deduct credits for this generation attempt
   await useCredit(project.user_id, 5);
 
-  const isObjectReplacement = !!(replacementObject && objectNameToReplace);
+  // Determine if it's an object replacement based on provided parameters
+  const isObjectReplacement = !!(replacementObject && objectToReplaceIdentifier);
   let objectImageParts: InlineDataPart[] = [];
+  let replacementObjectDescription: string | null = null; // Description of the NEW object
+  let actualObjectToReplaceDescription: string | null = null; // Detailed description of the object TO REPLACE (from DB)
 
   if (isObjectReplacement) {
+    // 1. Get description of the NEW object
+    replacementObjectDescription = replacementObject.description ?? null; 
+    console.log(`[regenerateImageWithSubstitution] Replacement object description: "${replacementObjectDescription}"`);
+
+    // 2. Find the detailed description of the object TO REPLACE from image_objects
     try {
-      const replacementUrl = replacementObject.thumbnail_url || replacementObject.asset_url;
-      if (!replacementUrl) {
-        console.warn(`Replacement object ${replacementObject.id} is missing asset/thumbnail URL.`);
+      console.log(`[regenerateImageWithSubstitution] Finding description for object identifier: "${objectToReplaceIdentifier}" in project ${project.id}`);
+      const { data: foundObjects, error: findError } = await supabase
+        .from('image_objects')
+        .select('object_name') // object_name contains the detailed description
+        .eq('project_id', project.id)
+        // Use 'like' to match if the saved description starts with the identifier
+        .like('object_name', `${objectToReplaceIdentifier}%`) 
+        .limit(1); // Take the first match
+
+      if (findError) {
+        throw findError;
+      }
+
+      if (foundObjects && foundObjects.length > 0) {
+        actualObjectToReplaceDescription = foundObjects[0].object_name;
+        console.log(`[regenerateImageWithSubstitution] Found description for object to replace: "${actualObjectToReplaceDescription}"`);
       } else {
-        console.log('Converting replacement object image to inline data:', replacementUrl);
+        console.warn(`[regenerateImageWithSubstitution] Could not find object matching identifier "${objectToReplaceIdentifier}" in image_objects for project ${project.id}. Using identifier as description.`);
+        // Fallback: use the identifier itself if no detailed description found
+        actualObjectToReplaceDescription = objectToReplaceIdentifier; 
+      }
+    } catch (dbError) {
+       console.error(`[regenerateImageWithSubstitution] Error fetching object description from DB:`, dbError);
+       // Fallback in case of DB error
+       actualObjectToReplaceDescription = objectToReplaceIdentifier; 
+       console.warn(`[regenerateImageWithSubstitution] Using identifier "${actualObjectToReplaceDescription}" as description due to DB error.`);
+    }
+
+    // 3. Prepare image data for the NEW object
+    let replacementUrl: string | null = null;
+    try {
+      replacementUrl = replacementObject.thumbnail_url || replacementObject.asset_url;
+      console.log(`[regenerateImageWithSubstitution] Attempting to use replacement URL: ${replacementUrl}`);
+
+      if (!replacementUrl) {
+        console.warn(`[regenerateImageWithSubstitution] Replacement object ${replacementObject.id} is missing asset/thumbnail URL. Cannot prepare image data.`);
+      } else {
+        console.log('[regenerateImageWithSubstitution] Converting replacement object image to inline data...');
         const imagePart = await urlToInlineDataPart(replacementUrl);
+        console.log('[regenerateImageWithSubstitution] Conversion successful. MimeType:', imagePart.inlineData.mimeType);
         objectImageParts = [imagePart];
       }
     } catch (error) {
-      console.error('Error converting replacement image:', error);
-      throw new Error('Failed to process replacement object image');
+      console.error(`[regenerateImageWithSubstitution] Error converting replacement image from URL: ${replacementUrl}`, error);
+      throw new Error('Failed to process replacement object image'); // Throw error if image prep fails
     }
+
     console.log('[regenerate] Replacing object with params:', {
-      objectNameToReplace,
+      objectToReplaceDescription: actualObjectToReplaceDescription, // Log the description found/used
       replacementObjectId: replacementObject.id,
+      replacementObjectDescription, 
       newViewType: viewType,
       newRenderingType: renderingType,
       newColorTone: colorTone
     });
+
   } else {
-    console.log('[regenerate] Generating new variant with params:', {
+    // Not an object replacement, just generating a variant
+    console.log('[regenerate] Generating new variant (no object replacement) with params:', {
       newViewType: viewType,
       newRenderingType: renderingType,
       newColorTone: colorTone
     });
   }
 
+  // 4. Generate the prompt and call the API
   try {
     const prompt = getNewGenerationPrompt(
       project.style,
-      renderingType || '3d',
+      renderingType || '3d', // Default to 3d if not provided
       project.room_type,
-      (colorTone || project.color_tone) ?? undefined,
-      (viewType || project.view_type) ?? undefined,
-      isObjectReplacement
+      (colorTone || project.color_tone) ?? undefined, // Use new or existing color tone
+      (viewType || project.view_type) ?? undefined, // Use new or existing view type
+      isObjectReplacement,
+      // Pass the descriptions found/retrieved
+      actualObjectToReplaceDescription, // Might be the detailed one from DB or the identifier as fallback
+      replacementObjectDescription // From the new UserObject
     );
 
     console.log(`[regenerate] Generated prompt: "${prompt.substring(0, 100)}..."`);
 
-    // Convert main image to inline data
+    // Convert main image to inline data (always needed)
     const mainImagePart = await urlToInlineDataPart(originalImageUrl);
     
     const { imageData, detectedObjects } = await _callGeminiApi(
       prompt,
       originalImageUrl, // Still pass URL for backward compatibility
-      objectImageParts  // Pass pre-processed inline data
+      objectImageParts  // Pass image data ONLY for the replacement object
     );
+    console.log('[regenerateImageWithSubstitution] Called _callGeminiApi with objectImageParts:', objectImageParts); 
 
     if (!imageData) {
       throw new Error('Image generation failed - no image data returned from _callGeminiApi');

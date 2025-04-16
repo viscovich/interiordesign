@@ -28,6 +28,7 @@ export interface UserObject {
   object_type: string; // Corresponds to TEXT (e.g., 'Refrigerator', 'Chair')
   asset_url: string; // Corresponds to TEXT (URL)
   thumbnail_url?: string | null; // Corresponds to TEXT (URL), optional
+  description?: string | null; // AI-generated description
   dimensions?: string | null; // Corresponds to TEXT, optional
   created_at: string; // Corresponds to TIMESTAMPTZ
 }

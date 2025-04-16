@@ -1,15 +1,9 @@
 import { supabase } from './supabase';
+// Import the shared type definition
+import type { UserObject } from './projectsService.d'; 
+// Re-export the type so components can import it from here
+export type { UserObject }; 
 
-export interface UserObject {
-  id: string;
-  user_id: string;
-  object_name: string;
-  object_type: string;
-  asset_url: string;
-  thumbnail_url?: string;
-  dimensions?: string;
-  created_at: string;
-}
 
 export const getUserObjects = async (userId: string): Promise<UserObject[]> => {
   const { data, error } = await supabase
@@ -22,7 +16,8 @@ export const getUserObjects = async (userId: string): Promise<UserObject[]> => {
     console.error('Error fetching user objects:', error); // Keep basic error log
     throw error;
   }
-  return data || [];
+  // Ensure the return type matches Promise<UserObject[]>
+  return (data as UserObject[]) || []; 
 };
 
 export const searchObjects = async (
@@ -67,19 +62,13 @@ export const searchObjects = async (
     .range((page - 1) * pageSize, page * pageSize - 1);
 
   if (error) throw error;
-  return { data: data || [], count: count || 0 };
+  return { data: (data as UserObject[]) || [], count: count || 0 };
 };
 
-export const addUserObject = async (object: Omit<UserObject, 'id'|'created_at'>): Promise<UserObject> => {
-  const { data, error } = await supabase
-    .from('user_objects')
-    .insert(object)
-    .select()
-    .single();
+// REMOVED the duplicate addUserObject function definition from this file.
+// The correct version (handling file upload and description generation) is in projectsService.ts
+// and is imported by UploadObjectModal.tsx.
 
-  if (error) throw error;
-  return data;
-};
 
 export const deleteUserObject = async (id: string): Promise<void> => {
   const { error } = await supabase

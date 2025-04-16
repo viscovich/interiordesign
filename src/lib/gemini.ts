@@ -117,7 +117,9 @@ export function getNewGenerationPrompt(
   roomType: string,
   colorTone?: string, // Expects 'palette:name' or 'color:name'
   newView?: string,
-  includeObjectsInstruction?: boolean
+  includeObjectsInstruction?: boolean, // Flag indicating if object replacement is happening
+  objectToReplaceDescription?: string | null, // Description of the object being replaced
+  replacementObjectDescription?: string | null // Description of the new object being inserted
 ): string {
   let colorPrompt = '';
   if (colorTone) {
@@ -137,9 +139,16 @@ export function getNewGenerationPrompt(
   };
   const viewPrompt = newView && viewMap[newView] ? ` Set the point of view ${viewMap[newView]}.` : '';
 
-  const objectsInstruction = includeObjectsInstruction
-    ? "\nIMPORTANT: You MUST replace the original object(s) with the attached replacement image(s). Remove the original object completely and integrate the new object naturally into the scene. The replacement object should match the style and perspective of the original design."
-    : '';
+  // Construct the specific object replacement instruction using the provided descriptions
+  let objectsInstruction = '';
+  if (includeObjectsInstruction && objectToReplaceDescription && replacementObjectDescription) {
+    objectsInstruction = `\n**Object Replacement Instruction:** Replace the '${objectToReplaceDescription}' visible in the original image with the new object described as '${replacementObjectDescription}'. Refer to the attached image for the visual representation of the new object. Integrate it naturally into the scene, matching the style and perspective.`;
+  } else if (includeObjectsInstruction) {
+    // Fallback or warning if descriptions are missing but replacement was intended
+    console.warn('[getNewGenerationPrompt] Object replacement intended, but descriptions are missing. Using generic instruction.');
+    objectsInstruction = "\nIMPORTANT: You MUST replace the original object(s) with the attached replacement image(s). Remove the original object completely and integrate the new object naturally into the scene. The replacement object should match the style and perspective of the original design."; // Keep old generic one as fallback
+  }
+
 
   return `**Goal:** Update the previously generated ${roomType} design by changing certain visual aspects, without altering the underlying architectural layout or furniture arrangement.
 
@@ -155,7 +164,7 @@ export function getNewGenerationPrompt(
 - Apply the new visual settings (rendering style, viewpoint, and/or color palette) while keeping the design consistent with the existing one.${objectsInstruction}
 
 **Deliverable:**
-- **First, list the essential furniture and appliances visible in the updated image.** Use the same format as the initial generation: a plain list starting each item with '- '.
+- **First, list the essential furniture and appliances visible in the updated image.** For each item, provide a brief description including its main color or material. Use this format: '- [color/material] [object name]'. Example: '- black sofa', '- wooden table'.
 - **Then, generate one updated image** of the same room design, reflecting the requested changes above in style, color tone, viewpoint, or rendering type.`;
 }
 
@@ -190,7 +199,10 @@ async function _callGeminiApi(
     console.log(`[_callGeminiApi] Request contents length: ${contents.length}`);
 
     const response = await model.generateContent(contents);
-    console.log(`[_callGeminiApi] Raw API response:`, JSON.stringify(response, null, 2));
+    // Log the full raw response object for detailed debugging
+    console.log(`[_callGeminiApi] Full Raw API response object:`, response); 
+    // Keep the stringified version for quick overview in console if needed
+    console.log(`[_callGeminiApi] Raw API response (stringified):`, JSON.stringify(response, null, 2)); 
 
     const parts = response.response?.candidates?.[0]?.content?.parts || [];
     console.log(`[_callGeminiApi] Response parts count: ${parts.length}`);
@@ -297,3 +309,36 @@ export async function generateInteriorDesign(
 
 // Export the internal function for use in projectsService
 export { _callGeminiApi };
+
+
+// --- Function to Generate Object Description ---
+
+// Uses a different model optimized for vision tasks if needed, or the standard one
+// For simplicity, let's try with the standard model first, but keep gemini-pro-vision in mind
+export async function generateObjectDescription(imageUrl: string): Promise<string> {
+  console.log(`[generateObjectDescription] Generating description for image: ${imageUrl}`);
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Or "gemini-pro-vision" if available/needed
+
+  const prompt = "Describe the main object in this image concisely in a few words, focusing on its type, color, and key visual features. Example: 'black leather sofa with chrome legs'.";
+
+  try {
+    const imagePart = await urlToInlineDataPart(imageUrl);
+    const result = await model.generateContent([prompt, imagePart]);
+    const response = result.response;
+    const description = response.text();
+
+    if (!description) {
+      console.warn('[generateObjectDescription] Gemini did not return a description.');
+      return 'Object description unavailable'; // Return a default string
+    }
+
+    console.log(`[generateObjectDescription] Generated description: "${description}"`);
+    return description.trim(); // Trim whitespace
+
+  } catch (error) {
+    console.error(`[generateObjectDescription] Error generating description for ${imageUrl}:`, error);
+    // Decide on error handling: throw, or return a default string?
+    // Returning a default string might be safer for the flow in addUserObject
+    return 'Object description failed'; // Return a default error string
+  }
+}

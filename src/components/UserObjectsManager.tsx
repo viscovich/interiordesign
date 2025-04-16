@@ -218,10 +218,17 @@ const UserObjectsManager: React.FC = () => {
                 />
               </div>
               <div className="flex-1">
-                <div>
+                <div className="mb-4"> {/* Added margin-bottom */}
                   <h3 className="font-bold text-lg">Type:</h3>
                   <p>{selectedObject.object_type}</p>
                 </div>
+                {/* Add Description Section */}
+                {selectedObject.description && (
+                  <div>
+                    <h3 className="font-bold text-lg">Description:</h3>
+                    <p className="text-gray-700">{selectedObject.description}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
