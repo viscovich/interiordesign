@@ -125,7 +125,6 @@ export function ProjectsList({ user, onModifyProject, refreshKey, newProjectId }
                       src={project.thumbnail_url || project.generated_image_url || ''}
                       alt={`Generated ${project.room_type}`}
                       className="w-full h-48 object-cover rounded-lg mb-2 cursor-pointer"
-                      loading="lazy"
                       onClick={(e) => {
                         e.stopPropagation();
                         setFullscreenImageUrl(project.generated_image_url || project.original_image_url || '');

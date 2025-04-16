@@ -98,27 +98,39 @@ export default function useDesignGenerator({
 
   const handleImageUpload = async (file: File) => {
     setLastUsedImageFile(file); // Store the file object
-    try {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(reader.error);
-      });
+    setGeneratedImage(null); // Clear previous generation results
+    setDesignDescription(null);
 
-      const originalImageUrl = await uploadImage(
-        dataUrl,
-        `original/${Date.now()}_${file.name}`
-      );
+    // 1. Generate local data URL for immediate preview
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      // 2. Set state immediately with data URL to show selectors
+      setUploadedImage(dataUrl);
 
-      setUploadedImage(originalImageUrl);
-      setGeneratedImage(null);
-      setDesignDescription(null);
-    } catch (error) {
-      console.error('Error in handleImageUpload:', error);
-      toast.error('Failed to process image upload');
-    }
+      // 3. Upload to storage in the background (no need to await here for UI update)
+      uploadImage(dataUrl, `original/${Date.now()}_${file.name}`)
+        .then(storageUrl => {
+          // Optional: Update state again with the final storage URL if needed elsewhere,
+          // but the UI update already happened.
+          // setUploadedImage(storageUrl); // Uncomment if storage URL is strictly needed later
+          console.log('Image uploaded to storage:', storageUrl);
+        })
+        .catch(error => {
+          console.error('Error uploading image to storage:', error);
+          toast.error('Failed to save image to storage');
+          // Optionally revert uploadedImage state or handle error
+          // setUploadedImage(null); // Revert if upload fails?
+        });
+    };
+    reader.onerror = (error) => {
+      console.error('Error reading file:', error);
+      toast.error('Failed to read image file');
+      setUploadedImage(null); // Clear image state on read error
+    };
   };
+
 
   const resetUpload = () => {
     setUploadedImage(null);
