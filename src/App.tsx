@@ -3,14 +3,13 @@ import { Helmet } from 'react-helmet-async';
 import { useAuth } from './lib/auth';
 import SeoWrapper from './components/SeoWrapper';
 import { SidebarMenu } from './components/SidebarMenu';
-// import { CommunitySection } from './components/CommunitySection'; // Original import, commented out
 import { FloatingObjectsSidebar } from './components/FloatingObjectsSidebar';
 import { LoginModal } from './components/LoginModal';
 import { RegisterModal } from './components/RegisterModal';
 import ImageModificationModal from './components/ImageModificationModal';
 import { UserAccountDropdown } from './components/UserAccountDropdown';
 import useUserObjects from './hooks/useUserObjects';
-import { UserObject } from './lib/userObjectsService'; // Import UserObject type
+import { UserObject } from './lib/userObjectsService';
 import useDesignGenerator from './hooks/useDesignGenerator';
 import useModals from './hooks/useModals';
 import HeroSection from './sections/HeroSection';
@@ -23,14 +22,14 @@ import PricingSection from './sections/PricingSection';
 import PortfolioSection from './sections/PortfolioSection';
 import FAQSection from './sections/FAQSection';
 import UserObjectsManager from './components/UserObjectsManager';
-import CommunityProjectsSection from './sections/CommunityProjectsSection'; // Reverted import path
+import CommunityProjectsSection from './sections/CommunityProjectsSection';
 import ErrorModal from './components/ErrorModal';
 
 function App() {
   const { user, loading: authLoading, signOut } = useAuth();
   const [activeSection, setActiveSection] = React.useState<string>('design');
   const [showFullHome, setShowFullHome] = React.useState(false);
-  const [projectsRefreshKey, setProjectsRefreshKey] = React.useState(0); // State for triggering refresh
+  const [projectsRefreshKey, setProjectsRefreshKey] = React.useState(0);
 
   // Custom hooks
   const modals = useModals();
@@ -39,17 +38,13 @@ function App() {
     setIsLoginModalOpen: modals.setIsLoginModalOpen,
     setPendingGenerate: modals.setPendingGenerate
   });
-  // Remove activeSection argument from useUserObjects call
   const objects = useUserObjects(user?.id); 
 
-  // Removed duplicate handleNewDesign
-
   const handleNewDesign = () => {
-    design.startNewProject(); // Use the new function to reset and pre-fill image
+    design.startNewProject();
     setActiveSection('design');
   };
 
-  // Restored handleScrollToDesign
   const handleScrollToDesign = () => {
     setActiveSection('design');
     document.getElementById('design-section')?.scrollIntoView({ behavior: 'smooth' });
@@ -61,11 +56,8 @@ function App() {
 
   const [newProjectId, setNewProjectId] = useState<string | null>(null);
 
-  // Update handleGenerate to accept selectedObjects
   const handleGenerate = async (selectedObjects: UserObject[]) => { 
-    // Pass selectedObjects to the hook's handleGenerate method
     const projectId = await design.handleGenerate(selectedObjects); 
-    console.log('Generation result:', projectId);
     if (projectId) {
       setNewProjectId(projectId);
       triggerProjectsRefresh();
@@ -73,21 +65,16 @@ function App() {
     }
   };
 
-  // Handle pending generation after login - NOTE: This won't have selected objects!
-  // This flow might need rethinking if objects are required for pending generations.
-  // For now, we'll pass an empty array.
   React.useEffect(() => {
     if (user && modals.pendingGenerate) {
-      handleGenerate([]); // Pass empty array for pending generation
+      handleGenerate([]);
       modals.setPendingGenerate(false);
     }
-  }, [user, modals.pendingGenerate, handleGenerate]); // Added handleGenerate dependency
+  }, [user, modals.pendingGenerate, handleGenerate]);
 
   const triggerProjectsRefresh = () => {
     setProjectsRefreshKey(prevKey => prevKey + 1);
   };
-
-
 
   return (
     <SeoWrapper
@@ -95,11 +82,10 @@ function App() {
       description="Upload a photo and let AI redesign your room in your preferred style. Get stunning results in seconds."
       ogImage="/images/before_after.jpg"
     >
-      {/* Header - Removed fixed positioning */}
-      <header className="bg-white shadow-sm border-b border-gray-200"> {/* Added border like target */}
-        <nav className="container max-w-8xl mx-auto px-4 sm:px-6 lg:px-8"> {/* Matched padding */}
-          <div className="flex items-center justify-between h-16"> {/* Matched height */}
-            <div className="flex items-center"> {/* Kept flex items-center */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <nav className="container max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center ml-16 lg:ml-0">
               <img 
                 src="/images/Dreamcasa3-removebg-preview.png" 
                 alt="DreamCasa AI Logo" 
@@ -110,19 +96,16 @@ function App() {
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
               />
-              <span className="ml-2 text-xl font-semibold text-custom">DreamCasa AI</span> {/* Matched font weight */}
+              <span className="ml-2 text-xl font-semibold text-custom">DreamCasa AI</span>
             </div>
-            {/* Right side of header */}
             <div className="flex items-center space-x-4">
-              {/* User Account/Sign Out */}
               {!authLoading && user && (
                  <div className="flex items-center gap-4">
-                    <UserAccountDropdown /> {/* Restored dropdown */}
+                    <UserAccountDropdown />
                   </div>
               )}
-              {/* Sign In/Register buttons for logged-out state (kept original logic) */}
               {!authLoading && !user && (
-                 <div className="hidden md:flex items-center space-x-4"> {/* Kept original responsive logic */}
+                 <div className="hidden md:flex items-center space-x-4">
                    <button
                       onClick={() => modals.setIsLoginModalOpen(true)}
                       className="!rounded-button px-6 py-2 text-custom border border-custom hover:bg-custom hover:text-white transition"
@@ -137,42 +120,29 @@ function App() {
                     </button>
                  </div>
               )}
-              {/* Original Nav Links (Removed as they are not in the target logged-in view) */}
-              {/* {!user && (
-                <>
-                  <a href="#features" className="text-gray-600 hover:text-custom">Features</a>
-                  <a href="#pricing" className="text-gray-600 hover:text-custom">Pricing</a>
-                  <a href="#portfolio" className="text-gray-600 hover:text-custom">Portfolio</a>
-                  <a href="#faq" className="text-gray-600 hover:text-custom">FAQ</a>
-              )} */}
-            </div> {/* End right side */}
+            </div>
           </div>
         </nav>
       </header>
 
-      {/* Added flex container for sidebar and main content */}
-      <div className="flex-1 flex">
-        {/* Render sidebar conditionally */}
+      <div className="flex-1 flex overflow-hidden">
         {user && (
           <SidebarMenu
             activeSection={activeSection}
             setActiveSection={setActiveSection}
-            onNewProjectClick={handleNewDesign} // Pass the handler down
-            setShowFullHome={setShowFullHome} // Pass the showFullHome setter
+            onNewProjectClick={handleNewDesign}
+            setShowFullHome={setShowFullHome}
           />
         )}
 
-        {/* Main content area: Removed pt-20 and ml-64 */}
-        <main className={`flex-1 ${user ? '' : 'w-full'}`}> {/* Ensure main takes full width if no sidebar */}
-          {/* Render sections based on activeSection and user status */}
-          {/* Wrap sections in a div with padding */}
+        <main className={`flex-1 overflow-y-auto ${user ? 'lg:pl-0 pl-16' : 'w-full'}`}>
           <div className="p-8">
             {(showFullHome || !user) && (
-              <> {/* Keep logged-out view as is */}
-                <HeroSection // Keep logged-out view as is
-                  onScrollToDesign={handleScrollToDesign} // Keep logged-out view as is
-                  onScrollToFeatures={handleScrollToFeatures} // Keep logged-out view as is
-                /> {/* Keep logged-out view as is */}
+              <>
+                <HeroSection
+                  onScrollToDesign={handleScrollToDesign}
+                  onScrollToFeatures={handleScrollToFeatures}
+                />
                 <DesignSection
                   uploadedImage={design.uploadedImage}
                   isGenerating={design.isGenerating}
@@ -182,7 +152,7 @@ function App() {
                   selectedView={design.selectedView}
                   selectedRenderingType={design.selectedRenderingType}
                   onImageUpload={design.handleImageUpload}
-                  onReset={design.resetUpload} // Re-added prop
+                  onReset={design.resetUpload}
                   onGenerate={handleGenerate}
                   onStyleSelect={design.setSelectedStyle}
                   onRoomTypeSelect={design.setSelectedRoomType}
@@ -192,22 +162,15 @@ function App() {
                   isAuthenticated={!!user}
                   hasObjects={objects.userObjects.length > 0}
                 />
-                <FeaturesSection /> {/* Keep logged-out view as is */}
-                <PricingSection /> {/* Keep logged-out view as is */}
-                <PortfolioSection /> {/* Keep logged-out view as is */}
-                <FAQSection /> {/* Keep logged-out view as is */}
-              </> // Keep logged-out view as is
+                <FeaturesSection />
+                <PricingSection />
+                <PortfolioSection />
+                <FAQSection />
+              </>
             )}
 
-            {/* Logged-in view sections - only show when not showing full home */}
-            {!showFullHome && activeSection === 'design' && user && (() => { // Remove console logs
-              const hasObjectsValue = objects.userObjects.length > 0;
-              // console.log('[App.tsx] Rendering DesignSection:');
-              // console.log('  - User:', user);
-              // console.log('  - objects.userObjects:', objects.userObjects);
-              // console.log('  - hasObjects prop:', hasObjectsValue);
-              return (
-                <DesignSection
+            {!showFullHome && activeSection === 'design' && user && (
+              <DesignSection
                 uploadedImage={design.uploadedImage}
                 isGenerating={design.isGenerating}
                 selectedStyle={design.selectedStyle}
@@ -216,200 +179,179 @@ function App() {
                 selectedView={design.selectedView}
                 selectedRenderingType={design.selectedRenderingType}
                 onImageUpload={design.handleImageUpload}
-                onReset={design.resetUpload} // Re-added prop
+                onReset={design.resetUpload}
                 onGenerate={handleGenerate}
                 onStyleSelect={design.setSelectedStyle}
                 onRoomTypeSelect={design.setSelectedRoomType}
                 onColorToneSelect={design.setSelectedColorTone}
                 onViewChange={design.setSelectedView}
                 onRenderingTypeChange={design.setSelectedRenderingType}
-                  isAuthenticated={!!user}
-                  hasObjects={hasObjectsValue}
-                  userId={user?.id} // Ensure userId is passed
-                />
-              );
-            })()}
-
-              {/* ResultsSection removed from main flow based on activeSection */}
-              {/* {design.generatedImage && activeSection === 'results' && (
-              <ResultsSection
-                originalImage={design.uploadedImage!}
-                generatedImage={design.generatedImage}
-                onNewDesign={handleNewDesign}
+                isAuthenticated={!!user}
+                hasObjects={objects.userObjects.length > 0}
+                userId={user?.id}
               />
-            )} */}
+            )}
 
-              {/* Render sections based on activeSection */}
-              {activeSection === 'projects' && user && (
-                <ProjectsSection
-                  user={user}
-                  onModifyProject={modals.handleOpenModificationModal}
-                  refreshKey={projectsRefreshKey} // Pass refresh key down
-                />
-              )}
+            {activeSection === 'projects' && user && (
+              <ProjectsSection
+                user={user}
+                onModifyProject={modals.handleOpenModificationModal}
+                refreshKey={projectsRefreshKey}
+              />
+            )}
 
-              {/* Render UserObjectsManager only if authenticated AND has objects */}
-              {activeSection === 'objects' && user && objects.userObjects.length > 0 && (
-                <UserObjectsManager />
-              )}
+            {activeSection === 'objects' && user && objects.userObjects.length > 0 && (
+              <UserObjectsManager />
+            )}
 
-              {/* Optional: Show a message if authenticated but has no objects */}
-              {activeSection === 'objects' && user && objects.userObjects.length === 0 && (
-                <div className="text-center py-12 text-gray-500">
-                  <h2 className="text-2xl font-semibold mb-4">My Objects</h2>
-                  <p>You haven't uploaded any objects yet.</p>
-                  {/* Consider adding a button/link to upload objects here */}
-                </div>
-              )}
-
-              {activeSection === 'community' && user && (
-                 <CommunityProjectsSection /> // Render the new section
-              )}
-            </div> {/* End padding div */}
-          </main> {/* End main content */}
-        </div> {/* End flex container */}
-
-        {/* Footer: Reverted to dark theme, kept layout adjustments */}
-        <footer className={`bg-gray-900 text-white py-12 ${user ? '' : 'w-full'}`}> {/* Reverted background, text color */}
-          <div className="container max-w-8xl mx-auto px-4"> {/* Kept container adjustments */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8"> {/* Reverted to 3 columns like original */}
-              {/* Column 1: Logo and tagline */}
-              <div>
-                <img src="/images/Dreamcasa3-removebg-preview.png" alt="DreamCasa AI Logo" className="h-8 mb-4 brightness-0 invert" /> {/* Restored invert/brightness */}
-                <span className="text-white text-lg font-bold block mb-2">DreamCasa AI</span> {/* Restored styles */}
-                <p className="text-gray-400">Transform your spaces with AI</p> {/* Restored styles */}
+            {activeSection === 'objects' && user && objects.userObjects.length === 0 && (
+              <div className="text-center py-12 text-gray-500">
+                <h2 className="text-2xl font-semibold mb-4">My Objects</h2>
+                <p>You haven't uploaded any objects yet.</p>
               </div>
-              {/* Column 2: Product Links */}
-              <div>
-                <h4 className="text-lg font-semibold mb-4">Product</h4> {/* Restored styles */}
-                <ul className="space-y-2">
-                  <li>
-                    {user ? (
-                      <a 
-                        href="#" 
-                        className="text-gray-400 hover:text-white"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setActiveSection('design');
-                          setShowFullHome(true);
-                          document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-                        }}
-                      >
-                        Features
-                      </a>
-                    ) : (
-                      <a href="#features" className="text-gray-400 hover:text-white">Features</a>
-                    )}
-                  </li>
-                  <li>
-                    {user ? (
-                      <a 
-                        href="#" 
-                        className="text-gray-400 hover:text-white"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setActiveSection('design');
-                          setShowFullHome(true);
-                          document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
-                        }}
-                      >
-                        Pricing
-                      </a>
-                    ) : (
-                      <a href="#pricing" className="text-gray-400 hover:text-white">Pricing</a>
-                    )}
-                  </li>
-                  <li>
-                    {user ? (
-                      <a 
-                        href="#" 
-                        className="text-gray-400 hover:text-white"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setActiveSection('design');
-                          setShowFullHome(true);
-                          document.getElementById('portfolio')?.scrollIntoView({ behavior: 'smooth' });
-                        }}
-                      >
-                        Portfolio
-                      </a>
-                    ) : (
-                      <a href="#portfolio" className="text-gray-400 hover:text-white">Portfolio</a>
-                    )}
-                  </li>
-                </ul>
-              </div>
-              {/* Column 3: Support Links */}
-              <div>
-                <h4 className="text-lg font-semibold mb-4">Support</h4> {/* Restored styles */}
-                <ul className="space-y-2">
-                  <li>
-                    {user ? (
-                      <a 
-                        href="#" 
-                        className="text-gray-400 hover:text-white"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setActiveSection('design');
-                          setShowFullHome(true);
-                          document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' });
-                        }}
-                      >
-                        FAQ
-                      </a>
-                    ) : (
-                      <a href="#faq" className="text-gray-400 hover:text-white">FAQ</a>
-                    )}
-                  </li>
-                  <li><a href="#" className="text-gray-400 hover:text-white">Contact</a></li>
-                </ul>
-              </div>
-              {/* Column 4: Social Links (Removed as it wasn't in original dark footer) */}
+            )}
+
+            {activeSection === 'community' && user && (
+              <CommunityProjectsSection />
+            )}
+          </div>
+        </main>
+      </div>
+
+      <footer className={`bg-gray-900 text-white py-12 ${user ? '' : 'w-full'}`}>
+        <div className="container max-w-8xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div>
+              <img src="/images/Dreamcasa3-removebg-preview.png" alt="DreamCasa AI Logo" className="h-8 mb-4 brightness-0 invert" />
+              <span className="text-white text-lg font-bold block mb-2">DreamCasa AI</span>
+              <p className="text-gray-400">Transform your spaces with AI</p>
             </div>
-            {/* Copyright - Restored border-t and text color */}
-            <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400"> {/* Restored styles */}
-              <p>&copy; 2025 DreamCasa AI. All rights reserved.</p>
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Product</h4>
+              <ul className="space-y-2">
+                <li>
+                  {user ? (
+                    <a 
+                      href="#" 
+                      className="text-gray-400 hover:text-white"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setActiveSection('design');
+                        setShowFullHome(true);
+                        document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                    >
+                      Features
+                    </a>
+                  ) : (
+                    <a href="#features" className="text-gray-400 hover:text-white">Features</a>
+                  )}
+                </li>
+                <li>
+                  {user ? (
+                    <a 
+                      href="#" 
+                      className="text-gray-400 hover:text-white"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setActiveSection('design');
+                        setShowFullHome(true);
+                        document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                    >
+                      Pricing
+                    </a>
+                  ) : (
+                    <a href="#pricing" className="text-gray-400 hover:text-white">Pricing</a>
+                  )}
+                </li>
+                <li>
+                  {user ? (
+                    <a 
+                      href="#" 
+                      className="text-gray-400 hover:text-white"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setActiveSection('design');
+                        setShowFullHome(true);
+                        document.getElementById('portfolio')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                    >
+                      Portfolio
+                    </a>
+                  ) : (
+                    <a href="#portfolio" className="text-gray-400 hover:text-white">Portfolio</a>
+                  )}
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Support</h4>
+              <ul className="space-y-2">
+                <li>
+                  {user ? (
+                    <a 
+                      href="#" 
+                      className="text-gray-400 hover:text-white"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setActiveSection('design');
+                        setShowFullHome(true);
+                        document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                    >
+                      FAQ
+                    </a>
+                  ) : (
+                    <a href="#faq" className="text-gray-400 hover:text-white">FAQ</a>
+                  )}
+                </li>
+                <li><a href="#" className="text-gray-400 hover:text-white">Contact</a></li>
+              </ul>
             </div>
           </div>
-        </footer>
+          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+            <p>&copy; 2025 DreamCasa AI. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
 
-        {/* Modals (Keep as is) */}
-        <LoginModal
-          isOpen={modals.isLoginModalOpen}
-          onClose={() => modals.setIsLoginModalOpen(false)}
-          onSwitchToRegister={() => {
-            modals.setIsLoginModalOpen(false);
-            modals.setIsRegisterModalOpen(true);
-          }}
-        />
-        <RegisterModal
-          isOpen={modals.isRegisterModalOpen}
-          onClose={() => modals.setIsRegisterModalOpen(false)}
-          onSwitchToLogin={() => {
-            modals.setIsRegisterModalOpen(false);
-            modals.setIsLoginModalOpen(true);
-          }}
-        />
-        <FloatingObjectsSidebar
-          isOpen={modals.isObjectsSidebarOpen}
-          onClose={() => modals.setIsObjectsSidebarOpen(false)}
-          selectedObjects={objects.selectedObjects}
-          onSelectObject={objects.handleSelectObject}
-        />
-        <ImageModificationModal
-          isOpen={modals.isModificationModalOpen}
-          onClose={modals.handleCloseModificationModal}
-          project={modals.projectToModify}
-          onGenerationComplete={triggerProjectsRefresh} // Pass refresh trigger function
-        />
-        <ErrorModal
-          isOpen={design.errorModal.isOpen}
-          onClose={() => design.setErrorModal({...design.errorModal, isOpen: false})}
-          title={design.errorModal.title}
-          message={design.errorModal.message}
-        />
-    </SeoWrapper> // Added missing closing tag
+      <LoginModal
+        isOpen={modals.isLoginModalOpen}
+        onClose={() => modals.setIsLoginModalOpen(false)}
+        onSwitchToRegister={() => {
+          modals.setIsLoginModalOpen(false);
+          modals.setIsRegisterModalOpen(true);
+        }}
+      />
+      <RegisterModal
+        isOpen={modals.isRegisterModalOpen}
+        onClose={() => modals.setIsRegisterModalOpen(false)}
+        onSwitchToLogin={() => {
+          modals.setIsRegisterModalOpen(false);
+          modals.setIsLoginModalOpen(true);
+        }}
+      />
+      <FloatingObjectsSidebar
+        isOpen={modals.isObjectsSidebarOpen}
+        onClose={() => modals.setIsObjectsSidebarOpen(false)}
+        selectedObjects={objects.selectedObjects}
+        onSelectObject={objects.handleSelectObject}
+      />
+      <ImageModificationModal
+        isOpen={modals.isModificationModalOpen}
+        onClose={modals.handleCloseModificationModal}
+        project={modals.projectToModify}
+        onGenerationComplete={triggerProjectsRefresh}
+      />
+      <ErrorModal
+        isOpen={design.errorModal.isOpen}
+        onClose={() => design.setErrorModal({...design.errorModal, isOpen: false})}
+        title={design.errorModal.title}
+        message={design.errorModal.message}
+      />
+    </SeoWrapper>
   );
 }
 
-export default App; // Added missing closing tag
+export default App;

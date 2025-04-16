@@ -1,4 +1,5 @@
 import React from 'react';
+import { ImageLoader } from './ImageLoader';
 import type { UserObject } from '../lib/userObjectsService';
 import { TrashIcon, EyeIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast'; // Added toast import
@@ -57,17 +58,11 @@ export function UserObjectsList({ objects, selectedObjects, onSelectObject, onDe
             onSelectObject(object.id);
           }}
         >
-          {(object.thumbnail_url || object.asset_url) && (
-            <img 
-              src={object.thumbnail_url || object.asset_url} 
-              alt={object.object_name} 
+            <ImageLoader
+              src={object.thumbnail_url || object.asset_url || ''}
+              alt={object.object_name}
               className="w-full h-48 object-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-              }}
             />
-          )}
           <div className="p-4">
             <h3 className="font-semibold text-gray-900">{object.object_name}</h3>
             <p className="text-sm text-gray-600">{object.object_type}</p>

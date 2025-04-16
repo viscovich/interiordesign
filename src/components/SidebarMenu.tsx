@@ -1,61 +1,79 @@
-import React from 'react';
-// Removed Heroicons imports, will use Font Awesome classes directly
+import React, { useState } from 'react';
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 
 interface SidebarMenuProps {
-  activeSection: string | null; // Keep activeSection prop
-  setActiveSection: (section: string) => void; // Keep setActiveSection prop
-  onNewProjectClick: () => void; // Add the new prop
-  setShowFullHome: (show: boolean) => void; // Add new prop for full home toggle
+  activeSection: string | null;
+  setActiveSection: (section: string) => void;
+  onNewProjectClick: () => void;
+  setShowFullHome: (show: boolean) => void;
 }
 
-// Define menu items with Font Awesome classes
 const menuItems = [
-  // Note: "New Project" is handled separately as a button above the nav
   { name: 'My projects', section: 'projects', iconClass: 'fas fa-folder' },
   { name: 'My Objects', section: 'objects', iconClass: 'fas fa-cube' },
-  { name: 'Community', section: 'community', iconClass: 'fas fa-users' }, // Changed icon to match target
+  { name: 'Community', section: 'community', iconClass: 'fas fa-users' },
 ];
 
-export function SidebarMenu({ activeSection, setActiveSection, onNewProjectClick, setShowFullHome }: SidebarMenuProps) { // Destructure all props
-  return (
-    // Changed positioning and styling to match target layout
-    <aside className="w-64 bg-gray-50 text-gray-800 border-r border-gray-200">
-      <div className="p-4">
-        {/* New Project Button */}
-        <button
-          onClick={() => {
-            setShowFullHome(false);
-            onNewProjectClick();
-          }}
-          className="w-full bg-custom text-white p-3 !rounded-button flex items-center justify-center space-x-2 mb-8" // Added margin-bottom
-        >
-          <i className="fas fa-plus"></i>
-          <span>New Project</span> {/* Changed text to English */}
-        </button>
+export function SidebarMenu({ activeSection, setActiveSection, onNewProjectClick, setShowFullHome }: SidebarMenuProps) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-        {/* Navigation Links */}
-        <nav className="space-y-2"> {/* Removed mt-8, handled by button margin */}
-          {menuItems.map((item) => (
-            <a // Changed to <a> tag for semantic correctness, though button functionality is kept via onClick
-              key={item.name}
-              href="#" // Added href for <a> tag
+  return (
+    <>
+      {/* Mobile menu button */}
+      <div className="lg:hidden fixed top-4 left-4 z-50">
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 rounded-md bg-gray-100 text-gray-500 hover:bg-gray-200"
+        >
+          {isMobileMenuOpen ? (
+            <XMarkIcon className="h-6 w-6" />
+          ) : (
+            <Bars3Icon className="h-6 w-6" />
+          )}
+        </button>
+      </div>
+
+      {/* Sidebar - hidden on mobile unless menu is open */}
+      <aside className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-gray-50 text-gray-800 border-r border-gray-200 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-200 ease-in-out`}>
+        <div className="p-4">
+          {/* New Project Button */}
+          <button
+            onClick={() => {
+              setShowFullHome(false);
+              onNewProjectClick();
+              setIsMobileMenuOpen(false); // Close mobile menu when New Project is clicked
+            }}
+            className="w-full bg-custom text-white p-3 !rounded-button flex items-center justify-center space-x-2 mb-8"
+          >
+            <i className="fas fa-plus"></i>
+            <span>New Project</span>
+          </button>
+
+          {/* Navigation Links */}
+          <nav className="space-y-2">
+            {menuItems.map((item) => (
+              <a
+                key={item.name}
+                href="#"
               onClick={(e) => {
-                e.preventDefault(); // Prevent default link behavior
+                e.preventDefault();
                 setShowFullHome(false);
                 setActiveSection(item.section);
+                setIsMobileMenuOpen(false); // Close mobile menu when item is selected
               }}
-              className={`flex items-center space-x-3 p-3 rounded-lg ${ // Adjusted padding and spacing
-                activeSection === item.section
-                  ? 'bg-gray-200 text-custom' // Active state styles
-                  : 'text-gray-600 hover:bg-gray-200' // Default and hover styles
-              }`}
-            >
-              <i className={`${item.iconClass} w-5 h-5`}></i> {/* Use iconClass, added width/height */}
-              <span>{item.name}</span>
-            </a>
-          ))}
-        </nav>
-      </div>
-    </aside>
+                className={`flex items-center space-x-3 p-3 rounded-lg ${
+                  activeSection === item.section
+                    ? 'bg-gray-200 text-custom'
+                    : 'text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <i className={`${item.iconClass} w-5 h-5`}></i>
+                <span>{item.name}</span>
+              </a>
+            ))}
+          </nav>
+        </div>
+      </aside>
+    </>
   );
 }

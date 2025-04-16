@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ImageLoader } from './ImageLoader';
 import type { Project, PaginatedProjects } from '../lib/projectsService.d';
 import type { User } from '@supabase/supabase-js';
 import { getProjectsByUser, deleteProject } from '../lib/projectsService';
@@ -120,17 +121,15 @@ export function ProjectsList({ user, onModifyProject, refreshKey, newProjectId }
                 className="relative p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <div className="flex flex-col space-y-2">
-                  {(project.thumbnail_url || project.generated_image_url) && (
-                    <img
-                      src={project.thumbnail_url || project.generated_image_url || ''}
-                      alt={`Generated ${project.room_type}`}
-                      className="w-full h-48 object-cover rounded-lg mb-2 cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFullscreenImageUrl(project.generated_image_url || project.original_image_url || '');
-                      }}
-                    />
-                  )}
+                  <ImageLoader
+                    src={project.thumbnail_url || project.generated_image_url || ''}
+                    alt={`Generated ${project.room_type}`}
+                    className="w-full h-48 object-cover rounded-lg mb-2 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFullscreenImageUrl(project.generated_image_url || project.original_image_url || '');
+                    }}
+                  />
                   <div
                     className="cursor-pointer"
                     onClick={() => setSelectedProject(project)}
