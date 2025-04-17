@@ -1,6 +1,20 @@
 import React from 'react';
+import ErrorModal from '../components/ErrorModal';
 
-export default function PricingSection() {
+interface PricingSectionProps {
+  user?: {
+    user_profile?: {
+      stripe_sandbox_access?: boolean;
+    };
+  };
+}
+
+export default function PricingSection({ user }: PricingSectionProps) {
+  const [showModal, setShowModal] = React.useState(false);
+
+  const showComingSoonModal = () => {
+    setShowModal(true);
+  };
   return (
     <section id="pricing" className="py-20 bg-gray-50">
       <div className="container max-w-8xl mx-auto px-4">
@@ -44,6 +58,9 @@ export default function PricingSection() {
             <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-custom text-white px-4 py-1 rounded-full text-sm">
               Most popular
             </div>
+            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-white px-4 py-1 rounded-full text-sm mt-6">
+              Coming Soon
+            </div>
             <h3 className="text-2xl font-bold mb-4">🟦 Pro</h3>
             <div className="text-4xl font-bold mb-6">
               $19<span className="text-xl font-normal">/month</span>
@@ -70,11 +87,18 @@ export default function PricingSection() {
                 High-resolution images
               </li>
             </ul>
-            <button className="!rounded-button w-full py-3 bg-custom text-white hover:bg-custom/90 transition">
-              Upgrade Now
+            <button 
+              className="!rounded-button w-full py-3 bg-gray-300 text-white cursor-not-allowed"
+              disabled={!user?.user_profile?.stripe_sandbox_access}
+              onClick={() => !user?.user_profile?.stripe_sandbox_access && showComingSoonModal()}
+            >
+              {user?.user_profile?.stripe_sandbox_access ? 'Upgrade Now' : 'Coming Soon'}
             </button>
           </div>
-          <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
+          <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100 relative">
+            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-white px-4 py-1 rounded-full text-sm">
+              Coming Soon
+            </div>
             <h3 className="text-2xl font-bold mb-4">🟥 Enterprise</h3>
             <div className="text-4xl font-bold mb-6">
               $49<span className="text-xl font-normal">/month</span>
@@ -101,12 +125,22 @@ export default function PricingSection() {
                 High-resolution images
               </li>
             </ul>
-            <button className="!rounded-button w-full py-3 bg-custom text-white hover:bg-custom/90 transition">
-              Upgrade Now
+            <button 
+              className="!rounded-button w-full py-3 bg-gray-300 text-white cursor-not-allowed"
+              disabled={!user?.user_profile?.stripe_sandbox_access}
+              onClick={() => !user?.user_profile?.stripe_sandbox_access && showComingSoonModal()}
+            >
+              {user?.user_profile?.stripe_sandbox_access ? 'Upgrade Now' : 'Coming Soon'}
             </button>
           </div>
         </div>
       </div>
+      <ErrorModal 
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title="Feature Coming Soon"
+        message="This feature will be available soon. Selected users will get early access."
+      />
     </section>
   );
 }
