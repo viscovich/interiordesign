@@ -41,7 +41,49 @@ export function SidebarMenu({ activeSection, setActiveSection, onNewProjectClick
         </button>
       </div>
 
-      {/* Sidebar - only shown on mobile */}
+      {/* Sidebar - shown on desktop for authenticated users */}
+      {user && (
+        <aside className="hidden lg:block w-full h-full bg-gray-50 text-gray-800 overflow-y-auto">
+          <div className="p-4">
+            {/* New Project Button */}
+            <button
+              onClick={() => {
+                setShowFullHome(false);
+                onNewProjectClick();
+              }}
+              className="w-full bg-custom text-white p-3 !rounded-button flex items-center justify-center space-x-2 mb-8"
+            >
+              <i className="fas fa-plus"></i>
+              <span>New Project</span>
+            </button>
+
+            {/* Navigation Links */}
+            <nav className="space-y-2">
+              {authMenuItems.map((item) => (
+                <a
+                  key={item.name}
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowFullHome(false);
+                    setActiveSection(item.section);
+                  }}
+                  className={`flex items-center space-x-3 p-3 rounded-lg ${
+                    activeSection === item.section
+                      ? 'bg-gray-200 text-custom'
+                      : 'text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  <i className={`${item.iconClass} w-5 h-5`}></i>
+                  <span>{item.name}</span>
+                </a>
+              ))}
+            </nav>
+          </div>
+        </aside>
+      )}
+
+      {/* Mobile Sidebar - only shown on mobile */}
       <aside className={`lg:hidden fixed inset-y-0 left-0 z-40 w-64 bg-gray-50 text-gray-800 border-r border-gray-200 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-200 ease-in-out`}>
         <div className="p-4">
           {/* New Project Button */}

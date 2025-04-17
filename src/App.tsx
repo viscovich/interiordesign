@@ -82,6 +82,7 @@ function App() {
       description="Upload a photo and let AI redesign your room in your preferred style. Get stunning results in seconds."
       ogImage="/images/before_after.jpg"
     >
+    <div className="flex flex-col min-h-screen">
       <header className="bg-white shadow-sm border-b border-gray-200">
         <nav className="container max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -180,16 +181,20 @@ function App() {
         </nav>
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
-        <SidebarMenu
-          activeSection={activeSection}
-          setActiveSection={setActiveSection}
-          onNewProjectClick={handleNewDesign}
-          setShowFullHome={setShowFullHome}
-          user={user}
-        />
+      <div className="flex-grow flex flex-col lg:flex-row"> {/* Added flex-grow */}
+        {user && (
+          <div className="lg:w-64 flex-shrink-0 border-r border-gray-200 bg-gray-50"> {/* Removed overflow-y-auto */}
+            <SidebarMenu
+              activeSection={activeSection}
+              setActiveSection={setActiveSection}
+              onNewProjectClick={handleNewDesign}
+              setShowFullHome={setShowFullHome}
+              user={user}
+            />
+          </div>
+        )}
 
-        <main className={`flex-1 overflow-y-auto ${user ? 'lg:pl-0 pl-16' : 'w-full'}`}>
+        <main className={`flex-1 overflow-y-auto ${user ? 'lg:pl-0' : 'w-full'}`}>
           <div className="p-8">
             {(showFullHome || !user) && (
               <>
@@ -369,7 +374,7 @@ function App() {
           </div>
         </div>
       </footer>
-
+    </div>
       <LoginModal
         isOpen={modals.isLoginModalOpen}
         onClose={() => modals.setIsLoginModalOpen(false)}

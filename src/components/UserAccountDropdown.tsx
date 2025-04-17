@@ -12,6 +12,7 @@ interface UserProfile {
   stripe_customer_id?: string;
   subscription_status?: string;
   current_plan?: string;
+  stripe_sandbox_access?: boolean;
 }
 
 export function UserAccountDropdown() {
@@ -121,8 +122,8 @@ export function UserAccountDropdown() {
                 {/* Plan and Status buttons removed */}
                 <button 
                   onClick={handleUpgrade}
-                  disabled={loading.upgrade}
-                  className={`block w-full text-left px-2 py-1 text-sm font-medium text-red-600 hover:bg-gray-100 rounded ${loading.upgrade ? 'opacity-50' : ''}`}
+                  disabled={loading.upgrade || userProfile?.stripe_sandbox_access !== true}
+                  className={`block w-full text-left px-2 py-1 text-sm font-medium text-red-600 hover:bg-gray-100 rounded ${(loading.upgrade || userProfile?.stripe_sandbox_access !== true) ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {loading.upgrade ? 'Processing...' : 'Upgrade Plan'}
                 </button>
