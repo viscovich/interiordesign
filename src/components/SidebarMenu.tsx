@@ -6,20 +6,28 @@ interface SidebarMenuProps {
   setActiveSection: (section: string) => void;
   onNewProjectClick: () => void;
   setShowFullHome: (show: boolean) => void;
+  user: any; // TODO: Replace with proper user type
 }
 
-const menuItems = [
+const authMenuItems = [
   { name: 'My projects', section: 'projects', iconClass: 'fas fa-folder' },
   { name: 'My Objects', section: 'objects', iconClass: 'fas fa-cube' },
   { name: 'Community', section: 'community', iconClass: 'fas fa-users' },
 ];
 
-export function SidebarMenu({ activeSection, setActiveSection, onNewProjectClick, setShowFullHome }: SidebarMenuProps) {
+const mainMenuItems = [
+  { name: 'Features', section: 'features', iconClass: 'fas fa-star' },
+  { name: 'Pricing', section: 'pricing', iconClass: 'fas fa-tag' },
+  { name: 'Portfolio', section: 'portfolio', iconClass: 'fas fa-images' },
+  { name: 'FAQ', section: 'faq', iconClass: 'fas fa-question-circle' },
+];
+
+export function SidebarMenu({ activeSection, setActiveSection, onNewProjectClick, setShowFullHome, user }: SidebarMenuProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <>
-      {/* Mobile menu button */}
+      {/* Mobile menu button - only shown on mobile */}
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -33,8 +41,8 @@ export function SidebarMenu({ activeSection, setActiveSection, onNewProjectClick
         </button>
       </div>
 
-      {/* Sidebar - hidden on mobile unless menu is open */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-gray-50 text-gray-800 border-r border-gray-200 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-200 ease-in-out`}>
+      {/* Sidebar - only shown on mobile */}
+      <aside className={`lg:hidden fixed inset-y-0 left-0 z-40 w-64 bg-gray-50 text-gray-800 border-r border-gray-200 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-200 ease-in-out`}>
         <div className="p-4">
           {/* New Project Button */}
           <button
@@ -51,16 +59,38 @@ export function SidebarMenu({ activeSection, setActiveSection, onNewProjectClick
 
           {/* Navigation Links */}
           <nav className="space-y-2">
-            {menuItems.map((item) => (
+            {mainMenuItems.map((item) => (
               <a
                 key={item.name}
                 href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                setShowFullHome(false);
-                setActiveSection(item.section);
-                setIsMobileMenuOpen(false); // Close mobile menu when item is selected
-              }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowFullHome(true);
+                  setActiveSection('design');
+                  document.getElementById(item.section)?.scrollIntoView({ behavior: 'smooth' });
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex items-center space-x-3 p-3 rounded-lg ${
+                  activeSection === item.section
+                    ? 'bg-gray-200 text-custom'
+                    : 'text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <i className={`${item.iconClass} w-5 h-5`}></i>
+                <span>{item.name}</span>
+              </a>
+            ))}
+
+            {user && authMenuItems.map((item) => (
+              <a
+                key={item.name}
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowFullHome(false);
+                  setActiveSection(item.section);
+                  setIsMobileMenuOpen(false);
+                }}
                 className={`flex items-center space-x-3 p-3 rounded-lg ${
                   activeSection === item.section
                     ? 'bg-gray-200 text-custom'

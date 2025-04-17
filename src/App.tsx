@@ -85,7 +85,8 @@ function App() {
       <header className="bg-white shadow-sm border-b border-gray-200">
         <nav className="container max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center ml-16 lg:ml-0">
+            {/* Logo - shown on left for desktop, right for mobile */}
+            <div className="flex items-center lg:ml-0 order-1 lg:order-none ml-16 lg:ml-0">
               <img 
                 src="/images/Dreamcasa3-removebg-preview.png" 
                 alt="DreamCasa AI Logo" 
@@ -98,27 +99,81 @@ function App() {
               />
               <span className="ml-2 text-xl font-semibold text-custom">DreamCasa AI</span>
             </div>
-            <div className="flex items-center space-x-4">
+
+            {/* Desktop Navigation Links - hidden on mobile */}
+            <div className="hidden lg:flex items-center space-x-8 order-2">
+              <a 
+                href="#features" 
+                className="text-gray-600 hover:text-custom"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveSection('design');
+                  setShowFullHome(true);
+                  document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                Features
+              </a>
+              <a 
+                href="#pricing" 
+                className="text-gray-600 hover:text-custom"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveSection('design');
+                  setShowFullHome(true);
+                  document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                Pricing
+              </a>
+              <a 
+                href="#portfolio" 
+                className="text-gray-600 hover:text-custom"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveSection('design');
+                  setShowFullHome(true);
+                  document.getElementById('portfolio')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                Portfolio
+              </a>
+              <a 
+                href="#faq" 
+                className="text-gray-600 hover:text-custom"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveSection('design');
+                  setShowFullHome(true);
+                  document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                FAQ
+              </a>
+            </div>
+
+            {/* Auth Buttons - shown on right */}
+            <div className="flex items-center space-x-4 order-3">
               {!authLoading && user && (
-                 <div className="flex items-center gap-4">
-                    <UserAccountDropdown />
-                  </div>
+                <div className="flex items-center gap-4">
+                  <UserAccountDropdown />
+                </div>
               )}
               {!authLoading && !user && (
-                 <div className="hidden md:flex items-center space-x-4">
-                   <button
-                      onClick={() => modals.setIsLoginModalOpen(true)}
-                      className="!rounded-button px-6 py-2 text-custom border border-custom hover:bg-custom hover:text-white transition"
-                    >
-                      Sign In
-                    </button>
-                    <button
-                      onClick={() => modals.setIsRegisterModalOpen(true)}
-                      className="!rounded-button px-6 py-2 bg-custom text-white hover:bg-custom/90 transition"
-                    >
-                      Register free
-                    </button>
-                 </div>
+                <div className="hidden md:flex items-center space-x-4">
+                  <button
+                    onClick={() => modals.setIsLoginModalOpen(true)}
+                    className="!rounded-button px-6 py-2 text-custom border border-custom hover:bg-custom hover:text-white transition"
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    onClick={() => modals.setIsRegisterModalOpen(true)}
+                    className="!rounded-button px-6 py-2 bg-custom text-white hover:bg-custom/90 transition"
+                  >
+                    Register free
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -126,14 +181,13 @@ function App() {
       </header>
 
       <div className="flex-1 flex overflow-hidden">
-        {user && (
-          <SidebarMenu
-            activeSection={activeSection}
-            setActiveSection={setActiveSection}
-            onNewProjectClick={handleNewDesign}
-            setShowFullHome={setShowFullHome}
-          />
-        )}
+        <SidebarMenu
+          activeSection={activeSection}
+          setActiveSection={setActiveSection}
+          onNewProjectClick={handleNewDesign}
+          setShowFullHome={setShowFullHome}
+          user={user}
+        />
 
         <main className={`flex-1 overflow-y-auto ${user ? 'lg:pl-0 pl-16' : 'w-full'}`}>
           <div className="p-8">
@@ -306,7 +360,7 @@ function App() {
                     <a href="#faq" className="text-gray-400 hover:text-white">FAQ</a>
                   )}
                 </li>
-                <li><a href="#" className="text-gray-400 hover:text-white">Contact</a></li>
+                <li><a href="mailto:info@dreamcasa.design" className="text-gray-400 hover:text-white">Contact</a></li>
               </ul>
             </div>
           </div>
