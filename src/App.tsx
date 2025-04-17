@@ -116,7 +116,7 @@ function App() {
                       onClick={() => modals.setIsRegisterModalOpen(true)}
                       className="!rounded-button px-6 py-2 bg-custom text-white hover:bg-custom/90 transition"
                     >
-                      Register
+                      Register free
                     </button>
                  </div>
               )}
@@ -163,7 +163,7 @@ function App() {
                   hasObjects={objects.userObjects.length > 0}
                 />
                 <FeaturesSection />
-                <PricingSection />
+                <PricingSection onRegisterClick={() => modals.setIsRegisterModalOpen(true)} />
                 <PortfolioSection />
                 <FAQSection />
               </>

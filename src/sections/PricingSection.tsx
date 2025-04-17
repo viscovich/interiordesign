@@ -7,9 +7,10 @@ interface PricingSectionProps {
       stripe_sandbox_access?: boolean;
     };
   };
+  onRegisterClick?: () => void;
 }
 
-export default function PricingSection({ user }: PricingSectionProps) {
+export default function PricingSection({ user, onRegisterClick }: PricingSectionProps) {
   const [showModal, setShowModal] = React.useState(false);
 
   const showComingSoonModal = () => {
@@ -50,7 +51,10 @@ export default function PricingSection({ user }: PricingSectionProps) {
                 Image Resolution: 1024x720 pixel
               </li>
             </ul>
-            <button className="!rounded-button w-full py-3 border border-custom text-custom hover:bg-custom hover:text-white transition">
+            <button 
+              onClick={onRegisterClick}
+              className="!rounded-button w-full py-3 border border-custom text-custom hover:bg-custom hover:text-white transition"
+            >
               Get Started
             </button>
           </div>

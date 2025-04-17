@@ -89,7 +89,7 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
                 onClick={handleResetRegistration}
                 className="w-full py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
-                Try different method
+                Try different email
               </button>
               
               <button
@@ -189,9 +189,9 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !acceptedTerms || !email || !password}
                 className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
-                  ${loading ? 'bg-gray-400' : 'bg-black hover:bg-custom-800'}`}
+                  ${loading || !acceptedTerms || !email || !password ? 'bg-gray-400' : 'bg-black hover:bg-custom-800'}`}
               >
                 {loading ? 'Processing...' : 'Sign Up'}
               </button>
