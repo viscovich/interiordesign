@@ -272,12 +272,24 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
     // --- Filtering Logic ---
     const compatibleObjects = userObjectLibrary.filter(obj => {
         if (!selectedObjectName) return false;
+
+        // Find the full selected image object from the recognized list
+        const selectedImageObject = recognizedObjects.find(recObj => recObj.object_name === selectedObjectName);
+        const selectedImageObjectNameLower = selectedImageObject?.object_name.toLowerCase() || ''; // Use full name for description check
+
+        // Extract keyword (last word) for original matching logic
         const nameParts = selectedObjectName.toLowerCase().split(' ');
         const keyword = nameParts[nameParts.length - 1];
         const keywordSingular = keyword.endsWith('s') ? keyword.slice(0, -1) : keyword;
+
+        // Original matching criteria
         const typeMatch = obj.object_type.toLowerCase() === keyword || obj.object_type.toLowerCase() === keywordSingular;
         const nameMatch = obj.object_name.toLowerCase().includes(keyword) || obj.object_name.toLowerCase().includes(keywordSingular);
-        return typeMatch || nameMatch;
+
+        // New matching criterion: Check if library object type is in the image object's full name
+        const descriptionMatch = selectedImageObjectNameLower.includes(obj.object_type.toLowerCase());
+
+        return typeMatch || nameMatch || descriptionMatch; // Combine all three criteria
     });
 
     // --- Render Logic ---

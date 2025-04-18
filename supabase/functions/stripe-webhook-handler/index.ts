@@ -27,9 +27,11 @@ const supabaseAdmin = createClient(
 // Get the webhook signing secret from environment variables (ensure STRIPE_WEBHOOK_SECRET is set)
 const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
 
-// Define the Price ID for the test plan and the credits to add
-const TEST_PLAN_PRICE_ID = 'price_1RCGMcHqqEp5PbqKlqBheNM9';
-const CREDITS_FOR_TEST_PLAN = 250;
+// Get plan configurations from environment variables
+const PRO_PLAN_PRICE_ID = Deno.env.get('STRIPE_PRO_PRICE_ID') ?? '';
+const ENTERPRISE_PLAN_PRICE_ID = Deno.env.get('STRIPE_ENTERPRISE_PRICE_ID') ?? '';
+const PRO_PLAN_CREDITS = parseInt(Deno.env.get('PRO_PLAN_CREDITS') ?? '250');
+const ENTERPRISE_PLAN_CREDITS = parseInt(Deno.env.get('ENTERPRISE_PLAN_CREDITS') ?? '1000');
 
 // --- Database Function Call ---
 // Assumes a PostgreSQL function `add_user_credits(p_stripe_customer_id TEXT, p_credits_to_add INT)` exists
@@ -110,12 +112,19 @@ serve(async (req: Request) => {
          return new Response(JSON.stringify({ error: 'Missing customer or price ID.' }), { status: 400, headers: responseHeaders });
       }
 
-      // Check if the price ID matches the test plan
-      if (priceId === TEST_PLAN_PRICE_ID) {
+      // Determine which plan was purchased and assign appropriate credits
+      let creditsToAdd = 0;
+      if (priceId === PRO_PLAN_PRICE_ID) {
+        creditsToAdd = PRO_PLAN_CREDITS;
+      } else if (priceId === ENTERPRISE_PLAN_PRICE_ID) {
+        creditsToAdd = ENTERPRISE_PLAN_CREDITS;
+      }
+
+      if (creditsToAdd > 0) {
         try {
           // Add credits using the database function
-          await addCreditsToUser(customerId, CREDITS_FOR_TEST_PLAN);
-          console.log(`Successfully added ${CREDITS_FOR_TEST_PLAN} credits for customer ${customerId}`);
+          await addCreditsToUser(customerId, creditsToAdd);
+          console.log(`Successfully added ${creditsToAdd} credits for customer ${customerId}`);
         } catch (dbError: unknown) {
            const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown database error';
            console.error(`Database error adding credits for ${customerId}: ${errorMessage}`);

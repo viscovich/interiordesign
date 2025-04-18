@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Added useEffect
+import { BrowserRouter, useLocation } from 'react-router-dom'; // Added BrowserRouter and useLocation
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from './lib/auth';
 import SeoWrapper from './components/SeoWrapper';
+import SuccessPage from './pages/SuccessPage'; // Import SuccessPage
+import CanceledPage from './pages/CanceledPage'; // Import CanceledPage
 import { SidebarMenu } from './components/SidebarMenu';
 import { FloatingObjectsSidebar } from './components/FloatingObjectsSidebar';
 import { LoginModal } from './components/LoginModal';
@@ -25,11 +28,14 @@ import UserObjectsManager from './components/UserObjectsManager';
 import CommunityProjectsSection from './sections/CommunityProjectsSection';
 import ErrorModal from './components/ErrorModal';
 
-function App() {
+
+// Inner component to access router context (needed for useLocation/useSearchParams)
+function AppContent() {
+  const location = useLocation(); // Get current location
   const { user, loading: authLoading, signOut } = useAuth();
-  const [activeSection, setActiveSection] = React.useState<string>('design');
-  const [showFullHome, setShowFullHome] = React.useState(false);
-  const [projectsRefreshKey, setProjectsRefreshKey] = React.useState(0);
+  const [activeSection, setActiveSection] = useState<string>('design');
+  const [showFullHome, setShowFullHome] = useState(false);
+  const [projectsRefreshKey, setProjectsRefreshKey] = useState(0);
 
   // Custom hooks
   const modals = useModals();
@@ -65,9 +71,17 @@ function App() {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
+    // Reset view when path changes away from success/canceled
+    if (location.pathname !== '/success' && location.pathname !== '/canceled') {
+       // Potentially reset state if needed when navigating back to main app
+    }
+  }, [location.pathname]);
+
+
+  useEffect(() => {
     if (user && modals.pendingGenerate) {
-      handleGenerate([]);
+      handleGenerate([]); // Keep existing logic
       modals.setPendingGenerate(false);
     }
   }, [user, modals.pendingGenerate, handleGenerate]);
@@ -76,6 +90,17 @@ function App() {
     setProjectsRefreshKey(prevKey => prevKey + 1);
   };
 
+  // --- Routing Logic ---
+  if (location.pathname === '/success') {
+    return <SuccessPage />;
+  }
+  if (location.pathname === '/canceled') {
+    return <CanceledPage />;
+  }
+  // --- End Routing Logic ---
+
+
+  // Render the main application UI if not on success/canceled pages
   return (
     <SeoWrapper
       title="Transform Your Space with AI"
@@ -365,7 +390,7 @@ function App() {
                     <a href="#faq" className="text-gray-400 hover:text-white">FAQ</a>
                   )}
                 </li>
-                <li><a href="mailto:info@dreamcasa.design" className="text-gray-400 hover:text-white">Contact</a></li>
+                <li><a href="mailto:info@mg.dreamcasa.design" className="text-gray-400 hover:text-white">Contact</a></li>
               </ul>
             </div>
           </div>
@@ -410,6 +435,15 @@ function App() {
         message={design.errorModal.message}
       />
     </SeoWrapper>
+  );
+}
+
+// Wrap AppContent with BrowserRouter
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 }
 
