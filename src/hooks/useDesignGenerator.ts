@@ -112,10 +112,10 @@ export default function useDesignGenerator({
       // 3. Upload to storage in the background (no need to await here for UI update)
       uploadImage(dataUrl, `original/${Date.now()}_${file.name}`)
         .then(storageUrl => {
-          // Optional: Update state again with the final storage URL if needed elsewhere,
-          // but the UI update already happened.
-          // setUploadedImage(storageUrl); // Uncomment if storage URL is strictly needed later
-          console.log('Image uploaded to storage:', storageUrl);
+          // Update state with the final storage URL. This is crucial so that
+          // handleGenerate uses the correct URL.
+          setUploadedImage(storageUrl); // *** Uncommented this line ***
+          console.log('Image uploaded to storage and state updated:', storageUrl);
         })
         .catch(error => {
           console.error('Error uploading image to storage:', error);

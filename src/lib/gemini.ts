@@ -204,19 +204,8 @@ export async function generateInteriorDesign(
 
   // 3. Call the Netlify function
   try {
-    // Add detailed logging before the fetch call
-    console.log(`[generateInteriorDesign] Preparing to call Netlify function '/.netlify/functions/gemini-call'`);
-    console.log(`[generateInteriorDesign]   mainImageUrl: ${imageUrl}`);
-    console.log(`[generateInteriorDesign]   objectImageUrls: ${JSON.stringify(objectImageUrls)}`);
-    console.log(`[generateInteriorDesign]   prompt starts with: "${prompt.substring(0, 100)}..."`);
-
-    // Basic check for mainImageUrl validity (can be enhanced)
-    if (!imageUrl || !imageUrl.startsWith('http')) {
-        console.error(`[generateInteriorDesign] Invalid mainImageUrl detected before fetch: ${imageUrl}`);
-        throw new Error('Invalid main image URL provided for generation.');
-    }
-    // Optional: Add similar check for objectImageUrls if needed
-
+    // Removed detailed logging and data: URL check added for debugging
+    console.log(`[generateInteriorDesign] Calling Netlify function '/.netlify/functions/gemini-call'`);
     const response = await fetch('/.netlify/functions/gemini-call', {
       method: 'POST',
       headers: {
