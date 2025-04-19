@@ -229,6 +229,11 @@ export async function addUserObject(
   file: File,
   dimensions?: string
 ): Promise<UserObject> {
+  // Validate file format
+  const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!validTypes.includes(file.type)) {
+    throw new Error(`Unsupported file format: ${file.type}. Please use JPEG, PNG or WEBP.`);
+  }
 
   // 1. Convert file to base64
   const base64Data = await fileToBase64(file);
@@ -388,7 +393,9 @@ export async function regenerateImageWithSubstitution(
       replacementObjectDescription // From the new UserObject
     );
 
-    console.log(`[regenerate] Generated prompt: "${prompt.substring(0, 100)}..."`);
+    console.log('===== FULL PROMPT SENT TO GEMINI =====');
+    console.log(prompt);
+    console.log('===== END PROMPT =====');
 
     // Call the Netlify function instead of _callGeminiApi
     console.log(`[regenerate] Calling Netlify function '/.netlify/functions/gemini-call'`);

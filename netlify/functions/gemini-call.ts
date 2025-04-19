@@ -5,9 +5,21 @@ import type { Handler, HandlerEvent, HandlerContext } from "@netlify/functions";
 // Helper to fetch and convert image URL to InlineDataPart (copied from original gemini.ts)
 async function urlToInlineDataPart(url: string): Promise<InlineDataPart> {
   // Add error handling for invalid URLs
-  if (!url || !url.startsWith('http')) {
-    console.error(`Invalid URL provided: ${url}`);
-    throw new Error(`Invalid image URL provided.`);
+  if (!url) {
+    console.error('Empty URL provided');
+    throw new Error('Image URL is required');
+  }
+
+  // Check for valid URL format (http, https, or data URIs)
+  try {
+    const parsedUrl = new URL(url);
+    if (!['http:', 'https:', 'data:'].includes(parsedUrl.protocol)) {
+      console.error(`Invalid URL protocol: ${url}`);
+      throw new Error('Only HTTP/HTTPS and data URLs are supported');
+    }
+  } catch (e) {
+    console.error(`Invalid URL format: ${url}`);
+    throw new Error('Invalid image URL format');
   }
   console.log(`Fetching image from URL: ${url}`);
 
@@ -20,15 +32,11 @@ async function urlToInlineDataPart(url: string): Promise<InlineDataPart> {
       throw new Error(`Failed to fetch image: ${response.statusText}`);
     }
 
-    // Special handling for AVIF files
-    let blob: Blob;
+    // Reject AVIF files as they're not supported by Gemini
     if (url.endsWith('.avif')) {
-      console.log('Detected AVIF file, using custom blob handling');
-      const buffer = await response.arrayBuffer();
-      blob = new Blob([buffer], { type: 'image/avif' });
-    } else {
-      blob = await response.blob();
+      throw new Error('AVIF format is not supported. Please use JPEG or PNG.');
     }
+    const blob = await response.blob();
 
     // Add check for empty blob or invalid type
     if (!blob || blob.size === 0) {
@@ -41,8 +49,8 @@ async function urlToInlineDataPart(url: string): Promise<InlineDataPart> {
       new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
     );
 
-    // Force JPEG if type is empty or problematic
-    const mimeType = blob.type && blob.type !== 'application/octet-stream' 
+    // Force JPEG if type is empty or problematic (but not AVIF)
+    const mimeType = blob.type && blob.type !== 'application/octet-stream' && !blob.type.includes('avif')
       ? blob.type 
       : 'image/jpeg';
 
