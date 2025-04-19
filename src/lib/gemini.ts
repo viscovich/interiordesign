@@ -199,13 +199,27 @@ export async function generateInteriorDesign(
 
   // 2. Prepare object image URLs (if any)
   const objectImageUrls = selectedObjects
-    .map(obj => obj.thumbnail_url || obj.asset_url)
-    .filter((url): url is string => !!url); // Filter out null/undefined URLs
+    .map(obj => {
+      const url = obj.thumbnail_url || obj.asset_url;
+      console.log(`Object URL for ${obj.object_name}:`, url);
+      return url;
+    })
+    .filter((url): url is string => {
+      if (!url) {
+        console.warn('Empty object URL found');
+        return false;
+      }
+      if (!url.startsWith('http')) {
+        console.error(`Invalid object URL format: ${url}`);
+        return false;
+      }
+      return true;
+    });
 
   // 3. Call the Netlify function
   try {
     // Removed detailed logging and data: URL check added for debugging
-    console.log(`[generateInteriorDesign] Calling Netlify function '/.netlify/functions/gemini-call'`);
+    console.log(`[generateInteriorDesign] Calling Netlify function with object URLs:`, objectImageUrls);
     const response = await fetch('/.netlify/functions/gemini-call', {
       method: 'POST',
       headers: {

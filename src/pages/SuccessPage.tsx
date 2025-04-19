@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom'; // Use react-router-dom hook
+import { useSearchParams } from 'react-router-dom';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 export default function SuccessPage() {
   const [searchParams] = useSearchParams();
@@ -10,41 +16,29 @@ export default function SuccessPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (sessionId) {
-      // Construct the Supabase function URL
-      // Assumes your Supabase project URL is in VITE_SUPABASE_URL env var
-      // and the function name matches what we planned
-      const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-stripe-session-details`;
+    const fetchSessionDetails = async () => {
+      if (sessionId) {
+        try {
+          const { data, error } = await supabase.functions.invoke('get-stripe-session-details', {
+            body: { session_id: sessionId }
+          });
 
-      fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-           'Content-Type': 'application/json',
-           // Include Authorization header if your function requires authentication
-           // 'Authorization': `Bearer ${your_supabase_token}`
-         },
-        body: JSON.stringify({ session_id: sessionId }),
-      })
-        .then(async (res) => {
-          if (!res.ok) {
-            const errorData = await res.json().catch(() => ({ message: 'Failed to parse error response' }));
-            throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
-          }
-          return res.json();
-        })
-        .then(data => {
+          if (error) throw error;
+          
           setSessionData(data);
           setLoading(false);
-        })
-        .catch(err => {
+        } catch (err) {
           console.error('Errore nel recupero della sessione Stripe:', err);
-          setError(err.message || 'Si è verificato un errore durante il recupero dei dettagli della sessione.');
+          setError(err instanceof Error ? err.message : 'Si è verificato un errore durante il recupero dei dettagli della sessione.');
           setLoading(false);
-        });
-    } else {
-      setError('ID sessione mancante nei parametri URL.');
-      setLoading(false);
-    }
+        }
+      } else {
+        setError('ID sessione mancante nei parametri URL.');
+        setLoading(false);
+      }
+    };
+
+    fetchSessionDetails();
   }, [sessionId]);
 
   if (loading) return <div className="container mx-auto px-4 py-8 text-center"><p>Caricamento...</p></div>;
