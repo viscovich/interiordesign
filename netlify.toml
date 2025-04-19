@@ -5,6 +5,12 @@
   # Specifies the directory where Netlify should look for serverless functions.
   directory = "netlify/functions"
 
+# SPA fallback for client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
 # Optional: Build settings if needed (adjust command/directory if different)
 # [build]
 #   command = "npm run build" # Or your specific build command

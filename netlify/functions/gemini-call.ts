@@ -49,12 +49,19 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
   let body;
   try {
     body = JSON.parse(event.body || "{}");
+    console.log('Received request body:', JSON.stringify(body, null, 2)); // Log full request
   } catch (error) {
     console.error("Failed to parse request body:", error);
     return { statusCode: 400, body: JSON.stringify({ error: "Invalid request body." }) };
   }
 
   const { prompt, mainImageUrl, objectImageUrls = [] } = body;
+  console.log('Processing with:', {
+    promptLength: prompt?.length,
+    mainImageUrl: mainImageUrl,
+    objectImageCount: objectImageUrls.length,
+    sampleObjectUrl: objectImageUrls[0] // Log first object URL for debugging
+  });
 
   if (!prompt || !mainImageUrl) {
     return { statusCode: 400, body: JSON.stringify({ error: "Missing required fields: prompt and mainImageUrl." }) };
@@ -82,15 +89,22 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
     const objectImageParts: InlineDataPart[] = [];
     console.log(`Preparing ${objectImageUrls.length} object image parts...`);
     for (const url of objectImageUrls) {
-       try {
-           console.log(`Preparing object image part for: ${url}`);
-           const imagePart = await urlToInlineDataPart(url);
-           objectImageParts.push(imagePart);
-           console.log(`Object image part prepared for: ${url}`);
-       } catch (error) {
-           console.error(`Skipping object image due to error: ${url}`, error);
-           // Optionally inform the client? For now, just log and skip.
-       }
+      if (!url) {
+        console.error('Empty object URL provided, skipping');
+        continue;
+      }
+      try {
+        console.log(`Preparing object image part for: ${url}`);
+        if (!url.startsWith('http')) {
+          throw new Error(`Invalid object URL format: ${url}`);
+        }
+        const imagePart = await urlToInlineDataPart(url);
+        objectImageParts.push(imagePart);
+        console.log(`Object image part prepared for: ${url}`);
+      } catch (error) {
+        console.error(`Skipping object image due to error: ${url}`, error);
+        // Continue with other objects but log the error
+      }
     }
      console.log(`Finished preparing object image parts.`);
 
