@@ -121,15 +121,6 @@ serve(async (req: Request) => {
       }
 
       if (creditsToAdd > 0) {
-        try {
-          // Add credits using the database function
-          await addCreditsToUser(customerId, creditsToAdd);
-          console.log(`Successfully added ${creditsToAdd} credits for customer ${customerId}`);
-        } catch (dbError: unknown) {
-           const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown database error';
-           console.error(`Database error adding credits for ${customerId}: ${errorMessage}`);
-           // Return 500 so Stripe retries later
-           return new Response(JSON.stringify({ error: `Database update failed: ${errorMessage}` }), { status: 500, headers: responseHeaders });
         }
       } else {
         // Optional: Handle other plans or log that this plan doesn't grant credits

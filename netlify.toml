@@ -1,0 +1,11 @@
+# netlify.toml
+
+# Settings for Netlify Functions
+[functions]
+  # Specifies the directory where Netlify should look for serverless functions.
+  directory = "netlify/functions"
+
+# Optional: Build settings if needed (adjust command/directory if different)
+# [build]
+#   command = "npm run build" # Or your specific build command
+#   publish = "dist"          # Or your specific publish directory

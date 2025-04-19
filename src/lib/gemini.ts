@@ -1,30 +1,10 @@
-import { GoogleGenerativeAI, InlineDataPart } from '@google/generative-ai'; // Added InlineDataPart
-import { useCredit } from './userService';
-import { UserObject } from './userObjectsService'; // Added UserObject import
+// Removed GoogleGenerativeAI, InlineDataPart imports and API Key initialization
+// import { useCredit } from './userService'; // Keep if needed elsewhere, remove if only for gemini
+import { UserObject } from './userObjectsService'; // Keep UserObject import
 
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(API_KEY);
+// Removed urlToInlineDataPart helper function as it's now handled server-side
 
-// Helper to fetch and convert image URL to InlineDataPart
-export async function urlToInlineDataPart(url: string): Promise<InlineDataPart> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch image: ${response.statusText}`);
-  }
-  const blob = await response.blob();
-  const buffer = await blob.arrayBuffer();
-  const base64 = btoa(
-    new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
-  );
-  return {
-    inlineData: {
-      data: base64,
-      mimeType: blob.type,
-    },
-  };
-}
-
-// Rename function for clarity
+// Rename function for clarity (Keep prompt generation logic client-side)
 function getGenerationPrompt(
   renderingType: string,
   style: string,
@@ -168,99 +148,9 @@ export function getNewGenerationPrompt(
 - **Then, generate one updated image** of the same room design, reflecting the requested changes above in style, color tone, viewpoint, or rendering type.`;
 }
 
+// Removed internal _callGeminiApi function. Calls will now go to the Netlify function.
 
-// Internal function to handle the actual API call
-async function _callGeminiApi(
-  prompt: string,
-  mainImageUrl: string,
-  objectImageParts: InlineDataPart[] = []
-): Promise<{ description: string; imageData: string; detectedObjects: string[] }> {
-  console.log(`[_callGeminiApi] Calling Gemini with prompt starting: "${prompt.substring(0, 3000)}..." and ${objectImageParts.length} object images.`);
-
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash-exp-image-generation",
-    generationConfig: {
-      responseModalities: ["Text", "Image"],
-    } as any,
-  });
-
-  // Fetch and prepare main image data
-  const mainImagePart = await urlToInlineDataPart(mainImageUrl);
-
-  // objectImageParts is now passed directly as parameter
-
-  try {
-    console.log(`[_callGeminiApi] Preparing contents...`);
-    const contents = [
-      mainImagePart,
-      ...objectImageParts,
-      { text: prompt },
-    ];
-    console.log(`[_callGeminiApi] Request contents length: ${contents.length}`);
-
-    const response = await model.generateContent(contents);
-    // Log the full raw response object for detailed debugging
-    console.log(`[_callGeminiApi] Full Raw API response object:`, response); 
-    // Keep the stringified version for quick overview in console if needed
-    console.log(`[_callGeminiApi] Raw API response (stringified):`, JSON.stringify(response, null, 2)); 
-
-    const parts = response.response?.candidates?.[0]?.content?.parts || [];
-    console.log(`[_callGeminiApi] Response parts count: ${parts.length}`);
-
-    let description = '';
-    let imageData = '';
-    const detectedObjects: string[] = []; // Keep object detection logic here for now
-
-    for (const part of parts) {
-      if (part.text) {
-         // Simplified object detection logic (assuming it's still needed from the prompt structure)
-         const lines = part.text.split('\n');
-         for (const line of lines) {
-           if (line.trim().startsWith('- ')) {
-             const objectName = line.trim().replace(/^- /, '').trim();
-             if (objectName) {
-               detectedObjects.push(objectName);
-             }
-           }
-         }
-         description += part.text; // Append all text parts
-         console.log(`[_callGeminiApi] Found text part.`);
-      } else if (part.inlineData) {
-        imageData = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-        console.log(`[_callGeminiApi] Found image data of type: ${part.inlineData.mimeType}`);
-      }
-    }
-     console.log('[Object Detection] Found objects:', detectedObjects); // Log detected objects
-
-    console.log(`[_callGeminiApi] Processed response: description=${description ? 'present' : 'missing'}, imageData=${imageData ? 'present' : 'missing'}`);
-
-    if (!description && !imageData) {
-      throw new Error("503: Service Unavailable - Both description and image data are missing");
-    } else if (!description) {
-      console.warn("API response missing description text.");
-    } else if (!imageData) {
-      throw new Error("imageData=missing: Model is overloaded, try again later");
-    }
-
-    // Return detectedObjects even if description is missing, might be useful
-    return { description, imageData, detectedObjects };
-
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    console.error("Error details:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
-    if (error instanceof Error) {
-      if (error.name === 'GoogleGenerativeAIFetchError' && error.message.includes('503')) {
-        throw new Error("503: Service Unavailable - Model is currently overloaded");
-      } else if (error.message.includes('Failed to fetch')) {
-        throw new Error("500: Server Error - Failed to connect to API");
-      }
-    }
-    throw new Error(`Failed to generate design: ${error instanceof Error ? error.message : String(error)}`);
-  }
-}
-
-
-// This function now handles INITIAL generation using getGenerationPrompt
+// This function now handles INITIAL generation using getGenerationPrompt and calls the Netlify function
 export async function generateInteriorDesign(
   imageUrl: string,
   style: string,
@@ -268,14 +158,12 @@ export async function generateInteriorDesign(
   colorTone: string, // Keep colorTone here for the initial prompt
   renderingType: string,
   view: string,
-  userId: string,
-  selectedObjects: UserObject[] = [] // Keep selectedObjects for initial prompt object instruction
+  userId: string, // Keep userId if needed for logging or future checks, but credit deduction is likely server-side now
+  selectedObjects: UserObject[] = []
 ): Promise<{ description: string; imageData: string; detectedObjects: string[] }> {
-  // Deduce credits only once per user action (should be handled in the calling service ideally)
-  // await useCredit(userId, 5); // Moved potentially to projectService
-  console.log(`[generateInteriorDesign - Initial] Starting with params: style=${style}, roomType=${roomType}, renderingType=${renderingType}, view=${view}, objects=${selectedObjects.length}`);
+  console.log(`[generateInteriorDesign] Calling Netlify function with params: style=${style}, roomType=${roomType}, renderingType=${renderingType}, view=${view}, objects=${selectedObjects.length}`);
 
-  // 1. Generate the INITIAL prompt
+  // 1. Generate the prompt client-side
   const prompt = getGenerationPrompt(
     renderingType,
     style,
@@ -284,61 +172,92 @@ export async function generateInteriorDesign(
     view,
     selectedObjects.length > 0 // Pass object flag for initial prompt
   );
-  console.log(`[generateInteriorDesign - Initial] Generated initial prompt.`);
+  console.log(`[generateInteriorDesign] Generated prompt.`);
 
-  // 2. Prepare object image data (if any)
-  const objectImageParts: InlineDataPart[] = [];
-  for (const obj of selectedObjects) {
-    const url = obj.thumbnail_url || obj.asset_url;
-    if (url) {
-      try {
-        const imagePart = await urlToInlineDataPart(url);
-        objectImageParts.push(imagePart);
-      } catch (error) {
-        console.error(`Error converting object image to inline data: ${url}`, error);
-        // Continue with other images if one fails
-      }
-    }
-  }
+  // 2. Prepare object image URLs (if any)
+  const objectImageUrls = selectedObjects
+    .map(obj => obj.thumbnail_url || obj.asset_url)
+    .filter((url): url is string => !!url); // Filter out null/undefined URLs
 
-  // 3. Call the internal API function
-  // Note: We are NOT deducting credits here anymore, assuming it's handled upstream.
-  return await _callGeminiApi(prompt, imageUrl, objectImageParts);
-}
-
-
-// Export the internal function for use in projectsService
-export { _callGeminiApi };
-
-
-// --- Function to Generate Object Description ---
-
-// Uses a different model optimized for vision tasks if needed, or the standard one
-// For simplicity, let's try with the standard model first, but keep gemini-pro-vision in mind
-export async function generateObjectDescription(imageUrl: string): Promise<string> {
-  console.log(`[generateObjectDescription] Generating description for image: ${imageUrl}`);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Or "gemini-pro-vision" if available/needed
-
-  const prompt = "Describe the main object in this image concisely in a few words, focusing on its type, color, and key visual features. Example: 'black leather sofa with chrome legs'.";
-
+  // 3. Call the Netlify function
   try {
-    const imagePart = await urlToInlineDataPart(imageUrl);
-    const result = await model.generateContent([prompt, imagePart]);
-    const response = result.response;
-    const description = response.text();
+    console.log(`[generateInteriorDesign] Calling Netlify function '/.netlify/functions/gemini-call'`);
+    const response = await fetch('/.netlify/functions/gemini-call', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt: prompt,
+        mainImageUrl: imageUrl,
+        objectImageUrls: objectImageUrls,
+      }),
+    });
 
-    if (!description) {
-      console.warn('[generateObjectDescription] Gemini did not return a description.');
-      return 'Object description unavailable'; // Return a default string
+    console.log(`[generateInteriorDesign] Netlify function response status: ${response.status}`);
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error(`[generateInteriorDesign] Netlify function error: ${response.statusText}`, result);
+      // Throw a more specific error based on status or result content
+      throw new Error(result.error || `Failed to generate design (${response.status})`);
     }
 
-    console.log(`[generateObjectDescription] Generated description: "${description}"`);
-    return description.trim(); // Trim whitespace
+    console.log(`[generateInteriorDesign] Received data from Netlify function.`);
+    // Validate the expected fields exist
+    if (typeof result.description !== 'string' || typeof result.imageData !== 'string' || !Array.isArray(result.detectedObjects)) {
+        console.error('[generateInteriorDesign] Invalid data structure received from Netlify function:', result);
+        throw new Error('Invalid response format from generation service.');
+    }
+
+    return {
+        description: result.description,
+        imageData: result.imageData,
+        detectedObjects: result.detectedObjects
+    };
 
   } catch (error) {
-    console.error(`[generateObjectDescription] Error generating description for ${imageUrl}:`, error);
-    // Decide on error handling: throw, or return a default string?
-    // Returning a default string might be safer for the flow in addUserObject
-    return 'Object description failed'; // Return a default error string
+    console.error("[generateInteriorDesign] Error calling Netlify function:", error);
+    // Re-throw or handle the error appropriately for the UI
+    throw error instanceof Error ? error : new Error('An unknown error occurred during design generation.');
+  }
+}
+
+// Removed export of _callGeminiApi
+
+// --- Function to Generate Object Description (Calls Netlify Function) ---
+export async function generateObjectDescription(imageUrl: string): Promise<string> {
+  console.log(`[generateObjectDescription] Calling Netlify function for image: ${imageUrl}`);
+
+  try {
+    const response = await fetch('/.netlify/functions/gemini-describe-object', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ imageUrl }),
+    });
+
+    console.log(`[generateObjectDescription] Netlify function response status: ${response.status}`);
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error(`[generateObjectDescription] Netlify function error: ${response.statusText}`, result);
+      throw new Error(result.error || `Failed to generate description (${response.status})`);
+    }
+
+     // Check if description exists in the response
+    if (typeof result.description !== 'string') {
+        console.warn('[generateObjectDescription] Description missing or invalid in Netlify function response:', result);
+        return 'Object description unavailable'; // Return default as per original logic
+    }
+
+    console.log(`[generateObjectDescription] Received description: "${result.description}"`);
+    return result.description;
+
+  } catch (error) {
+    console.error(`[generateObjectDescription] Error calling Netlify function for ${imageUrl}:`, error);
+    // Return a default error string as per original logic
+    return 'Object description failed';
   }
 }
