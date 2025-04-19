@@ -1,8 +1,31 @@
 // Removed GoogleGenerativeAI, InlineDataPart imports and API Key initialization
 // import { useCredit } from './userService'; // Keep if needed elsewhere, remove if only for gemini
 import { UserObject } from './userObjectsService'; // Keep UserObject import
+import { InlineDataPart } from '@google/generative-ai'; // Re-add InlineDataPart for the helper
 
-// Removed urlToInlineDataPart helper function as it's now handled server-side
+// Restore urlToInlineDataPart helper function as it's needed by projectsService
+// Ensure it's exported
+export async function urlToInlineDataPart(url: string): Promise<InlineDataPart> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch image: ${response.statusText}`);
+  }
+  const blob = await response.blob();
+   if (!blob || blob.size === 0) {
+      throw new Error(`Fetched empty or invalid image data from ${url}`);
+  }
+  const buffer = await blob.arrayBuffer();
+  const base64 = btoa(
+    new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
+  );
+  return {
+    inlineData: {
+      data: base64,
+      mimeType: blob.type || 'image/jpeg', // Provide default mimetype if missing
+    },
+  };
+}
+
 
 // Rename function for clarity (Keep prompt generation logic client-side)
 function getGenerationPrompt(
