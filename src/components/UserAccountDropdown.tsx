@@ -120,20 +120,24 @@ export function UserAccountDropdown() {
               <h3 className="text-sm font-medium text-gray-900">⚙️ Actions</h3>
               <div className="mt-1 space-y-1">
                 {/* Plan and Status buttons removed */}
-                <button 
-                  onClick={() => handleUpgrade(import.meta.env.VITE_STRIPE_PRO_PRICE_ID)}
-                  disabled={loading.upgrade || userProfile?.stripe_sandbox_access !== true}
-                  className={`block w-full text-left px-2 py-1 text-sm font-medium text-red-600 hover:bg-gray-100 rounded ${(loading.upgrade || userProfile?.stripe_sandbox_access !== true) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  {loading.upgrade ? 'Processing...' : 'Upgrade to Pro'}
-                </button>
-                <button 
-                  onClick={() => handleUpgrade(import.meta.env.VITE_STRIPE_ENTERPRISE_PRICE_ID)}
-                  disabled={loading.upgrade || userProfile?.stripe_sandbox_access !== true}
-                  className={`block w-full text-left px-2 py-1 text-sm font-medium text-red-600 hover:bg-gray-100 rounded ${(loading.upgrade || userProfile?.stripe_sandbox_access !== true) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  {loading.upgrade ? 'Processing...' : 'Upgrade to Enterprise'}
-                </button>
+                {userProfile?.current_plan === 'Free' && (
+                  <button 
+                    onClick={() => handleUpgrade(import.meta.env.VITE_STRIPE_PRO_PRICE_ID)}
+                    disabled={loading.upgrade || userProfile?.stripe_sandbox_access !== true}
+                    className={`block w-full text-left px-2 py-1 text-sm font-medium text-red-600 hover:bg-gray-100 rounded ${(loading.upgrade || userProfile?.stripe_sandbox_access !== true) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {loading.upgrade ? 'Processing...' : 'Upgrade to Pro'}
+                  </button>
+                )}
+                {userProfile?.current_plan !== 'Enterprise' && (
+                  <button 
+                    onClick={() => handleUpgrade(import.meta.env.VITE_STRIPE_ENTERPRISE_PRICE_ID)}
+                    disabled={loading.upgrade || userProfile?.stripe_sandbox_access !== true}
+                    className={`block w-full text-left px-2 py-1 text-sm font-medium text-red-600 hover:bg-gray-100 rounded ${(loading.upgrade || userProfile?.stripe_sandbox_access !== true) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {loading.upgrade ? 'Processing...' : 'Upgrade to Enterprise'}
+                  </button>
+                )}
               </div>
             </div>
 

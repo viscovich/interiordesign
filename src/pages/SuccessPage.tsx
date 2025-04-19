@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
+import SeoWrapper from '../components/SeoWrapper';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -9,11 +10,8 @@ const supabase = createClient(
 
 export default function SuccessPage() {
   const [searchParams] = useSearchParams();
-  const sessionId = searchParams.get('session_id'); // Get session_id from URL query params
-
-  const [sessionData, setSessionData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const sessionId = searchParams.get('session_id');
+  const [email, setEmail] = useState<string>('');
 
   useEffect(() => {
     const fetchSessionDetails = async () => {
@@ -24,40 +22,82 @@ export default function SuccessPage() {
           });
 
           if (error) throw error;
-          
-          setSessionData(data);
-          setLoading(false);
+          setEmail(data?.customer_details?.email || '');
         } catch (err) {
           console.error('Errore nel recupero della sessione Stripe:', err);
-          setError(err instanceof Error ? err.message : 'Si è verificato un errore durante il recupero dei dettagli della sessione.');
-          setLoading(false);
         }
-      } else {
-        setError('ID sessione mancante nei parametri URL.');
-        setLoading(false);
       }
     };
 
     fetchSessionDetails();
   }, [sessionId]);
 
-  if (loading) return <div className="container mx-auto px-4 py-8 text-center"><p>Caricamento...</p></div>;
-  if (error) return <div className="container mx-auto px-4 py-8 text-center text-red-600"><p>Errore: {error}</p></div>;
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-4 text-center text-green-600">Pagamento completato con successo!</h1>
-      <p className="text-lg mb-6 text-center">
-        Grazie per il tuo acquisto, {sessionData?.customer_details?.email || 'cliente'}!
-      </p>
-      <div className="bg-gray-100 p-4 rounded shadow">
-        <h2 className="text-xl font-semibold mb-2">Dettagli Sessione:</h2>
-        <pre className="text-sm overflow-auto">{JSON.stringify(sessionData, null, 2)}</pre>
+    <SeoWrapper
+      title="Payment Successful - DreamCasa AI"
+      description="Thank you for your purchase with DreamCasa AI"
+    >
+      <div className="flex flex-col min-h-screen">
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <nav className="container max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center lg:ml-0 order-1 lg:order-none ml-16 lg:ml-0">
+                <img 
+                  src="/images/Dreamcasa3-removebg-preview.png" 
+                  alt="DreamCasa AI Logo" 
+                  className="h-8 w-auto cursor-pointer"
+                />
+                <span className="ml-2 text-xl font-semibold text-custom">DreamCasa AI</span>
+              </div>
+            </div>
+          </nav>
+        </header>
+
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center max-w-2xl px-4 py-12">
+            <h1 className="text-3xl font-bold mb-6 text-custom">Pagamento completato con successo!</h1>
+            <p className="text-xl mb-8">
+              Grazie per il tuo acquisto, {email || 'cliente'}!
+            </p>
+            <a 
+              href="/" 
+              className="inline-block px-6 py-3 bg-custom text-white rounded-button hover:bg-custom/90 transition"
+            >
+              Torna alla Home
+            </a>
+          </div>
+        </main>
+
+        <footer className="bg-gray-900 text-white py-12 w-full">
+          <div className="container max-w-8xl mx-auto px-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div>
+                <img src="/images/Dreamcasa3-removebg-preview.png" alt="DreamCasa AI Logo" className="h-8 mb-4 brightness-0 invert" />
+                <span className="text-white text-lg font-bold block mb-2">DreamCasa AI</span>
+                <p className="text-gray-400">Transform your spaces with AI</p>
+              </div>
+              <div>
+                <h4 className="text-lg font-semibold mb-4">Product</h4>
+                <ul className="space-y-2">
+                  <li><a href="#features" className="text-gray-400 hover:text-white">Features</a></li>
+                  <li><a href="#pricing" className="text-gray-400 hover:text-white">Pricing</a></li>
+                  <li><a href="#portfolio" className="text-gray-400 hover:text-white">Portfolio</a></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-lg font-semibold mb-4">Support</h4>
+                <ul className="space-y-2">
+                  <li><a href="#faq" className="text-gray-400 hover:text-white">FAQ</a></li>
+                  <li><a href="mailto:info@mg.dreamcasa.design" className="text-gray-400 hover:text-white">Contact</a></li>
+                </ul>
+              </div>
+            </div>
+            <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+              <p>&copy; 2025 DreamCasa AI. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
       </div>
-      {/* Aggiungi un link per tornare alla home page o al dashboard */}
-      <div className="text-center mt-6">
-        <a href="/" className="text-blue-600 hover:underline">Torna alla Home</a>
-      </div>
-    </div>
+    </SeoWrapper>
   );
 }

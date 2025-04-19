@@ -121,17 +121,72 @@ serve(async (req: Request) => {
       }
 
       if (creditsToAdd > 0) {
+        try {
+          // Update user plan and status
+          const { error: profileError } = await supabaseAdmin
+            .from('user_profiles')
+            .update({ 
+              current_plan: priceId === PRO_PLAN_PRICE_ID ? 'Pro' : 'Enterprise',
+              subscription_status: 'active',
+              updated_at: new Date().toISOString()
+            })
+            .eq('stripe_customer_id', customerId);
+
+          if (profileError) throw profileError;
+
+          // Add credits
+          await addCreditsToUser(customerId, creditsToAdd);
+        } catch (err) {
+          console.error('Error updating user profile:', err);
+          return new Response(JSON.stringify({ error: 'Failed to update user profile' }), { 
+            status: 500, 
+            headers: responseHeaders 
+          });
         }
-      } else {
-        // Optional: Handle other plans or log that this plan doesn't grant credits
-        console.log(`Invoice paid for a different price ID (${priceId}), no credits added.`);
       }
-    } else {
-       console.log('Invoice is not for a subscription or has no line items.');
+    }
+  } else if (event.type === 'invoice.payment_failed') {
+    const invoice = event.data.object as Stripe.Invoice;
+    if (invoice.subscription) {
+      const customerId = invoice.customer as string;
+      
+      const { error } = await supabaseAdmin
+        .from('user_profiles')
+        .update({ 
+          subscription_status: 'past_due',
+          updated_at: new Date().toISOString()
+        })
+        .eq('stripe_customer_id', customerId);
+
+      if (error) {
+        console.error('Error updating subscription status:', error);
+        return new Response(JSON.stringify({ error: 'Failed to update subscription status' }), { 
+          status: 500, 
+          headers: responseHeaders 
+        });
+      }
+    }
+  } else if (event.type === 'customer.subscription.deleted') {
+    const subscription = event.data.object as Stripe.Subscription;
+    const customerId = subscription.customer as string;
+    
+    const { error } = await supabaseAdmin
+      .from('user_profiles')
+      .update({ 
+        subscription_status: 'canceled',
+        updated_at: new Date().toISOString()
+      })
+      .eq('stripe_customer_id', customerId);
+
+    if (error) {
+      console.error('Error canceling subscription:', error);
+      return new Response(JSON.stringify({ error: 'Failed to cancel subscription' }), { 
+        status: 500, 
+        headers: responseHeaders 
+      });
     }
   } else {
-    // Handle other event types if needed, or ignore
-    console.log(`Unhandled event type: ${event.type}`)
+    console.log(`Unhandled event type: ${event.type}`);
   }
 
   // Acknowledge receipt of the event to Stripe

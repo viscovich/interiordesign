@@ -10,29 +10,52 @@ async function urlToInlineDataPart(url: string): Promise<InlineDataPart> {
     throw new Error(`Invalid image URL provided.`);
   }
   console.log(`Fetching image from URL: ${url}`);
-  const response = await fetch(url);
-  if (!response.ok) {
-    console.error(`Failed to fetch image: ${response.status} ${response.statusText}`);
-    const errorBody = await response.text();
-    console.error(`Error body: ${errorBody}`);
-    throw new Error(`Failed to fetch image: ${response.statusText}`);
-  }
-  const blob = await response.blob();
-  // Add check for empty blob or invalid type
-  if (!blob || blob.size === 0) {
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+      const errorBody = await response.text();
+      console.error(`Error body: ${errorBody}`);
+      throw new Error(`Failed to fetch image: ${response.statusText}`);
+    }
+
+    // Special handling for AVIF files
+    let blob: Blob;
+    if (url.endsWith('.avif')) {
+      console.log('Detected AVIF file, using custom blob handling');
+      const buffer = await response.arrayBuffer();
+      blob = new Blob([buffer], { type: 'image/avif' });
+    } else {
+      blob = await response.blob();
+    }
+
+    // Add check for empty blob or invalid type
+    if (!blob || blob.size === 0) {
       throw new Error(`Fetched empty or invalid image data from ${url}`);
+    }
+
+    console.log(`Fetched blob type: ${blob.type}, size: ${blob.size}`);
+    const buffer = await blob.arrayBuffer();
+    const base64 = btoa(
+      new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
+    );
+
+    // Force JPEG if type is empty or problematic
+    const mimeType = blob.type && blob.type !== 'application/octet-stream' 
+      ? blob.type 
+      : 'image/jpeg';
+
+    return {
+      inlineData: {
+        data: base64,
+        mimeType: mimeType,
+      },
+    };
+  } catch (error) {
+    console.error(`Error processing image URL ${url}:`, error);
+    throw new Error(`Failed to process image: ${error instanceof Error ? error.message : String(error)}`);
   }
-  console.log(`Fetched blob type: ${blob.type}, size: ${blob.size}`);
-  const buffer = await blob.arrayBuffer();
-  const base64 = btoa(
-    new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
-  );
-  return {
-    inlineData: {
-      data: base64,
-      mimeType: blob.type || 'image/jpeg', // Provide default mimetype if missing
-    },
-  };
 }
 
 const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
