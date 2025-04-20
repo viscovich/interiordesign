@@ -11,19 +11,26 @@ async function urlToInlineDataPart(url: string): Promise<InlineDataPart> {
   }
 
   // Check for valid URL format (http, https, or data URIs)
+  let encodedUrl: string;
   try {
-    // Encode the URL to handle spaces and special characters
-    const encodedUrl = encodeURI(url);
+    // First encode the URL to handle spaces and special characters
+    encodedUrl = encodeURI(url);
+    // Then encode individual components to handle special characters in path segments
     const parsedUrl = new URL(encodedUrl);
+    parsedUrl.pathname = parsedUrl.pathname.split('/')
+      .map(segment => encodeURIComponent(segment))
+      .join('/');
+    encodedUrl = parsedUrl.toString();
+    
     if (!['http:', 'https:', 'data:'].includes(parsedUrl.protocol)) {
       console.error(`Invalid URL protocol: ${url}`);
       throw new Error('Only HTTP/HTTPS and data URLs are supported');
     }
   } catch (e) {
-    console.error(`Invalid URL format: ${url}`);
-    throw new Error('Invalid image URL format');
+    console.error(`Invalid URL format: ${url}`, e);
+    throw new Error(`Invalid image URL format: ${e instanceof Error ? e.message : String(e)}`);
   }
-  console.log(`Fetching image from URL: ${url}`);
+  console.log(`Fetching image from URL (original: ${url}, encoded: ${encodedUrl})`);
 
   try {
     // Use encoded URL for the fetch call

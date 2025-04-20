@@ -4,6 +4,11 @@
 [functions]
   # Specifies the directory where Netlify should look for serverless functions.
   directory = "netlify/functions"
+  # Increase timeout for image processing functions
+  [functions.gemini-call]
+    timeout = 30
+  [functions.gemini-describe-object]
+    timeout = 30
 
 # SPA fallback for client-side routing
 [[redirects]]

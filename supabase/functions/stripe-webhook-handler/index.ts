@@ -122,17 +122,52 @@ serve(async (req: Request) => {
 
       if (creditsToAdd > 0) {
         try {
-          // Update user plan and status
-          const { error: profileError } = await supabaseAdmin
+          // First ensure the user profile exists with this stripe_customer_id
+          const { data: profileData, error: profileError } = await supabaseAdmin
             .from('user_profiles')
-            .update({ 
-              current_plan: priceId === PRO_PLAN_PRICE_ID ? 'Pro' : 'Enterprise',
-              subscription_status: 'active',
-              updated_at: new Date().toISOString()
-            })
-            .eq('stripe_customer_id', customerId);
+            .select('id')
+            .eq('stripe_customer_id', customerId)
+            .single();
 
-          if (profileError) throw profileError;
+          if (profileError || !profileData) {
+            // If no profile found, try to find by email (from Stripe customer)
+            const stripeCustomer = await stripe.customers.retrieve(customerId);
+            if (stripeCustomer.deleted) {
+              throw new Error(`Stripe customer ${customerId} was deleted`);
+            }
+
+            const customerEmail = typeof stripeCustomer.email === 'string' ? stripeCustomer.email : null;
+            if (!customerEmail) {
+              throw new Error(`No email found for Stripe customer ${customerId}`);
+            }
+
+            // Update or create user profile with stripe_customer_id
+            const { error: upsertError } = await supabaseAdmin
+              .from('user_profiles')
+              .upsert({
+                email: customerEmail,
+                stripe_customer_id: customerId,
+                current_plan: priceId === PRO_PLAN_PRICE_ID ? 'Pro' : 'Enterprise',
+                subscription_status: 'active',
+                updated_at: new Date().toISOString()
+              }, {
+                onConflict: 'email'
+              });
+
+            if (upsertError) throw upsertError;
+          } else {
+            // Profile exists, just update plan and status
+            const { error: updateError } = await supabaseAdmin
+              .from('user_profiles')
+              .update({ 
+                current_plan: priceId === PRO_PLAN_PRICE_ID ? 'Pro' : 'Enterprise',
+                subscription_status: 'active',
+                updated_at: new Date().toISOString()
+              })
+              .eq('stripe_customer_id', customerId);
+
+            if (updateError) throw updateError;
+          }
 
           // Add credits
           await addCreditsToUser(customerId, creditsToAdd);
