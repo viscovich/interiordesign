@@ -381,6 +381,10 @@ export async function regenerateImageWithSubstitution(
 
   // 4. Generate the prompt and call the API
   try {
+    const objectsToReplace = isObjectReplacement && actualObjectToReplaceDescription && replacementObjectDescription
+      ? [{ original: actualObjectToReplaceDescription, replacement: replacementObjectDescription }]
+      : undefined;
+
     const prompt = getNewGenerationPrompt(
       project.style,
       renderingType || '3d', // Default to 3d if not provided
@@ -388,9 +392,7 @@ export async function regenerateImageWithSubstitution(
       (colorTone || project.color_tone) ?? undefined, // Use new or existing color tone
       (viewType || project.view_type) ?? undefined, // Use new or existing view type
       isObjectReplacement,
-      // Pass the descriptions found/retrieved
-      actualObjectToReplaceDescription, // Might be the detailed one from DB or the identifier as fallback
-      replacementObjectDescription // From the new UserObject
+      objectsToReplace
     );
 
     console.log('===== FULL PROMPT SENT TO GEMINI =====');

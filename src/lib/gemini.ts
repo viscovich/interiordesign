@@ -34,7 +34,7 @@ function getGenerationPrompt(
   roomType: string,
   colorTone?: string, // Expects 'palette:name' or 'color:name' or undefined
   view?: string,
-  includeObjectsInstruction?: boolean
+  objectsToInclude?: {name: string, description: string}[] // Array of objects to include
 ): string {
   let colorPrompt = '';
   if (colorTone) {
@@ -69,9 +69,17 @@ Then, describe the layout and positioning of these elements in the ${roomType}.`
 
 Finally, generate an image that represents the design in a ${renderingType} format.`;
 
-  const objectsInstruction = includeObjectsInstruction
-    ? "\nBe sure to include the attached object(s) in the final image, integrating them naturally into the scene."
-    : "";
+  let objectsInstruction = '';
+  if (objectsToInclude?.length) {
+    if (objectsToInclude.length === 1) {
+      objectsInstruction = `\n**Object Inclusion Instruction:** Include the object described as '${objectsToInclude[0].description}' in the final image. Refer to the attached image for its visual representation and integrate it naturally into the scene, matching the style and perspective.`;
+    } else {
+      const objectsList = objectsToInclude.map(obj => 
+        `- ${obj.description}`
+      ).join('\n');
+      objectsInstruction = `\n**Object Inclusion Instructions:**\nInclude these objects in the final image:\n${objectsList}\n\nRefer to the attached images for their visual representations and integrate them naturally into the scene, matching the style and perspective.`;
+    }
+  }
 
   switch (renderingType.toLowerCase()) {
     case 'wireframe':
@@ -121,8 +129,7 @@ export function getNewGenerationPrompt(
   colorTone?: string, // Expects 'palette:name' or 'color:name'
   newView?: string,
   includeObjectsInstruction?: boolean, // Flag indicating if object replacement is happening
-  objectToReplaceDescription?: string | null, // Description of the object being replaced
-  replacementObjectDescription?: string | null // Description of the new object being inserted
+  objectsToReplace?: {original: string, replacement: string}[] // Array of object replacement pairs
 ): string {
   let colorPrompt = '';
   if (colorTone) {
@@ -144,12 +151,20 @@ export function getNewGenerationPrompt(
 
   // Construct the specific object replacement instruction using the provided descriptions
   let objectsInstruction = '';
-  if (includeObjectsInstruction && objectToReplaceDescription && replacementObjectDescription) {
-    objectsInstruction = `\n**Object Replacement Instruction:** Replace the '${objectToReplaceDescription}' visible in the original image with the new object described as '${replacementObjectDescription}'. Refer to the attached image for the visual representation of the new object. Integrate it naturally into the scene, matching the style and perspective.`;
+  if (includeObjectsInstruction && objectsToReplace?.length) {
+    if (objectsToReplace.length === 1) {
+      const {original, replacement} = objectsToReplace[0];
+      objectsInstruction = `\n**Object Replacement Instruction:** Replace the '${original}' visible in the original image with the new object described as '${replacement}'. Refer to the attached image for the visual representation of the new object. Integrate it naturally into the scene, matching the style and perspective.`;
+    } else {
+      const replacements = objectsToReplace.map(({original, replacement}) => 
+        `- Replace '${original}' with '${replacement}'`
+      ).join('\n');
+      objectsInstruction = `\n**Object Replacement Instructions:**\n${replacements}\n\nRefer to the attached images for visual representations of the new objects. Integrate them naturally into the scene, matching the style and perspective.`;
+    }
   } else if (includeObjectsInstruction) {
     // Fallback or warning if descriptions are missing but replacement was intended
     console.warn('[getNewGenerationPrompt] Object replacement intended, but descriptions are missing. Using generic instruction.');
-    objectsInstruction = "\nIMPORTANT: You MUST replace the original object(s) with the attached replacement image(s). Remove the original object completely and integrate the new object naturally into the scene. The replacement object should match the style and perspective of the original design."; // Keep old generic one as fallback
+    objectsInstruction = "\nIMPORTANT: You MUST replace the original object(s) with the attached replacement image(s). Remove the original object(s) completely and integrate the new object(s) naturally into the scene. The replacement objects should match the style and perspective of the original design.";
   }
 
 
@@ -193,9 +208,12 @@ export async function generateInteriorDesign(
     roomType,
     colorTone, // Pass colorTone for initial prompt
     view,
-    selectedObjects.length > 0 // Pass object flag for initial prompt
+    selectedObjects.map(obj => ({
+      name: obj.object_name,
+      description: obj.description || obj.object_name
+    }))
   );
-  console.log(`[generateInteriorDesign] Generated prompt.`);
+  console.log(`[generateInteriorDesign] Generated prompt:\n${prompt}`);
 
   // 2. Prepare object image URLs (if any)
   const objectImageUrls = selectedObjects

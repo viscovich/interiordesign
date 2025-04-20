@@ -83,21 +83,23 @@ export function SidebarMenu({ activeSection, setActiveSection, onNewProjectClick
         </aside>
       )}
 
-      {/* Mobile Sidebar - only shown on mobile */}
+      {/* Mobile Sidebar - shown to all users on mobile */}
       <aside className={`lg:hidden fixed inset-y-0 left-0 z-40 w-64 bg-gray-50 text-gray-800 border-r border-gray-200 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-200 ease-in-out`}>
         <div className="p-4">
-          {/* New Project Button */}
-          <button
-            onClick={() => {
-              setShowFullHome(false);
-              onNewProjectClick();
-              setIsMobileMenuOpen(false); // Close mobile menu when New Project is clicked
-            }}
-            className="w-full bg-custom text-white p-3 !rounded-button flex items-center justify-center space-x-2 mb-8"
-          >
-            <i className="fas fa-plus"></i>
-            <span>New Project</span>
-          </button>
+          {/* New Project Button - shown only to authenticated users */}
+          {user && (
+            <button
+              onClick={() => {
+                setShowFullHome(false);
+                onNewProjectClick();
+                setIsMobileMenuOpen(false);
+              }}
+              className="w-full bg-custom text-white p-3 !rounded-button flex items-center justify-center space-x-2 mb-8"
+            >
+              <i className="fas fa-plus"></i>
+              <span>New Project</span>
+            </button>
+          )}
 
           {/* Navigation Links */}
           <nav className="space-y-2">
@@ -123,6 +125,7 @@ export function SidebarMenu({ activeSection, setActiveSection, onNewProjectClick
               </a>
             ))}
 
+            {/* Auth menu items - shown only to authenticated users */}
             {user && authMenuItems.map((item) => (
               <a
                 key={item.name}

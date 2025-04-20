@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
 import SeoWrapper from '../components/SeoWrapper';
+import { getUserProfile } from '../lib/userService';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -12,24 +13,59 @@ export default function SuccessPage() {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session_id');
   const [email, setEmail] = useState<string>('');
+  const [currentPlan, setCurrentPlan] = useState<string>('Loading...');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchSessionDetails = async () => {
+    const fetchSessionAndPlan = async () => {
       if (sessionId) {
         try {
-          const { data, error } = await supabase.functions.invoke('get-stripe-session-details', {
-            body: { session_id: sessionId }
-          });
+          // Get session details
+          const { data: sessionData, error: sessionError } = 
+            await supabase.functions.invoke('get-stripe-session-details', {
+              body: { session_id: sessionId }
+            });
 
-          if (error) throw error;
-          setEmail(data?.customer_details?.email || '');
+          if (sessionError) throw sessionError;
+          setEmail(sessionData?.customer_details?.email || '');
+
+          // Get current user
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error('User not logged in');
+
+          // Get user profile with retry logic
+          let retries = 0;
+          const maxRetries = 5;
+          let profile;
+
+          while (retries < maxRetries) {
+            profile = await getUserProfile(user.id);
+            if (profile.current_plan && profile.current_plan !== 'Free') {
+              setCurrentPlan(profile.current_plan);
+              break;
+            }
+            
+            if (retries < maxRetries - 1) {
+              await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+            }
+            retries++;
+          }
+
+          if (!profile?.current_plan || profile.current_plan === 'Free') {
+            setError('Plan update is taking longer than expected. Please refresh the page in a few minutes.');
+          }
+
         } catch (err) {
-          console.error('Errore nel recupero della sessione Stripe:', err);
+          console.error('Error:', err);
+          setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        } finally {
+          setIsLoading(false);
         }
       }
     };
 
-    fetchSessionDetails();
+    fetchSessionAndPlan();
   }, [sessionId]);
 
   return (
@@ -56,9 +92,25 @@ export default function SuccessPage() {
         <main className="flex-grow flex items-center justify-center">
           <div className="text-center max-w-2xl px-4 py-12">
             <h1 className="text-3xl font-bold mb-6 text-custom">Pagamento completato con successo!</h1>
-            <p className="text-xl mb-8">
-              Grazie per il tuo acquisto, {email || 'cliente'}!
-            </p>
+            {isLoading ? (
+              <div className="animate-pulse space-y-4">
+                <div className="h-6 bg-gray-200 rounded w-3/4 mx-auto"></div>
+                <div className="h-6 bg-gray-200 rounded w-1/2 mx-auto"></div>
+              </div>
+            ) : error ? (
+              <div className="text-red-500 mb-8">
+                {error}
+              </div>
+            ) : (
+              <>
+                <p className="text-xl mb-4">
+                  Grazie per il tuo acquisto, {email || 'cliente'}!
+                </p>
+                <p className="text-lg mb-8">
+                  Il tuo piano attuale: <span className="font-semibold">{currentPlan}</span>
+                </p>
+              </>
+            )}
             <a 
               href="/" 
               className="inline-block px-6 py-3 bg-custom text-white rounded-button hover:bg-custom/90 transition"
