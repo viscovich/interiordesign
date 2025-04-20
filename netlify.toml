@@ -5,10 +5,17 @@
   # Specifies the directory where Netlify should look for serverless functions.
   directory = "netlify/functions"
   # Increase timeout for image processing functions
-  [functions.gemini-call]
-    timeout = 30
-  [functions.gemini-describe-object]
-    timeout = 30
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  
+[functions.gemini-call]
+  timeout = 60  # Increased to maximum allowed 60 seconds
+  node_bundler = "esbuild"
+  
+[functions.gemini-describe-object]
+  timeout = 60  # Increased to maximum allowed 60 seconds
+  node_bundler = "esbuild"
 
 # SPA fallback for client-side routing
 [[redirects]]

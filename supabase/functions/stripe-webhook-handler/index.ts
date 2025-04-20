@@ -141,20 +141,45 @@ serve(async (req: Request) => {
               throw new Error(`No email found for Stripe customer ${customerId}`);
             }
 
-            // Update or create user profile with stripe_customer_id
-            const { error: upsertError } = await supabaseAdmin
+            // First try to find user by email
+            const { data: existingUser, error: findError } = await supabaseAdmin
               .from('user_profiles')
-              .upsert({
-                email: customerEmail,
-                stripe_customer_id: customerId,
-                current_plan: priceId === PRO_PLAN_PRICE_ID ? 'Pro' : 'Enterprise',
-                subscription_status: 'active',
-                updated_at: new Date().toISOString()
-              }, {
-                onConflict: 'email'
-              });
+              .select('id')
+              .eq('email', customerEmail)
+              .single();
 
-            if (upsertError) throw upsertError;
+            if (findError && findError.code !== 'PGRST116') { // Ignore "No rows found" error
+              throw findError;
+            }
+
+            if (existingUser) {
+              // Update existing user with stripe_customer_id
+              const { error: updateError } = await supabaseAdmin
+                .from('user_profiles')
+                .update({
+                  stripe_customer_id: customerId,
+                  current_plan: priceId === PRO_PLAN_PRICE_ID ? 'Pro' : 'Enterprise',
+                  subscription_status: 'active',
+                  updated_at: new Date().toISOString()
+                })
+                .eq('email', customerEmail);
+
+              if (updateError) throw updateError;
+            } else {
+              // Create new user profile
+              const { error: createError } = await supabaseAdmin
+                .from('user_profiles')
+                .insert({
+                  email: customerEmail,
+                  stripe_customer_id: customerId,
+                  current_plan: priceId === PRO_PLAN_PRICE_ID ? 'Pro' : 'Enterprise',
+                  subscription_status: 'active',
+                  credits: 0, // Initialize with 0 credits (will be added later)
+                  updated_at: new Date().toISOString()
+                });
+
+              if (createError) throw createError;
+            }
           } else {
             // Profile exists, just update plan and status
             const { error: updateError } = await supabaseAdmin
