@@ -6,7 +6,9 @@ import { InlineDataPart } from '@google/generative-ai'; // Re-add InlineDataPart
 // Restore urlToInlineDataPart helper function as it's needed by projectsService
 // Ensure it's exported
 export async function urlToInlineDataPart(url: string): Promise<InlineDataPart> {
-  const response = await fetch(url);
+  // Encode URL to handle spaces and special characters
+  const encodedUrl = encodeURI(url);
+  const response = await fetch(encodedUrl);
   if (!response.ok) {
     throw new Error(`Failed to fetch image: ${response.statusText}`);
   }
@@ -199,7 +201,13 @@ export async function generateInteriorDesign(
   userId: string, // Keep userId if needed for logging or future checks, but credit deduction is likely server-side now
   selectedObjects: UserObject[] = []
 ): Promise<{ description: string; imageData: string; detectedObjects: string[] }> {
-  console.log(`[generateInteriorDesign] Calling Netlify function with params: style=${style}, roomType=${roomType}, renderingType=${renderingType}, view=${view}, objects=${selectedObjects.length}`);
+  console.log(`[generateInteriorDesign] Calling Netlify function with params: 
+    style=${style}, 
+    roomType=${roomType}, 
+    renderingType=${renderingType}, 
+    view=${view}, 
+    objects=${selectedObjects.length},
+    mainImageUrl=${imageUrl}`);
 
   // 1. Generate the prompt client-side
   const prompt = getGenerationPrompt(

@@ -36,7 +36,7 @@ export default function SuccessPage() {
 
           // Get user profile with retry logic
           let retries = 0;
-          const maxRetries = 5;
+          const maxRetries = 10;
           let profile;
 
           while (retries < maxRetries) {
@@ -47,13 +47,13 @@ export default function SuccessPage() {
             }
             
             if (retries < maxRetries - 1) {
-              await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+              await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds
             }
             retries++;
           }
 
           if (!profile?.current_plan || profile.current_plan === 'Free') {
-            setError('Plan update is taking longer than expected. Please refresh the page in a few minutes.');
+            setError('Plan update is taking longer than expected. This usually completes within 30 seconds. Please refresh the page in a few minutes or contact support if the issue persists.');
           }
 
         } catch (err) {

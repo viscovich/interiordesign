@@ -12,7 +12,9 @@ async function urlToInlineDataPart(url: string): Promise<InlineDataPart> {
 
   // Check for valid URL format (http, https, or data URIs)
   try {
-    const parsedUrl = new URL(url);
+    // Encode the URL to handle spaces and special characters
+    const encodedUrl = encodeURI(url);
+    const parsedUrl = new URL(encodedUrl);
     if (!['http:', 'https:', 'data:'].includes(parsedUrl.protocol)) {
       console.error(`Invalid URL protocol: ${url}`);
       throw new Error('Only HTTP/HTTPS and data URLs are supported');
@@ -24,7 +26,9 @@ async function urlToInlineDataPart(url: string): Promise<InlineDataPart> {
   console.log(`Fetching image from URL: ${url}`);
 
   try {
-    const response = await fetch(url);
+    // Use encoded URL for the fetch call
+    const encodedUrl = encodeURI(url);
+    const response = await fetch(encodedUrl);
     if (!response.ok) {
       console.error(`Failed to fetch image: ${response.status} ${response.statusText}`);
       const errorBody = await response.text();
@@ -113,9 +117,9 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       ],
     });
 
-    console.log(`Preparing main image part for: ${mainImageUrl}`);
+    console.log(`Preparing main image part - Original URL: ${mainImageUrl}, Encoded: ${encodeURI(mainImageUrl)}`);
     const mainImagePart = await urlToInlineDataPart(mainImageUrl);
-    console.log(`Main image part prepared.`);
+    console.log(`Main image part prepared. Size: ${mainImagePart.inlineData.data.length} bytes, Type: ${mainImagePart.inlineData.mimeType}`);
 
     const objectImageParts: InlineDataPart[] = [];
     console.log(`Preparing ${objectImageUrls.length} object image parts...`);
