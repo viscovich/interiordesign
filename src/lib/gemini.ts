@@ -207,7 +207,12 @@ export async function generateInteriorDesign(
     renderingType=${renderingType}, 
     view=${view}, 
     objects=${selectedObjects.length},
-    mainImageUrl=${imageUrl}`);
+    mainImageUrl=${imageUrl.substring(0, 50)}... (truncated)`);
+  console.log('Selected objects details:', selectedObjects.map(obj => ({
+    name: obj.object_name,
+    url: obj.thumbnail_url || obj.asset_url,
+    description: obj.description
+  })));
 
   // 1. Generate the prompt client-side
   const prompt = getGenerationPrompt(
@@ -227,7 +232,10 @@ export async function generateInteriorDesign(
   const objectImageUrls = selectedObjects
     .map(obj => {
       const url = obj.thumbnail_url || obj.asset_url;
-      console.log(`Object URL for ${obj.object_name}:`, url);
+      console.log(`Object URL for ${obj.object_name}:`, url ? `${url.substring(0, 50)}... (truncated)` : 'MISSING');
+      if (!url) {
+        console.error(`Missing URL for object: ${obj.object_name}`);
+      }
       return url;
     })
     .filter((url): url is string => {
