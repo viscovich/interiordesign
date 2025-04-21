@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { getUserObjects, UserObject, deleteUserObject, searchObjects } from '../lib/userObjectsService';
+import { getSubscription } from '../lib/stripe';
 import { UserObjectsSection } from './UserObjectsSection';
 import UploadObjectModal from './UploadObjectModal';
 import { useAuth } from '../lib/auth';
 
 const UserObjectsManager: React.FC = () => {
   const { user } = useAuth();
+  const [userPlan, setUserPlan] = useState<string>('Free');
   const [allObjects, setAllObjects] = useState<UserObject[]>([]);
   const [filteredObjects, setFilteredObjects] = useState<UserObject[]>([]);
   const [selectedObjects, setSelectedObjects] = useState<string[]>([]);
@@ -101,6 +103,11 @@ const UserObjectsManager: React.FC = () => {
 
   useEffect(() => {
     fetchObjects();
+    if (user) {
+      getSubscription(user.id).then((sub) => {
+        setUserPlan(sub.current_plan);
+      });
+    }
   }, [user]);
 
   const handleUploadSuccess = () => {
@@ -113,10 +120,19 @@ const UserObjectsManager: React.FC = () => {
       <h2 className="text-lg font-semibold mb-4">My Objects</h2>
       <div className="space-y-4 mb-4">
         <div className="flex justify-between items-center">
-          <p className="text-sm text-gray-500">Upload your objects to include in your design</p>
+          <p className="text-sm text-gray-500">
+            {userPlan === 'Free' 
+              ? 'Upload not available with Free plan' 
+              : 'Upload your objects to include in your design'}
+          </p>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2 text-sm bg-black text-white rounded-md hover:bg-custom-800 shadow-md"
+          disabled={userPlan === 'Free'}
+          className={`px-4 py-2 text-sm rounded-md shadow-md ${
+            userPlan === 'Free' 
+              ? 'bg-gray-400 cursor-not-allowed' 
+              : 'bg-black text-white hover:bg-custom-800'
+          }`}
         >
           Upload Object
         </button>
