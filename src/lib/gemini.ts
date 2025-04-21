@@ -235,25 +235,32 @@ export async function generateInteriorDesign(
       console.log(`Object URL for ${obj.object_name}:`, url ? `${url.substring(0, 50)}... (truncated)` : 'MISSING');
       if (!url) {
         console.error(`Missing URL for object: ${obj.object_name}`);
+        return null;
       }
+      
+      // Validate URL format and protocol
+      try {
+        const parsedUrl = new URL(url);
+        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+          console.error(`Invalid URL protocol for object ${obj.object_name}: ${url}`);
+          return null;
+        }
+      } catch (e) {
+        console.error(`Invalid URL format for object ${obj.object_name}: ${url}`, e);
+        return null;
+      }
+
       return url;
     })
-    .filter((url): url is string => {
-      if (!url) {
-        console.warn('Empty object URL found');
-        return false;
-      }
-      if (!url.startsWith('http')) {
-        console.error(`Invalid object URL format: ${url}`);
-        return false;
-      }
-      return true;
-    });
+    .filter((url): url is string => url !== null);
 
   // 3. Call the Netlify function
   try {
-    // Removed detailed logging and data: URL check added for debugging
-    console.log(`[generateInteriorDesign] Calling Netlify function with object URLs:`, objectImageUrls);
+    console.log(`[generateInteriorDesign] Calling Netlify function with:
+      - Main Image URL: ${imageUrl}
+      - Object URLs:`, objectImageUrls.map((url, i) => 
+        `${i+1}. ${url} (for ${selectedObjects[i]?.object_name || 'unknown'})`
+      ));
     const response = await fetch('/.netlify/functions/gemini-call', {
       method: 'POST',
       headers: {
