@@ -1,10 +1,10 @@
 import { supabase } from './supabase';
 import { ImageObject, UserObject, PaginatedProjects, Project } from './projectsService.d'; // Import all types
 import { uploadImage } from './storage'; // Corrected import path and function name
-// Import necessary functions & generateObjectDescription
-import { getNewGenerationPrompt, _callGeminiApi, urlToInlineDataPart, generateObjectDescription } from './gemini'; 
+// Import necessary functions & generateObjectDescription - REMOVED _callGeminiApi
+import { getNewGenerationPrompt, urlToInlineDataPart, generateObjectDescription } from './gemini';
 import { useCredit } from './userService'; // Import useCredit
-import { InlineDataPart } from '@google/generative-ai';
+// Removed InlineDataPart import as it's no longer needed here
 
 // Helper function to convert File to Base64
 const fileToBase64 = (file: File): Promise<string> => {
@@ -229,6 +229,11 @@ export async function addUserObject(
   file: File,
   dimensions?: string
 ): Promise<UserObject> {
+  // Validate file format
+  const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!validTypes.includes(file.type)) {
+    throw new Error(`Unsupported file format: ${file.type}. Please use JPEG, PNG or WEBP.`);
+  }
 
   // 1. Convert file to base64
   const base64Data = await fileToBase64(file);
@@ -307,9 +312,10 @@ export async function regenerateImageWithSubstitution(
 
   // Determine if it's an object replacement based on provided parameters
   const isObjectReplacement = !!(replacementObject && objectToReplaceIdentifier);
-  let objectImageParts: InlineDataPart[] = [];
+  // let objectImageParts: InlineDataPart[] = []; // Removed - we pass URLs now
   let replacementObjectDescription: string | null = null; // Description of the NEW object
   let actualObjectToReplaceDescription: string | null = null; // Detailed description of the object TO REPLACE (from DB)
+  let replacementObjectImageUrl: string | null = null; // URL of the replacement object
 
   if (isObjectReplacement) {
     // 1. Get description of the NEW object
@@ -346,24 +352,14 @@ export async function regenerateImageWithSubstitution(
        console.warn(`[regenerateImageWithSubstitution] Using identifier "${actualObjectToReplaceDescription}" as description due to DB error.`);
     }
 
-    // 3. Prepare image data for the NEW object
-    let replacementUrl: string | null = null;
-    try {
-      replacementUrl = replacementObject.thumbnail_url || replacementObject.asset_url;
-      console.log(`[regenerateImageWithSubstitution] Attempting to use replacement URL: ${replacementUrl}`);
-
-      if (!replacementUrl) {
-        console.warn(`[regenerateImageWithSubstitution] Replacement object ${replacementObject.id} is missing asset/thumbnail URL. Cannot prepare image data.`);
-      } else {
-        console.log('[regenerateImageWithSubstitution] Converting replacement object image to inline data...');
-        const imagePart = await urlToInlineDataPart(replacementUrl);
-        console.log('[regenerateImageWithSubstitution] Conversion successful. MimeType:', imagePart.inlineData.mimeType);
-        objectImageParts = [imagePart];
-      }
-    } catch (error) {
-      console.error(`[regenerateImageWithSubstitution] Error converting replacement image from URL: ${replacementUrl}`, error);
-      throw new Error('Failed to process replacement object image'); // Throw error if image prep fails
+    // 3. Get image URL for the NEW object
+    replacementObjectImageUrl = replacementObject.thumbnail_url || replacementObject.asset_url;
+    if (!replacementObjectImageUrl) {
+       console.warn(`[regenerateImageWithSubstitution] Replacement object ${replacementObject.id} is missing asset/thumbnail URL. Cannot include its image.`);
+    } else {
+       console.log(`[regenerateImageWithSubstitution] Using replacement image URL: ${replacementObjectImageUrl}`);
     }
+    // No conversion needed here anymore, just pass the URL
 
     console.log('[regenerate] Replacing object with params:', {
       objectToReplaceDescription: actualObjectToReplaceDescription, // Log the description found/used
@@ -385,6 +381,10 @@ export async function regenerateImageWithSubstitution(
 
   // 4. Generate the prompt and call the API
   try {
+    const objectsToReplace = isObjectReplacement && actualObjectToReplaceDescription && replacementObjectDescription
+      ? [{ original: actualObjectToReplaceDescription, replacement: replacementObjectDescription }]
+      : undefined;
+
     const prompt = getNewGenerationPrompt(
       project.style,
       renderingType || '3d', // Default to 3d if not provided
@@ -392,31 +392,49 @@ export async function regenerateImageWithSubstitution(
       (colorTone || project.color_tone) ?? undefined, // Use new or existing color tone
       (viewType || project.view_type) ?? undefined, // Use new or existing view type
       isObjectReplacement,
-      // Pass the descriptions found/retrieved
-      actualObjectToReplaceDescription, // Might be the detailed one from DB or the identifier as fallback
-      replacementObjectDescription // From the new UserObject
+      objectsToReplace
     );
 
-    console.log(`[regenerate] Generated prompt: "${prompt.substring(0, 100)}..."`);
+    console.log('===== FULL PROMPT SENT TO GEMINI =====');
+    console.log(prompt);
+    console.log('===== END PROMPT =====');
 
-    // Convert main image to inline data (always needed)
-    const mainImagePart = await urlToInlineDataPart(originalImageUrl);
-    
-    const { imageData, detectedObjects } = await _callGeminiApi(
-      prompt,
-      originalImageUrl, // Still pass URL for backward compatibility
-      objectImageParts  // Pass image data ONLY for the replacement object
-    );
-    console.log('[regenerateImageWithSubstitution] Called _callGeminiApi with objectImageParts:', objectImageParts); 
+    // Call the Netlify function instead of _callGeminiApi
+    console.log(`[regenerate] Calling Netlify function '/.netlify/functions/gemini-call'`);
+    const response = await fetch('/.netlify/functions/gemini-call', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            prompt: prompt,
+            mainImageUrl: originalImageUrl, // Pass the main image URL
+            // Pass replacement image URL in an array if it exists, otherwise empty array
+            objectImageUrls: replacementObjectImageUrl ? [replacementObjectImageUrl] : [],
+        }),
+    });
 
-    if (!imageData) {
-      throw new Error('Image generation failed - no image data returned from _callGeminiApi');
+    console.log(`[regenerate] Netlify function response status: ${response.status}`);
+    const result = await response.json();
+
+    if (!response.ok) {
+        console.error(`[regenerate] Netlify function error: ${response.statusText}`, result);
+        throw new Error(result.error || `Failed to regenerate image (${response.status})`);
     }
 
-    console.log('[regenerate] Successfully generated new image variant.');
-    // Return both image data and detected objects
-    return { imageData, detectedObjects };
+     // Validate the expected fields exist
+    if (typeof result.description !== 'string' || typeof result.imageData !== 'string' || !Array.isArray(result.detectedObjects)) {
+        console.error('[regenerate] Invalid data structure received from Netlify function:', result);
+        throw new Error('Invalid response format from regeneration service.');
+    }
+    // Note: The Netlify function returns description, but we might not need it here.
+    // We primarily need imageData and detectedObjects.
 
+    console.log('[regenerate] Successfully generated new image variant via Netlify function.');
+    return {
+        imageData: result.imageData,
+        detectedObjects: result.detectedObjects
+    };
   } catch (error) {
     console.error('Error generating new image variant:', error);
     // Rethrow or handle specific errors

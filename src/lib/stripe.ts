@@ -75,7 +75,10 @@ export const createBillingPortal = async (customerId: string) => {
     const { data, error } = await supabase
       .functions
       .invoke('stripe-create-portal', {
-        body: { customer_id: customerId }
+        body: { customer_id: customerId },
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        }
       });
 
     if (error) throw error;

@@ -27,9 +27,11 @@ const supabaseAdmin = createClient(
 // Get the webhook signing secret from environment variables (ensure STRIPE_WEBHOOK_SECRET is set)
 const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
 
-// Define the Price ID for the test plan and the credits to add
-const TEST_PLAN_PRICE_ID = 'price_1RCGMcHqqEp5PbqKlqBheNM9';
-const CREDITS_FOR_TEST_PLAN = 250;
+// Get plan configurations from environment variables
+const PRO_PLAN_PRICE_ID = Deno.env.get('STRIPE_PRO_PRICE_ID') ?? '';
+const ENTERPRISE_PLAN_PRICE_ID = Deno.env.get('STRIPE_ENTERPRISE_PRICE_ID') ?? '';
+const PRO_PLAN_CREDITS = parseInt(Deno.env.get('PRO_PLAN_CREDITS') ?? '250');
+const ENTERPRISE_PLAN_CREDITS = parseInt(Deno.env.get('ENTERPRISE_PLAN_CREDITS') ?? '1000');
 
 // --- Database Function Call ---
 // Assumes a PostgreSQL function `add_user_credits(p_stripe_customer_id TEXT, p_credits_to_add INT)` exists
@@ -110,28 +112,141 @@ serve(async (req: Request) => {
          return new Response(JSON.stringify({ error: 'Missing customer or price ID.' }), { status: 400, headers: responseHeaders });
       }
 
-      // Check if the price ID matches the test plan
-      if (priceId === TEST_PLAN_PRICE_ID) {
-        try {
-          // Add credits using the database function
-          await addCreditsToUser(customerId, CREDITS_FOR_TEST_PLAN);
-          console.log(`Successfully added ${CREDITS_FOR_TEST_PLAN} credits for customer ${customerId}`);
-        } catch (dbError: unknown) {
-           const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown database error';
-           console.error(`Database error adding credits for ${customerId}: ${errorMessage}`);
-           // Return 500 so Stripe retries later
-           return new Response(JSON.stringify({ error: `Database update failed: ${errorMessage}` }), { status: 500, headers: responseHeaders });
-        }
-      } else {
-        // Optional: Handle other plans or log that this plan doesn't grant credits
-        console.log(`Invoice paid for a different price ID (${priceId}), no credits added.`);
+      // Determine which plan was purchased and assign appropriate credits
+      let creditsToAdd = 0;
+      if (priceId === PRO_PLAN_PRICE_ID) {
+        creditsToAdd = PRO_PLAN_CREDITS;
+      } else if (priceId === ENTERPRISE_PLAN_PRICE_ID) {
+        creditsToAdd = ENTERPRISE_PLAN_CREDITS;
       }
-    } else {
-       console.log('Invoice is not for a subscription or has no line items.');
+
+      if (creditsToAdd > 0) {
+        try {
+          // First ensure the user profile exists with this stripe_customer_id
+          const { data: profileData, error: profileError } = await supabaseAdmin
+            .from('user_profiles')
+            .select('id')
+            .eq('stripe_customer_id', customerId)
+            .single();
+
+          if (profileError || !profileData) {
+            // If no profile found, try to find by email (from Stripe customer)
+            const stripeCustomer = await stripe.customers.retrieve(customerId);
+            if (stripeCustomer.deleted) {
+              throw new Error(`Stripe customer ${customerId} was deleted`);
+            }
+
+            const customerEmail = typeof stripeCustomer.email === 'string' ? stripeCustomer.email : null;
+            if (!customerEmail) {
+              throw new Error(`No email found for Stripe customer ${customerId}`);
+            }
+
+            // First try to find user by email
+            const { data: existingUser, error: findError } = await supabaseAdmin
+              .from('user_profiles')
+              .select('id')
+              .eq('email', customerEmail)
+              .single();
+
+            if (findError && findError.code !== 'PGRST116') { // Ignore "No rows found" error
+              throw findError;
+            }
+
+            if (existingUser) {
+              // Update existing user with stripe_customer_id
+              const { error: updateError } = await supabaseAdmin
+                .from('user_profiles')
+                .update({
+                  stripe_customer_id: customerId,
+                  current_plan: priceId === PRO_PLAN_PRICE_ID ? 'Pro' : 'Enterprise',
+                  subscription_status: 'active',
+                  updated_at: new Date().toISOString()
+                })
+                .eq('email', customerEmail);
+
+              if (updateError) throw updateError;
+            } else {
+              // Create new user profile
+              const { error: createError } = await supabaseAdmin
+                .from('user_profiles')
+                .insert({
+                  email: customerEmail,
+                  stripe_customer_id: customerId,
+                  current_plan: priceId === PRO_PLAN_PRICE_ID ? 'Pro' : 'Enterprise',
+                  subscription_status: 'active',
+                  credits: 0, // Initialize with 0 credits (will be added later)
+                  updated_at: new Date().toISOString()
+                });
+
+              if (createError) throw createError;
+            }
+          } else {
+            // Profile exists, just update plan and status
+            const { error: updateError } = await supabaseAdmin
+              .from('user_profiles')
+              .update({ 
+                current_plan: priceId === PRO_PLAN_PRICE_ID ? 'Pro' : 'Enterprise',
+                subscription_status: 'active',
+                updated_at: new Date().toISOString()
+              })
+              .eq('stripe_customer_id', customerId);
+
+            if (updateError) throw updateError;
+          }
+
+          // Add credits
+          await addCreditsToUser(customerId, creditsToAdd);
+        } catch (err) {
+          console.error('Error updating user profile:', err);
+          return new Response(JSON.stringify({ error: 'Failed to update user profile' }), { 
+            status: 500, 
+            headers: responseHeaders 
+          });
+        }
+      }
+    }
+  } else if (event.type === 'invoice.payment_failed') {
+    const invoice = event.data.object as Stripe.Invoice;
+    if (invoice.subscription) {
+      const customerId = invoice.customer as string;
+      
+      const { error } = await supabaseAdmin
+        .from('user_profiles')
+        .update({ 
+          subscription_status: 'past_due',
+          updated_at: new Date().toISOString()
+        })
+        .eq('stripe_customer_id', customerId);
+
+      if (error) {
+        console.error('Error updating subscription status:', error);
+        return new Response(JSON.stringify({ error: 'Failed to update subscription status' }), { 
+          status: 500, 
+          headers: responseHeaders 
+        });
+      }
+    }
+  } else if (event.type === 'customer.subscription.deleted') {
+    const subscription = event.data.object as Stripe.Subscription;
+    const customerId = subscription.customer as string;
+    
+    const { error } = await supabaseAdmin
+      .from('user_profiles')
+      .update({ 
+        subscription_status: 'canceled',
+        updated_at: new Date().toISOString()
+      })
+      .eq('stripe_customer_id', customerId);
+
+    if (error) {
+      console.error('Error canceling subscription:', error);
+      return new Response(JSON.stringify({ error: 'Failed to cancel subscription' }), { 
+        status: 500, 
+        headers: responseHeaders 
+      });
     }
   } else {
-    // Handle other event types if needed, or ignore
-    console.log(`Unhandled event type: ${event.type}`)
+    console.log(`Unhandled event type: ${event.type}`);
   }
 
   // Acknowledge receipt of the event to Stripe

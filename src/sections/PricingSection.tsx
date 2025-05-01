@@ -47,8 +47,8 @@ export default function PricingSection({ user, onRegisterClick }: PricingSection
                 Standard generation: 5 credits/image
               </li>
               <li className="flex items-center">
-                <i className="fas fa-check text-custom mr-2"></i>
-                Image Resolution: 1024x720 pixel
+              <i className="fas fa-times text-gray-400 mr-2"></i>
+                You can't Include your objects into the rendering
               </li>
             </ul>
             <button 
@@ -88,7 +88,7 @@ export default function PricingSection({ user, onRegisterClick }: PricingSection
               </li>
               <li className="flex items-center">
                 <i className="fas fa-check text-custom mr-2"></i>
-                High-resolution images
+                Include your objects into the rendering
               </li>
             </ul>
             <button 
@@ -126,7 +126,7 @@ export default function PricingSection({ user, onRegisterClick }: PricingSection
               </li>
               <li className="flex items-center">
                 <i className="fas fa-check text-custom mr-2"></i>
-                High-resolution images
+                Include your objects into the rendering
               </li>
             </ul>
             <button 
