@@ -24,8 +24,8 @@ export async function urlToInlineDataPart(url: string): Promise<InlineDataPart> 
   };
 }
 
-// Rename function for clarity
-function getGenerationPrompt(
+// Rename function for clarity and EXPORT it
+export function getGenerationPrompt(
   renderingType: string,
   style: string,
   roomType: string,

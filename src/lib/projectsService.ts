@@ -423,3 +423,108 @@ export async function regenerateImageWithSubstitution(
     throw new Error(`Failed to generate new image variant: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
+
+
+// --- Function to Initiate Asynchronous Generation ---
+
+// Define the type for the parameters object
+interface AsyncGenerationParams {
+  userId: string;
+  originalImageUrl: string;
+  style: string;
+  roomType: string;
+  renderingType: string;
+  colorTone: string | null;
+  view: string | null;
+  prompt: string;
+  inputUserObjectIds: string[] | null;
+  model: string; // e.g., 'dall-e-3'
+  size: string; // e.g., '1024x1024'
+  quality: string; // e.g., 'standard'
+}
+
+export async function createProjectForAsyncGeneration(params: AsyncGenerationParams): Promise<string> {
+  console.log('[createProjectForAsyncGeneration] Initiating async generation with params:', params);
+
+  // 1. Insert project record with 'pending' status
+  let newProjectId: string | null = null;
+  try {
+    const { data: newProject, error: insertError } = await supabase
+      .from('projects')
+      .insert({
+        user_id: params.userId,
+        original_image_url: params.originalImageUrl, // Make sure this is the final URL if uploaded separately
+        style: params.style,
+        room_type: params.roomType,
+        rendering_type: params.renderingType,
+        color_tone: params.colorTone,
+        view: params.view,
+        prompt: params.prompt,
+        input_user_object_ids: params.inputUserObjectIds,
+        model: params.model,
+        size: params.size,
+        quality: params.quality,
+        stato_generazione: 'pending', // Set initial status
+        generated_image_url: null, // Ensure these are null initially
+        thumbnail_url: null,
+        generation_error: null,
+      })
+      .select('id') // Select only the ID
+      .single();
+
+    if (insertError) {
+      console.error('Error inserting pending project:', insertError);
+      throw new Error(`Failed to create project record: ${insertError.message}`);
+    }
+
+    if (!newProject || !newProject.id) {
+      throw new Error('Failed to create project record: No ID returned.');
+    }
+    newProjectId = newProject.id;
+    console.log(`[createProjectForAsyncGeneration] Pending project created with ID: ${newProjectId}`);
+
+  } catch (error) {
+    console.error('[createProjectForAsyncGeneration] Error during project insertion:', error);
+    // Rethrow the specific error or a generic one
+    throw error instanceof Error ? error : new Error('Failed to create project record.');
+  }
+
+  // Ensure newProjectId is a string before proceeding
+  if (typeof newProjectId !== 'string') {
+      // This case should theoretically not be reached if insertion succeeded without error
+      console.error('[createProjectForAsyncGeneration] Critical error: newProjectId is not a string after successful insertion.');
+      throw new Error('Failed to get project ID after creation.');
+  }
+  // Use a new const with the guaranteed string type for clarity and type safety
+  const projectIdToInvoke: string = newProjectId;
+
+
+  // 2. Invoke the Edge Function asynchronously
+  try {
+    const { error: invokeError } = await supabase.functions.invoke('generate-image-async', {
+      body: { projectId: projectIdToInvoke }, // Pass the guaranteed string ID
+    });
+
+    if (invokeError) {
+      console.error(`[createProjectForAsyncGeneration] Error invoking function for project ${projectIdToInvoke}:`, invokeError);
+      // Attempt to update the project status to 'failed' if invocation fails
+      await supabase
+        .from('projects')
+        .update({ stato_generazione: 'failed', generation_error: `Function invocation failed: ${invokeError.message}` })
+        .eq('id', projectIdToInvoke); // Use guaranteed string ID
+      throw new Error(`Failed to invoke generation function: ${invokeError.message}`);
+    }
+
+    console.log(`[createProjectForAsyncGeneration] Successfully invoked function for project ${projectIdToInvoke}`);
+    return projectIdToInvoke; // Return the guaranteed string ID
+
+  } catch (error) {
+    console.error('[createProjectForAsyncGeneration] Error during function invocation:', error);
+    // Ensure project status reflects failure if invocation step fails after insertion
+     await supabase
+        .from('projects')
+        .update({ stato_generazione: 'failed', generation_error: `Function invocation failed unexpectedly.` })
+        .eq('id', projectIdToInvoke); // Use guaranteed string ID
+    throw error instanceof Error ? error : new Error('Failed to invoke generation function.');
+  }
+}
