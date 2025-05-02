@@ -229,10 +229,9 @@ export async function addUserObject(
   file: File,
   dimensions?: string
 ): Promise<UserObject> {
-  // Validate file format
-  const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-  if (!validTypes.includes(file.type)) {
-    throw new Error(`Unsupported file format: ${file.type}. Please use JPEG, PNG or WEBP.`);
+  // Validate file format - only PNG allowed
+  if (file.type !== 'image/png') {
+    throw new Error(`Unsupported file format: ${file.type}. Only PNG files are accepted.`);
   }
 
   // 1. Convert file to base64
@@ -294,7 +293,7 @@ export async function regenerateImageWithSubstitution(
   project: Project,
   originalImageUrl: string, // Image containing the object to replace
   replacementObject: UserObject | null, // The new object to insert (contains its description)
-  objectToReplaceIdentifier: string | null, // Identifier (e.g., simple name like "Sofa") of the object TO REPLACE
+  objectToReplace: { original: string; replacement: string } | null, // Object with original and replacement descriptions
   viewType?: string | null,
   renderingType?: string | null,
   colorTone?: string | null
@@ -303,15 +302,15 @@ export async function regenerateImageWithSubstitution(
     throw new Error('Project data is required for regeneration.');
   }
   // Check: if replacing, both replacement object and identifier of object to replace are needed
-  if (replacementObject && !objectToReplaceIdentifier) {
-    throw new Error('Identifier of the object to replace is required when providing a replacement object.');
+  if (replacementObject && !objectToReplace) {
+    throw new Error('Object to replace is required when providing a replacement object.');
   }
 
   // Deduct credits for this generation attempt
   await useCredit(project.user_id, 5);
 
   // Determine if it's an object replacement based on provided parameters
-  const isObjectReplacement = !!(replacementObject && objectToReplaceIdentifier);
+  const isObjectReplacement = !!(replacementObject && objectToReplace);
   // let objectImageParts: InlineDataPart[] = []; // Removed - we pass URLs now
   let replacementObjectDescription: string | null = null; // Description of the NEW object
   let actualObjectToReplaceDescription: string | null = null; // Detailed description of the object TO REPLACE (from DB)

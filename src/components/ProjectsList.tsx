@@ -6,7 +6,7 @@ import { getProjectsByUser, deleteProject } from '../lib/projectsService';
 import toast from 'react-hot-toast';
 import { ProjectModal } from './ProjectModal';
 // Import ArrowPathIcon for refresh
-import { TrashIcon, PencilSquareIcon, DocumentTextIcon, PhotoIcon, ArrowDownTrayIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, PencilSquareIcon, PhotoIcon, ArrowDownTrayIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import ImageFullscreenModal from './ImageFullscreenModal';
 import { ImageComparison } from './ImageComparison';
 
@@ -177,16 +177,6 @@ export function ProjectsList({ user, onModifyProject, refreshKey, newProjectId }
                           disabled={!project.generated_image_url}
                         >
                           <PhotoIcon className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedProject(project); // Opens the details modal
-                          }}
-                          className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                          aria-label="View project description"
-                        >
-                          <DocumentTextIcon className="w-5 h-5" />
                         </button>
                         <button
                           onClick={(e) => {

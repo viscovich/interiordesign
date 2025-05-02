@@ -143,11 +143,12 @@ const UploadObjectModal: React.FC<UploadObjectModalProps> = ({ isOpen, onClose, 
               id="objectImage"
               ref={fileInputRef}
               onChange={handleFileChange}
-              accept="image/png, image/jpeg, image/webp" // Accept common image types
+              accept="image/png" // Only accept PNG files
               required
               className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 disabled:opacity-50"
               disabled={isLoading}
             />
+            <p className="text-xs text-gray-500 mt-1">Only PNG files are accepted</p>
             {previewUrl && (
               <div className="mt-2 border border-gray-200 rounded p-2 inline-block">
                 <img src={previewUrl} alt="Preview" className="h-20 w-auto object-contain" />

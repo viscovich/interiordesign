@@ -27,7 +27,7 @@ export default function PricingSection({ user, onRegisterClick }: PricingSection
           <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
             <h3 className="text-2xl font-bold mb-4">💎 Free</h3>
             <div className="text-4xl font-bold mb-6">
-              $0<span className="text-xl font-normal">/month</span>
+              $0<span className="text-xl font-normal"></span>
             </div>
             <ul className="space-y-4 mb-8">
               <li className="flex items-center">
@@ -35,8 +35,8 @@ export default function PricingSection({ user, onRegisterClick }: PricingSection
                 Access to the Standard model
               </li>
               <li className="flex items-center">
-                <i className="fas fa-times text-gray-400 mr-2"></i>
-                Advanced model not available
+                <i className="fas fa-check text-custom mr-2"></i>
+                Advanced model available
               </li>
               <li className="flex items-center">
                 <i className="fas fa-check text-custom mr-2"></i>
@@ -47,8 +47,8 @@ export default function PricingSection({ user, onRegisterClick }: PricingSection
                 Standard generation: 5 credits/image
               </li>
               <li className="flex items-center">
-              <i className="fas fa-times text-gray-400 mr-2"></i>
-                You can't Include your objects into the rendering
+              <i className="fas fa-check text-custom mr-2"></i>
+                You can Include your objects into the rendering
               </li>
             </ul>
             <button 
