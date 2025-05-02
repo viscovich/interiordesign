@@ -27,6 +27,7 @@ import FAQSection from './sections/FAQSection';
 import UserObjectsManager from './components/UserObjectsManager';
 import CommunityProjectsSection from './sections/CommunityProjectsSection';
 import ErrorModal from './components/ErrorModal';
+import InfoModal from './components/InfoModal'; // Import the new InfoModal
 
 
 // Inner component to access router context (needed for useLocation/useSearchParams)
@@ -433,6 +434,13 @@ function AppContent() {
         onClose={() => design.setErrorModal({...design.errorModal, isOpen: false})}
         title={design.errorModal.title}
         message={design.errorModal.message}
+      />
+      {/* Add the InfoModal */}
+      <InfoModal
+        isOpen={design.isInfoModalOpen}
+        onClose={() => design.setIsInfoModalOpen(false)}
+        title="Generation Started"
+        message="Generation in progress, you will find it in your projects."
       />
     </SeoWrapper>
   );

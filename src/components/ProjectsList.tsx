@@ -5,7 +5,8 @@ import type { User } from '@supabase/supabase-js';
 import { getProjectsByUser, deleteProject } from '../lib/projectsService';
 import toast from 'react-hot-toast';
 import { ProjectModal } from './ProjectModal';
-import { TrashIcon, PencilSquareIcon, DocumentTextIcon, PhotoIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+// Import ArrowPathIcon for refresh
+import { TrashIcon, PencilSquareIcon, DocumentTextIcon, PhotoIcon, ArrowDownTrayIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import ImageFullscreenModal from './ImageFullscreenModal';
 import { ImageComparison } from './ImageComparison';
 
@@ -28,6 +29,9 @@ export function ProjectsList({ user, onModifyProject, refreshKey, newProjectId }
     perPage: 6
   });
   const [loading, setLoading] = useState(false);
+  const [internalRefreshKey, setInternalRefreshKey] = useState(0); // State for manual refresh
+
+  const triggerRefresh = () => setInternalRefreshKey(prev => prev + 1); // Handler for refresh button
 
   useEffect(() => {
     if (user) {
@@ -47,7 +51,8 @@ export function ProjectsList({ user, onModifyProject, refreshKey, newProjectId }
         })
         .finally(() => setLoading(false));
     }
-  }, [user, paginatedProjects.page, refreshKey, newProjectId]);
+    // Add internalRefreshKey to dependencies
+  }, [user, paginatedProjects.page, refreshKey, newProjectId, internalRefreshKey]);
 
   if (!user) {
     return <p>Please sign in to view your projects</p>;
@@ -115,99 +120,127 @@ export function ProjectsList({ user, onModifyProject, refreshKey, newProjectId }
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Replace the entire map callback content */}
             {paginatedProjects.projects.map((project) => (
               <div
                 key={project.id}
-                className="relative p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                className="relative p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex flex-col" // Added flex flex-col
               >
-                <div className="flex flex-col space-y-2">
+                {/* Conditional Rendering based on status */}
+                {project.stato_generazione === 'pending' ? (
+                  <div className="w-full h-48 flex flex-col items-center justify-center border border-gray-200 rounded-lg bg-gray-50 text-center p-4 mb-2">
+                    <p className="text-sm text-gray-600 mb-2">Generation in progress</p>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); triggerRefresh(); }}
+                      className="p-2 text-gray-500 hover:text-black transition-colors"
+                      aria-label="Refresh status"
+                    >
+                      <ArrowPathIcon className="w-6 h-6" />
+                    </button>
+                  </div>
+                ) : (
                   <ImageLoader
                     src={project.thumbnail_url || project.generated_image_url || ''}
                     alt={`Generated ${project.room_type}`}
                     className="w-full h-48 object-cover rounded-lg mb-2 cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setFullscreenImageUrl(project.generated_image_url || project.original_image_url || '');
+                      // Only allow fullscreen if image exists
+                      if (project.generated_image_url || project.original_image_url) {
+                        setFullscreenImageUrl(project.generated_image_url || project.original_image_url || '');
+                      }
                     }}
                   />
-                  <div
-                    className="cursor-pointer"
-                    onClick={() => setSelectedProject(project)}
-                  >
-                    <div className="space-y-1">
-                      <div className="flex justify-between items-center">
-                        <h3 className="font-bold text-lg">{project.room_type}</h3>
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setComparisonImages({
-                                original: project.original_image_url || '',
-                                generated: project.generated_image_url || ''
-                              });
-                              setShowComparison(true);
-                            }}
-                            className="p-1 text-gray-400 hover:text-green-600 transition-colors"
-                            aria-label="Compare original and generated images"
-                          >
-                            <PhotoIcon className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedProject(project);
-                            }}
-                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                            aria-label="View project description"
-                          >
-                            <DocumentTextIcon className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDownloadImage(
-                                project.generated_image_url || '',
-                                `${project.room_type || 'project'}_generated.jpg`
-                              );
-                            }}
-                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                            aria-label="Download generated image"
-                            disabled={!project.generated_image_url}
-                          >
-                            <ArrowDownTrayIcon className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onModifyProject(project);
-                            }}
-                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                            aria-label="Modify project"
-                          >
-                            <PencilSquareIcon className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteProject(project);
-                            }}
-                            className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                            aria-label="Delete project"
-                          >
-                            <TrashIcon className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-700">{project.style}</span>
-                        <span className="text-gray-500 text-sm">
-                          {project.created_at ? new Date(project.created_at).toLocaleDateString() : ''}
-                        </span>
+                )}
+                {/* Project details below image/placeholder */}
+                <div
+                  className="cursor-pointer mt-auto" // Added mt-auto to push details down
+                  onClick={() => setSelectedProject(project)}
+                >
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-bold text-lg">{project.room_type}</h3>
+                      {/* Action Buttons */}
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setComparisonImages({
+                              original: project.original_image_url || '',
+                              generated: project.generated_image_url || ''
+                            });
+                            setShowComparison(true);
+                          }}
+                          className="p-1 text-gray-400 hover:text-green-600 transition-colors"
+                          aria-label="Compare original and generated images"
+                          // Disable compare if generated doesn't exist yet
+                          disabled={!project.generated_image_url}
+                        >
+                          <PhotoIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedProject(project); // Opens the details modal
+                          }}
+                          className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                          aria-label="View project description"
+                        >
+                          <DocumentTextIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadImage(
+                              project.generated_image_url || '',
+                              `${project.room_type || 'project'}_generated.jpg`
+                            );
+                          }}
+                          className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                          aria-label="Download generated image"
+                          disabled={!project.generated_image_url}
+                        >
+                          <ArrowDownTrayIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onModifyProject(project); // Opens modification modal
+                          }}
+                          className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                          aria-label="Modify project"
+                          // Disable modify if generation is pending? Or allow modification based on original? Let's allow it.
+                        >
+                          <PencilSquareIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteProject(project);
+                          }}
+                          className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                          aria-label="Delete project"
+                        >
+                          <TrashIcon className="w-5 h-5" />
+                        </button>
                       </div>
                     </div>
+                    {/* Style and Date */}
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700">{project.style}</span>
+                      <span className="text-gray-500 text-sm">
+                        {project.created_at ? new Date(project.created_at).toLocaleDateString() : ''}
+                      </span>
+                    </div>
+                    {/* Optionally show error message if generation failed */}
+                    {project.stato_generazione === 'failed' && (
+                      <p className="text-xs text-red-500 mt-1 truncate" title={project.generation_error || 'Generation failed'}>
+                        Error: {project.generation_error || 'Generation failed'}
+                      </p>
+                    )}
                   </div>
                 </div>
-              </div>
+              </div> // End of the main div for the project card
             ))}
           </div>
           <div className="flex justify-center mt-6 gap-2">

@@ -10,6 +10,8 @@ export interface Project {
   color_tone: string | null;
   thumbnail_url: string | null; // Added thumbnail URL
   rendering_type: string | null; // Added rendering type
+  stato_generazione: 'pending' | 'completed' | 'failed' | string; // Added generation status
+  generation_error: string | null; // Added potential error message
   created_at: string;
   updated_at: string;
 }

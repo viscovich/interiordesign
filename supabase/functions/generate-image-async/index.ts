@@ -31,9 +31,11 @@ interface UserObjectData {
 }
 
 serve(async (req) => {
+  const origin = req.headers.get("Origin");
+
   // Handle CORS preflight request
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeaders(origin) });
   }
 
   let projectId: string | null = null;
@@ -230,9 +232,9 @@ serve(async (req) => {
     if (updateError) throw updateError;
     console.log("Project status updated successfully.");
 
-    // --- 15. Return Success Response ---
+  // --- 15. Return Success Response ---
     return new Response(JSON.stringify({ success: true, projectId: projectId }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders(origin), "Content-Type": "application/json" },
       status: 200,
     });
 
@@ -260,7 +262,7 @@ serve(async (req) => {
 
     // --- Return Error Response ---
     return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders(origin), "Content-Type": "application/json" },
       status: 500,
     });
   }

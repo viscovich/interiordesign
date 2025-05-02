@@ -67,7 +67,7 @@ Then, describe the layout and positioning of these elements in the ${roomType}.`
 Finally, generate an image that represents the design in a ${renderingType} format.`;
 
   const objectsInstruction = includeObjectsInstruction
-    ? "\nBe sure to include the attached object(s) in the final image, integrating them naturally into the scene."
+    ? "\nBe sure to include the attached object(s) in the final image, integrating them naturally into the scene, but keeping their color."
     : "";
 
   switch (renderingType.toLowerCase()) {
@@ -100,12 +100,7 @@ ${listAndDescriptionPrompt}${imagePrompt}${objectsInstruction}`;
 
 **Required Outputs:**
 
-1.  **Textual Description (Markdown Format):**
-    *   **Essential Furniture & Appliances:**${listAndDescriptionPrompt}
-    *   **Layout Description:** Describe how these elements are arranged within the space, relative to walls and viewer orientation.
-    *   **Final Design Details:** Describe the redesigned room, covering color and material choices, textures, lighting, style adherence (${style}${colorPrompt}), and how everything fits together in a cohesive and functional way.${viewPrompt}
-
-2.  **Image Output (Most Important):**
+1.  **Image Output (Most Important):**
     *   Generate **one high-quality 3D rendered image** that visually represents the final design according to all specifications (${style} style, ${colorPrompt.trim() || 'appropriate colors'}, ${view && viewMap[view] ? viewMap[view] : 'front view'}).${objectsInstruction}`;
   }
 }
@@ -164,8 +159,7 @@ export function getNewGenerationPrompt(
 - Apply the new visual settings (rendering style, viewpoint, and/or color palette) while keeping the design consistent with the existing one.${objectsInstruction}
 
 **Deliverable:**
-- **First, list the essential furniture and appliances visible in the updated image.** For each item, provide a brief description including its main color or material. Use this format: '- [color/material] [object name]'. Example: '- black sofa', '- wooden table'.
-- **Then, generate one updated image** of the same room design, reflecting the requested changes above in style, color tone, viewpoint, or rendering type.`;
+- **Generate one updated image** of the same room design, reflecting the requested changes above in style, color tone, viewpoint, or rendering type or objects to change.`;
 }
 
 

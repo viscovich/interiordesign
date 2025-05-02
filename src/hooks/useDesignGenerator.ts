@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react';
 import { getGenerationPrompt } from '../lib/gemini'; // Import prompt generator
 import { uploadImage } from '../lib/storage';
-// Import the NEW service function (we'll create it next)
+// Import the NEW service function
 import { createProjectForAsyncGeneration } from '../lib/projectsService';
 import { useCredit } from '../lib/userService';
 import { UserObject } from '../lib/userObjectsService';
-import toast from 'react-hot-toast';
+import toast from 'react-hot-toast'; // Keep toast for errors
 
 // REMOVED Thumbnail Generation Helper - This will move to the Edge Function
 
@@ -58,6 +58,7 @@ export default function useDesignGenerator({
   // const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   // const [designDescription, setDesignDescription] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false); // Still useful for button state
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false); // State for the info modal
   const [errorModal, setErrorModal] = useState({
     isOpen: false, // Keep for immediate errors (credits, initial DB insert)
     title: '',
@@ -140,7 +141,7 @@ export default function useDesignGenerator({
   };
 
   // Wrap handleGenerate in useCallback
-  const handleGenerate = useCallback(async (selectedObjects: UserObject[] = []) => {
+  const handleGenerate = useCallback(async (selectedObjects: UserObject[] = []): Promise<string | undefined> => { // Add return type
     // --- 1. Input Validation ---
     if (!uploadedImage || !selectedStyle || !selectedRoomType ||
         !selectedColorTone || !selectedView || !_selectedRenderingType) {
@@ -159,11 +160,10 @@ export default function useDesignGenerator({
       return;
     }
 
-    // Show brief confirmation (no loading state)
-    toast.success('Generazione avviata! Troverai il progetto nella lista.', {
-      position: 'top-center',
-      duration: 3000
-    });
+    // Show the info modal IMMEDIATELY
+    setIsInfoModalOpen(true);
+
+    // REMOVED toast.success call
 
     try {
       // Deduct credits
@@ -179,8 +179,8 @@ export default function useDesignGenerator({
         selectedObjects.length > 0
       );
 
-      // Create async generation
-      await createProjectForAsyncGeneration({
+      // Create async generation and store the returned ID
+      const projectId = await createProjectForAsyncGeneration({
         userId,
         originalImageUrl: uploadedImage,
         style: selectedStyle.name,
@@ -191,9 +191,12 @@ export default function useDesignGenerator({
         prompt,
         inputUserObjectIds: selectedObjects.map(obj => obj.id),
         model: 'gpt-image-1', // Updated to correct model name
-        size: '1024x1024',
-        quality: 'standard'
+        size: '1536x1024',
+        quality: 'low'
       });
+
+      // Return the created project ID (modal is already open)
+      return projectId;
 
     } catch (error) {
       console.error('Initiation error:', error);
@@ -210,6 +213,7 @@ export default function useDesignGenerator({
       } catch (refundError) {
         console.error('Refund failed:', refundError);
       }
+      return undefined; // Return undefined on error
     }
   }, [
     uploadedImage,
@@ -258,6 +262,7 @@ export default function useDesignGenerator({
     selectedColorTone, // Keep
     selectedView, // Keep
     selectedRenderingType: _selectedRenderingType, // Keep
+    isInfoModalOpen, // Add info modal state
     handleImageUpload, // Keep
     resetUpload, // Keep
     handleGenerate, // Keep (updated version)
@@ -268,6 +273,7 @@ export default function useDesignGenerator({
     setSelectedRenderingType: updateRenderingType, // Keep
     startNewProject, // Keep
     errorModal, // Keep
-    setErrorModal // Keep
+    setErrorModal, // Keep
+    setIsInfoModalOpen // Add info modal setter
   };
 }

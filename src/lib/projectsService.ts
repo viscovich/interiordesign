@@ -476,7 +476,7 @@ export async function createProjectForAsyncGeneration(params: AsyncGenerationPar
         room_type: params.roomType,
         rendering_type: params.renderingType,
         color_tone: params.colorTone,
-        view: params.view,
+        view_type: params.view, // Changed from view to view_type to match database column
         prompt: params.prompt,
         input_user_object_ids: params.inputUserObjectIds,
         model: params.model,
