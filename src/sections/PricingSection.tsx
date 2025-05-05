@@ -30,10 +30,7 @@ export default function PricingSection({ user, onRegisterClick }: PricingSection
               $0<span className="text-xl font-normal"></span>
             </div>
             <ul className="space-y-4 mb-8">
-              <li className="flex items-center">
-                <i className="fas fa-check text-custom mr-2"></i>
-                Access to the Standard model
-              </li>
+
               <li className="flex items-center">
                 <i className="fas fa-check text-custom mr-2"></i>
                 Advanced model available
@@ -44,7 +41,7 @@ export default function PricingSection({ user, onRegisterClick }: PricingSection
               </li>
               <li className="flex items-center">
                 <i className="fas fa-check text-custom mr-2"></i>
-                Standard generation: 5 credits/image
+                Advance generation: 5 credits/image
               </li>
               <li className="flex items-center">
               <i className="fas fa-check text-custom mr-2"></i>
@@ -72,7 +69,7 @@ export default function PricingSection({ user, onRegisterClick }: PricingSection
             <ul className="space-y-4 mb-8">
               <li className="flex items-center">
                 <i className="fas fa-check text-custom mr-2"></i>
-                Full access to Standard + Advanced models
+                Full access to Advanced models
               </li>
               <li className="flex items-center">
                 <i className="fas fa-check text-custom mr-2"></i>
@@ -80,11 +77,7 @@ export default function PricingSection({ user, onRegisterClick }: PricingSection
               </li>
               <li className="flex items-center">
                 <i className="fas fa-check text-custom mr-2"></i>
-                Standard: 5 credits/image
-              </li>
-              <li className="flex items-center">
-                <i className="fas fa-check text-custom mr-2"></i>
-                Advanced: 15 credits/image
+                Advanced: 5 credits/image
               </li>
               <li className="flex items-center">
                 <i className="fas fa-check text-custom mr-2"></i>
@@ -110,7 +103,7 @@ export default function PricingSection({ user, onRegisterClick }: PricingSection
             <ul className="space-y-4 mb-8">
               <li className="flex items-center">
                 <i className="fas fa-check text-custom mr-2"></i>
-                Full access to Standard + Advanced models
+                Full access to Advanced models
               </li>
               <li className="flex items-center">
                 <i className="fas fa-check text-custom mr-2"></i>
@@ -118,11 +111,7 @@ export default function PricingSection({ user, onRegisterClick }: PricingSection
               </li>
               <li className="flex items-center">
                 <i className="fas fa-check text-custom mr-2"></i>
-                Standard: 5 credits/image
-              </li>
-              <li className="flex items-center">
-                <i className="fas fa-check text-custom mr-2"></i>
-                Advanced: 15 credits/image
+                Advanced: 5 credits/image
               </li>
               <li className="flex items-center">
                 <i className="fas fa-check text-custom mr-2"></i>
