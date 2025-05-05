@@ -42,10 +42,10 @@ function AppContent() {
   const modals = useModals();
   const design = useDesignGenerator({
     userId: user?.id,
-    setIsLoginModalOpen: modals.setIsLoginModalOpen,
+    onAuthRequired: () => modals.setIsRegisterModalOpen(true), // Changed prop and its value
     setPendingGenerate: modals.setPendingGenerate
   });
-  const objects = useUserObjects(user?.id); 
+  const objects = useUserObjects(user?.id);
 
   const handleNewDesign = () => {
     design.startNewProject();
@@ -82,10 +82,35 @@ function AppContent() {
 
   useEffect(() => {
     if (user && modals.pendingGenerate) {
-      handleGenerate([]); // Keep existing logic
-      modals.setPendingGenerate(false);
+      // --- State Restoration Logic ---
+      const savedStateJSON = sessionStorage.getItem('pendingDesignState');
+      if (savedStateJSON) {
+        console.log('Found pending design state, restoring...');
+        try {
+          const savedState = JSON.parse(savedStateJSON);
+          // Restore state using setters from the design hook
+          design.setUploadedImage(savedState.uploadedImage);
+          design.setSelectedStyle(savedState.selectedStyle);
+          design.setSelectedRoomType(savedState.selectedRoomType);
+          design.setSelectedColorTone(savedState.selectedColorTone);
+          design.setSelectedView(savedState.selectedView);
+          design.setSelectedRenderingType(savedState.selectedRenderingType);
+          console.log('Design state restored:', savedState);
+          // Clear the saved state from storage
+          sessionStorage.removeItem('pendingDesignState');
+        } catch (e) {
+          console.error("Error parsing or restoring saved design state:", e);
+          // Optionally notify the user or clear the invalid state
+          sessionStorage.removeItem('pendingDesignState');
+        }
+      }
+      // --- End State Restoration ---
+
+      // Now trigger the generation with the (potentially restored) state
+      handleGenerate([]); // Keep existing logic to trigger generation
+      modals.setPendingGenerate(false); // Reset pending flag
     }
-  }, [user, modals.pendingGenerate, handleGenerate]);
+  }, [user, modals.pendingGenerate, handleGenerate, design]); // Added design hook to dependencies
 
   const triggerProjectsRefresh = () => {
     setProjectsRefreshKey(prevKey => prevKey + 1);

@@ -42,13 +42,13 @@ const generateThumbnail = (
 
 interface UseDesignGeneratorProps {
   userId: string | undefined;
-  setIsLoginModalOpen: (isOpen: boolean) => void;
+  onAuthRequired: () => void; // Changed prop name
   setPendingGenerate: (pending: boolean) => void;
 }
 
 export default function useDesignGenerator({
   userId,
-  setIsLoginModalOpen,
+  onAuthRequired, // Changed prop name
   setPendingGenerate
 }: UseDesignGeneratorProps) {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null); // URL for display/generation
@@ -154,10 +154,31 @@ export default function useDesignGenerator({
 
     // --- 2. Authentication ---
     if (!userId) {
-      console.log('User not authenticated - opening login modal');
-      setIsLoginModalOpen(true);
+      console.log('User not authenticated - saving state and triggering auth');
+      // Gather current state
+      const currentState = {
+        uploadedImage,
+        selectedStyle,
+        selectedRoomType,
+        selectedColorTone,
+        selectedView,
+        selectedRenderingType: _selectedRenderingType,
+        // Consider if lastUsedImageFile needs saving/restoring
+      };
+      // Save state to sessionStorage
+      try {
+        sessionStorage.setItem('pendingDesignState', JSON.stringify(currentState));
+        console.log('Pending design state saved:', currentState);
+      } catch (e) {
+        console.error("Error saving state to sessionStorage:", e);
+        toast.error("Could not save your selections. Please try logging in first.");
+        // Don't proceed if saving failed
+        return;
+      }
+      // Trigger the auth flow (which should open Register modal)
+      onAuthRequired();
       setPendingGenerate(true);
-      return;
+      return; // Stop generation process here
     }
 
     // Show the info modal IMMEDIATELY
@@ -223,7 +244,7 @@ export default function useDesignGenerator({
     selectedView, // Keep dependencies
     _selectedRenderingType, // Keep dependencies
     userId, // Keep dependencies
-    setIsLoginModalOpen, // Keep dependencies
+    onAuthRequired, // Use the new prop in dependencies
     setPendingGenerate, // Keep dependencies
     // Add any other state variables used inside handleGenerate
   ]);
@@ -274,6 +295,7 @@ export default function useDesignGenerator({
     startNewProject, // Keep
     errorModal, // Keep
     setErrorModal, // Keep
-    setIsInfoModalOpen // Add info modal setter
+    setIsInfoModalOpen, // Add info modal setter
+    setUploadedImage // Expose setter for state restoration
   };
 }

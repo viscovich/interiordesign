@@ -46,7 +46,7 @@ export function getGenerationPrompt(
 
   const viewMap: Record<string, string> = {
     frontal: "from the front, facing the main wall",
-    side: "from the side, capturing an angled perspective",
+    side: "Camera positioned at a 45-degree angle to the main wall, showing both the front and side wall in perspective",
     top: "from above, as a bird’s-eye view"
   };
   const viewPrompt = view && viewMap[view] ? ` Set the point of view ${viewMap[view]}.` : '';
@@ -129,7 +129,7 @@ export function getNewGenerationPrompt(
 
   const viewMap: Record<string, string> = {
     frontal: "from the front, facing the main wall",
-    side: "from the side, capturing an angled perspective",
+    side: "Camera positioned at a 45-degree angle to the main wall, showing both the front and side wall in perspective",
     top: "from above, as a bird’s-eye view"
   };
   const viewPrompt = newView && viewMap[newView] ? ` Set the point of view ${viewMap[newView]}.` : '';
@@ -137,11 +137,11 @@ export function getNewGenerationPrompt(
   // Construct the specific object replacement instruction using the provided descriptions
   let objectsInstruction = '';
   if (includeObjectsInstruction && objectToReplaceDescription && replacementObjectDescription) {
-    objectsInstruction = `\n**Object Replacement Instruction:** Replace the '${objectToReplaceDescription}' visible in the original image with the new object described as '${replacementObjectDescription}'. Refer to the attached image for the visual representation of the new object. Integrate it naturally into the scene, matching the style and perspective.`;
+    objectsInstruction = `\n**Object Replacement Instruction:** Replace the '${objectToReplaceDescription}' visible in the original image with the new object. Refer to the attached image for the visual representation of the new object. Integrate it naturally into the scene, matching the style and perspective.`;
   } else if (includeObjectsInstruction) {
     // Fallback or warning if descriptions are missing but replacement was intended
     console.warn('[getNewGenerationPrompt] Object replacement intended, but descriptions are missing. Using generic instruction.');
-    objectsInstruction = "\nIMPORTANT: You MUST replace the original object(s) with the attached replacement image(s). Remove the original object completely and integrate the new object naturally into the scene. The replacement object should match the style and perspective of the original design."; // Keep old generic one as fallback
+    objectsInstruction = "\nIMPORTANT: You MUST replace the original object(s) with the attached replacement image(s). Remove the original object completely and integrate the new object naturally into the scene. The replacement object should match the perspective of the original design."; // Keep old generic one as fallback
   }
 
 
