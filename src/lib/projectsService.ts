@@ -293,7 +293,7 @@ export async function regenerateImageWithSubstitution(
   project: Project,
   originalImageUrl: string, // Image containing the object to replace
   replacementObject: UserObject | null, // The new object to insert (contains its description)
-  objectToReplace: { original: string; replacement: string } | null, // Object with original and replacement descriptions
+  objectToReplaceIdentifier: string | null, // Identifier (e.g., 'sofa') of the object type to replace - CORRECTED PARAM NAME
   viewType?: string | null,
   renderingType?: string | null,
   colorTone?: string | null
@@ -301,16 +301,16 @@ export async function regenerateImageWithSubstitution(
   if (!project.user_id) {
     throw new Error('Project data is required for regeneration.');
   }
-  // Check: if replacing, both replacement object and identifier of object to replace are needed
-  if (replacementObject && !objectToReplace) {
-    throw new Error('Object to replace is required when providing a replacement object.');
+  // Check: if replacing, both replacement object and identifier are needed
+  if (replacementObject && !objectToReplaceIdentifier) { // CORRECTED CHECK
+    throw new Error('Object identifier to replace is required when providing a replacement object.');
   }
 
   // Deduct credits for this generation attempt
   await useCredit(project.user_id, 5);
 
   // Determine if it's an object replacement based on provided parameters
-  const isObjectReplacement = !!(replacementObject && objectToReplace);
+  const isObjectReplacement = !!(replacementObject && objectToReplaceIdentifier); // CORRECTED CHECK
   // let objectImageParts: InlineDataPart[] = []; // Removed - we pass URLs now
   let replacementObjectDescription: string | null = null; // Description of the NEW object
   let actualObjectToReplaceDescription: string | null = null; // Detailed description of the object TO REPLACE (from DB)
@@ -321,7 +321,7 @@ export async function regenerateImageWithSubstitution(
     replacementObjectDescription = replacementObject.description ?? null; 
     console.log(`[regenerateImageWithSubstitution] Replacement object description: "${replacementObjectDescription}"`);
 
-    // 2. Find the detailed description of the object TO REPLACE from image_objects
+    // 2. Find the detailed description of the object TO REPLACE from image_objects using the identifier
     try {
       console.log(`[regenerateImageWithSubstitution] Finding description for object identifier: "${objectToReplaceIdentifier}" in project ${project.id}`);
       const { data: foundObjects, error: findError } = await supabase
@@ -380,9 +380,7 @@ export async function regenerateImageWithSubstitution(
 
   // 4. Generate the prompt and call the API
   try {
-    const objectsToReplace = isObjectReplacement && actualObjectToReplaceDescription && replacementObjectDescription
-      ? [{ original: actualObjectToReplaceDescription, replacement: replacementObjectDescription }]
-      : undefined;
+    // Removed the intermediate objectsToReplace array
 
     const prompt = getNewGenerationPrompt(
       project.style,
@@ -391,7 +389,9 @@ export async function regenerateImageWithSubstitution(
       (colorTone || project.color_tone) ?? undefined, // Use new or existing color tone
       (viewType || project.view_type) ?? undefined, // Use new or existing view type
       isObjectReplacement,
-      objectsToReplace
+      // Pass the descriptions directly as separate arguments
+      isObjectReplacement ? actualObjectToReplaceDescription : null,
+      isObjectReplacement ? replacementObjectDescription : null
     );
 
     console.log('===== FULL PROMPT SENT TO GEMINI =====');

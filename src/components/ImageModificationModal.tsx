@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Project, ImageObject, UserObject } from '../lib/projectsService.d';
+import { Project, UserObject, ImageObject } from '../lib/projectsService.d'; // Re-added ImageObject import for type safety
 import {
-    getImageObjects,
     getUserObjects,
-    regenerateImageWithSubstitution,
-    createProject,
-    saveDetectedObjects
+    // Removed regenerateImageWithSubstitution, createProject, saveDetectedObjects
+    createProjectForAsyncGeneration // Added async function import
 } from '../lib/projectsService';
-import { uploadImage } from '../lib/storage'; // Import uploadImage
+// import { uploadImage } from '../lib/storage'; // Removed uploadImage import
+import { supabase } from '../lib/supabase'; // Added Supabase client import
 import { useAuth } from '../lib/auth';
+import { useCredit } from '../lib/userService'; // Added useCredit import
+import { getNewGenerationPrompt } from '../lib/gemini'; // Added prompt generator import
 import toast from 'react-hot-toast';
+import InfoModal from './InfoModal'; // Corrected InfoModal import (default export)
 // Import the selector components
 import { ViewTypeSelector } from './ViewTypeSelector';
 import { RenderingTypeSelector } from './RenderingTypeSelector';
@@ -24,103 +26,35 @@ interface ImageModificationModalProps {
     onGenerationComplete?: () => void;
 }
 
-// Helper function to generate thumbnail using Canvas (Copied from useDesignGenerator)
-const generateThumbnail = (
-  imageDataUrl: string,
-  targetWidth: number = 400, // Increased target width to 400px
-  quality: number = 0.8
-): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const aspectRatio = img.height / img.width;
-      const targetHeight = targetWidth * aspectRatio;
-
-      canvas.width = targetWidth;
-      canvas.height = targetHeight;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        return reject(new Error('Could not get canvas context'));
-      }
-
-      ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
-      resolve(canvas.toDataURL('image/jpeg', quality)); // Use JPEG for smaller size
-    };
-    img.onerror = (error) => {
-      console.error('Error loading image for thumbnail generation:', error);
-      reject(error);
-    };
-    img.src = imageDataUrl;
-  });
-};
-
+// Removed generateThumbnail helper function
 
 const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen, onClose, project, onGenerationComplete }) => {
     const { user } = useAuth();
-    const [recognizedObjects, setRecognizedObjects] = useState<ImageObject[]>([]);
     const [userObjectLibrary, setUserObjectLibrary] = useState<UserObject[]>([]);
-    const [selectedObjectName, setSelectedObjectName] = useState<string | null>(null); // Which original object's options are shown
-    const [selectedReplacementsMap, setSelectedReplacementsMap] = useState<Record<string, UserObject | null>>({}); // Map: original_object_name -> replacement_object
+    const [selectedObjectType, setSelectedObjectType] = useState<string | null>(null);
+    const [selectedReplacementsMap, setSelectedReplacementsMap] = useState<Record<string, UserObject | null>>({});
     const [isLoadingGeneration, setIsLoadingGeneration] = useState(false);
-    const [error, setError] = useState<string | null>(null); // For fetch errors primarily
+    const [error, setError] = useState<string | null>(null);
     const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
+    const [isInfoModalOpen, setIsInfoModalOpen] = useState(false); // State for the info modal
 
     // State for dynamic selectors
     const [selectedViewType, setSelectedViewType] = useState<string | null>(null);
     const [selectedRenderingType, setSelectedRenderingType] = useState<string | null>(null);
     const [selectedColorTone, setSelectedColorTone] = useState<string | null>(null); // Using ColorTone state
 
-    // --- Data Fetching and State Reset ---
-    useEffect(() => {
-        if (isOpen && project) {
-            setCurrentImageUrl(project.generated_image_url || project.original_image_url);
-            setSelectedObjectName(null);
-            setSelectedReplacementsMap({}); // Reset the map
-            setError(null); // Clear errors on open
-            setIsLoadingGeneration(false);
-            // Initialize selectors with project values or defaults
-            // Initialize all selectors from project values
-            setSelectedViewType(project.view_type || 'frontal'); // Default to frontal if not set
-            setSelectedColorTone(project.color_tone || 'palette:neutral'); // Default to neutral palette
-            setSelectedRenderingType(project.rendering_type || '3d'); // Default to 3d if not set
+    // Define fixed objects per room type
+    const roomTypeObjects: Record<string, string[]> = {
+        'living-room': ['sofa', 'armchair', 'table', 'lamp'],
+        'bathroom': ['toilet', 'sink', 'shower', 'bathtub'],
+        'bedroom': ['bed', 'nightstand', 'dresser', 'lamp'],
+        'dining-room': ['table', 'chair', 'cabinet', 'lamp'],
+        'kitchen': ['counter', 'cabinet', 'stove', 'fridge'],
+        'office': ['desk', 'chair', 'bookshelf', 'lamp'],
+        // Add default or handle unknown room types if necessary
+    };
 
-            fetchRecognizedObjects(); // Call fetch
-            fetchUserLibrary();
-        } else if (!isOpen) {
-            // Clear state when modal closes
-            setRecognizedObjects([]);
-            setUserObjectLibrary([]);
-            setCurrentImageUrl(null);
-            setError(null);
-            setSelectedObjectName(null);
-            setSelectedReplacementsMap({});
-            setSelectedViewType(null);
-            setSelectedRenderingType(null);
-            setSelectedColorTone(null); // Clear color tone state
-        }
-    }, [isOpen, project]); // Dependency array includes isOpen and project
-
-    const fetchRecognizedObjects = useCallback(async () => {
-        if (!project || !user) return; // Guard clause
-        console.log(`Fetching recognized objects for project ID: ${project.id}`);
-        setError(null); // Clear previous errors before fetching
-        try {
-            const objects = await getImageObjects(project.id);
-            console.log("Fetched recognized objects:", objects);
-            setRecognizedObjects(objects);
-            if (objects.length === 0) {
-                console.log("getImageObjects returned an empty array.");
-            }
-        } catch (err) {
-            console.error("Error fetching recognized objects:", err);
-            const fetchErrorMsg = err instanceof Error ? err.message : "Unknown error";
-            setError(`Failed to load objects: ${fetchErrorMsg}`); // Set specific error message in state
-            toast.error(`Failed to load objects: ${fetchErrorMsg}`);
-        }
-    }, [project, user]); // Dependencies for useCallback
-
+    // Moved fetchUserLibrary definition before useEffect that uses it
     const fetchUserLibrary = useCallback(async () => {
         if (!user) return;
         try {
@@ -132,23 +66,55 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
         }
     }, [user]); // Dependency for useCallback
 
+    // --- Data Fetching and State Reset ---
+    useEffect(() => {
+        if (isOpen && project) {
+            setCurrentImageUrl(project.generated_image_url || project.original_image_url);
+            setSelectedObjectType(null); // Reset selected object type
+            setSelectedReplacementsMap({}); // Reset the map
+            setError(null); // Clear errors on open
+            setIsLoadingGeneration(false);
+            // Initialize selectors with project values or defaults
+            // Initialize all selectors from project values
+            setSelectedViewType(project.view_type || 'frontal'); // Default to frontal if not set
+            setSelectedColorTone(project.color_tone || 'palette:neutral'); // Default to neutral palette
+            setSelectedRenderingType(project.rendering_type || '3d'); // Default to 3d if not set
+
+            // fetchRecognizedObjects(); // No longer needed
+            fetchUserLibrary();
+        } else if (!isOpen) {
+            // Clear state when modal closes
+            // setRecognizedObjects([]); // No longer needed
+            setUserObjectLibrary([]);
+            setCurrentImageUrl(null);
+            setError(null);
+            setSelectedObjectType(null); // Clear selected object type
+            setSelectedReplacementsMap({});
+            setSelectedViewType(null);
+            setSelectedRenderingType(null);
+            setSelectedColorTone(null); // Clear color tone state
+        }
+    }, [isOpen, project, fetchUserLibrary]); // Keep fetchUserLibrary in dependencies
+
+    // Removed fetchRecognizedObjects function
+
     // --- Event Handlers ---
-    const handleSelectObject = (objectName: string) => {
-        setSelectedObjectName(objectName);
+    const handleSelectObject = (objectType: string) => { // Parameter is now objectType (string)
+        setSelectedObjectType(objectType); // Update selected object type state
     };
 
     const handleSelectReplacement = (replacementObject: UserObject) => {
-        if (!selectedObjectName) return;
+        if (!selectedObjectType) return; // Check selected object type state
         setSelectedReplacementsMap(prevMap => ({
             ...prevMap,
-            [selectedObjectName]: replacementObject
+            [selectedObjectType]: replacementObject // Use selected object type as key
         }));
     };
 
-    const handleRemoveReplacement = (originalObjectName: string) => {
+    const handleRemoveReplacement = (objectTypeToRemove: string) => { // Parameter is objectTypeToRemove (string)
         setSelectedReplacementsMap(prevMap => {
             const newMap = { ...prevMap };
-            delete newMap[originalObjectName];
+            delete newMap[objectTypeToRemove]; // Use object type as key
             return newMap;
         });
     };
@@ -160,110 +126,105 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
             toast.error("Project or image not loaded.");
             return;
         }
+        if (!user) {
+            toast.error("User not found. Please log in.");
+            return;
+        }
 
-        // Determine what to send for generation
-        const activeReplacementObject = selectedObjectName ? selectedReplacementsMap[selectedObjectName] : null;
-            const isObjectReplacement = !!(selectedObjectName && activeReplacementObject);
-            if (isObjectReplacement) {
-                console.log('Replacement object image URLs:', {
-                    thumbnail: activeReplacementObject.thumbnail_url,
-                    asset: activeReplacementObject.asset_url
-                });
+        // Get all selected replacements
+        const allReplacements = Object.entries(selectedReplacementsMap)
+            .filter(([_, obj]) => obj !== null)
+            .map(([objectType, obj]) => ({ objectType, obj: obj! }));
+
+        if (allReplacements.length === 0) {
+            toast.error("No replacements selected");
+            return;
+        }
+
+        // Show loading state and info modal immediately
+        setIsLoadingGeneration(true);
+        setIsInfoModalOpen(true);
+        setError(null);
+        let creditDeducted = false;
+
+        try {
+            // Deduct credits
+            await useCredit(user.id, 5);
+            creditDeducted = true;
+
+            // Get parameters
+            const viewTypeToSend = selectedViewType || project.view_type || 'frontal';
+            const colorToneToSend = selectedColorTone || project.color_tone || 'palette:neutral';
+            const renderingTypeToSend = selectedRenderingType || project.rendering_type || '3d';
+            const styleToSend = project.style;
+            const roomTypeToSend = project.room_type;
+
+            // Get all replacement IDs
+            const allReplacementIds = allReplacements.map(({ obj }) => obj.id);
+
+            // For prompt generation, use the first selected replacement
+            const firstReplacement = allReplacements[0];
+            let actualObjectToReplaceDescription: string | null = null;
+            let replacementObjectDescription = firstReplacement.obj.description ?? null;
+
+            // Get description of object being replaced
+            try {
+                const { data: foundObjects, error: findError } = await supabase
+                    .from('image_objects')
+                    .select('object_name')
+                    .eq('project_id', project.id)
+                    .like('object_name', `${firstReplacement.objectType}%`)
+                    .limit(1);
+
+                if (findError) throw findError;
+                actualObjectToReplaceDescription = foundObjects?.[0]?.object_name || firstReplacement.objectType;
+            } catch (dbError) {
+                console.error("Error fetching object description:", dbError);
+                actualObjectToReplaceDescription = firstReplacement.objectType;
             }
 
-        setIsLoadingGeneration(true);
-        setError(null); // Clear errors before generation
-        try {
-            const viewTypeToSend = selectedViewType || project.view_type;
-            const colorToneToSend = selectedColorTone || project.color_tone; // Use selectedColorTone state
-            const renderingTypeToSend = selectedRenderingType;
-
-            console.log("Generating with:", {
-                viewTypeToSend,
-                colorToneToSend, // Sending selected or original tone
+            // Generate prompt
+            const promptToSend = getNewGenerationPrompt(
+                styleToSend,
                 renderingTypeToSend,
-                isObjectReplacement,
-                selectedObjectName: isObjectReplacement ? selectedObjectName : null,
-                activeReplacementObjectId: activeReplacementObject?.id,
+                roomTypeToSend,
+                colorToneToSend,
+                viewTypeToSend,
+                true, // isObjectReplacement
+                actualObjectToReplaceDescription,
+                replacementObjectDescription
+            );
+
+            // Call async generation
+            await createProjectForAsyncGeneration({
+                userId: user.id,
+                originalImageUrl: currentImageUrl,
+                style: styleToSend,
+                roomType: roomTypeToSend,
+                renderingType: renderingTypeToSend,
+                colorTone: colorToneToSend,
+                view: viewTypeToSend,
+                prompt: promptToSend,
+                inputUserObjectIds: allReplacementIds,
+                model: 'gpt-image-1',
+                size: '1536x1024',
+                quality: 'low'
             });
 
-            const regenerationResult = await regenerateImageWithSubstitution(
-                project,
-                currentImageUrl,
-                isObjectReplacement ? activeReplacementObject : null,
-                isObjectReplacement ? selectedObjectName : null,
-                viewTypeToSend,
-                renderingTypeToSend,
-                colorToneToSend // Sending selected or original tone
-            );
+            // Show success
+            setIsInfoModalOpen(true);
 
-            const { imageData: newImageDataUrl, detectedObjects } = regenerationResult; // Renamed to newImageDataUrl
-
-            // --- Thumbnail Generation and Upload ---
-            let generatedImageUrl = ''; // Initialize URLs
-            let thumbnailUrl = '';
-            const timestamp = Date.now();
-            const baseFileName = `${timestamp}_variant.jpg`; // Indicate it's a variant
-            const fullImagePath = `generated/${baseFileName}`;
-            const thumbnailPath = `thumbnails/generated/${baseFileName}`;
-
-            try {
-                const thumbnailDataUrl = await generateThumbnail(newImageDataUrl);
-                // Upload both images in parallel
-                const [generatedImageUrlResult, thumbnailUrlResult] = await Promise.all([
-                    uploadImage(newImageDataUrl, fullImagePath),
-                    uploadImage(thumbnailDataUrl, thumbnailPath)
-                ]);
-                generatedImageUrl = generatedImageUrlResult; // Store the full image URL
-                thumbnailUrl = thumbnailUrlResult; // Store the thumbnail URL
-                console.log('Uploaded variant full image:', generatedImageUrl);
-                console.log('Uploaded variant thumbnail:', thumbnailUrl);
-            } catch (uploadError) {
-                console.error("Error during variant image/thumbnail upload:", uploadError);
-                toast.error('Failed to upload variant image or thumbnail.', { position: 'top-center' });
-                // Attempt to upload just the main image as a fallback
+        } catch (err) {
+            console.error("Generation error:", err);
+            toast.error(`Generation failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+            
+            if (creditDeducted) {
                 try {
-                    generatedImageUrl = await uploadImage(newImageDataUrl, fullImagePath);
-                    thumbnailUrl = generatedImageUrl; // Fallback: use main image URL if thumbnail fails
-                    console.log('Fallback: Uploaded variant full image only:', generatedImageUrl);
-                } catch (fallbackUploadError) {
-                     console.error("Fallback image upload also failed:", fallbackUploadError);
-                     throw new Error("Failed to upload generated image."); // Throw if even fallback fails
+                    await useCredit(user.id, -5);
+                } catch (refundError) {
+                    console.error("Credit refund failed:", refundError);
                 }
             }
-            // --- End Thumbnail Logic ---
-
-
-            // Create new project entry using the uploaded URLs
-            const newProject = await createProject(
-                project.user_id,
-                project.original_image_url, // Keep original source project's image
-                generatedImageUrl,          // Use the *uploaded* full image URL
-                project.style,
-                project.room_type,
-                project.description,
-                viewTypeToSend,
-                colorToneToSend,            // Save the used tone
-                thumbnailUrl,               // Pass the *uploaded* thumbnail URL
-                currentImageUrl             // Pass the parent image URL for the new field
-            );
-
-            // Save detected objects for the new project
-            if (newProject && detectedObjects && detectedObjects.length > 0) {
-                await saveDetectedObjects(newProject.id, newProject.user_id, detectedObjects);
-                console.log(`Saved ${detectedObjects.length} objects for new project ${newProject.id}`);
-            } else {
-                console.log(`No objects detected or project creation failed, skipping object save for new project.`);
-            }
-
-            toast.success(`New variant generated and saved!`);
-            onClose(); // Close modal on success
-            onGenerationComplete?.(); // Trigger refresh in parent
-        } catch (err) {
-            console.error("Error generating new image:", err);
-            const errorMessage = err instanceof Error ? err.message : "Failed to generate new image.";
-            setError(errorMessage); // Show generation error
-            toast.error(`Generation failed: ${errorMessage}`);
         } finally {
             setIsLoadingGeneration(false);
         }
@@ -271,41 +232,42 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
 
     // --- Filtering Logic ---
     const compatibleObjects = userObjectLibrary.filter(obj => {
-        if (!selectedObjectName) return false;
+        if (!selectedObjectType) return false; // Use selectedObjectType
 
-        // Find the full selected image object from the recognized list
-        const selectedImageObject = recognizedObjects.find(recObj => recObj.object_name === selectedObjectName);
-        const selectedImageObjectNameLower = selectedImageObject?.object_name.toLowerCase() || ''; // Use full name for description check
+        // Match based on the selected fixed object type (e.g., 'sofa', 'chair')
+        // This assumes userObjectLibrary has an 'object_type' field matching these fixed types
+        const selectedTypeLower = selectedObjectType.toLowerCase();
+        const userObjectTypeLower = obj.object_type.toLowerCase();
 
-        // Extract keyword (last word) for original matching logic
-        const nameParts = selectedObjectName.toLowerCase().split(' ');
-        const keyword = nameParts[nameParts.length - 1];
-        const keywordSingular = keyword.endsWith('s') ? keyword.slice(0, -1) : keyword;
-
-        // Original matching criteria
-        const typeMatch = obj.object_type.toLowerCase() === keyword || obj.object_type.toLowerCase() === keywordSingular;
-        const nameMatch = obj.object_name.toLowerCase().includes(keyword) || obj.object_name.toLowerCase().includes(keywordSingular);
-
-        // New matching criterion: Check if library object type is in the image object's full name
-        const descriptionMatch = selectedImageObjectNameLower.includes(obj.object_type.toLowerCase());
-
-        return typeMatch || nameMatch || descriptionMatch; // Combine all three criteria
+        // Simple type matching (case-insensitive)
+        return userObjectTypeLower === selectedTypeLower;
     });
+
+    // Get the list of fixed objects for the current room type
+    // Normalize the project room type key before lookup
+    const normalizedRoomTypeKey = project ? project.room_type.toLowerCase().replace(/\s+/g, '-') : '';
+    const currentFixedObjects = project ? roomTypeObjects[normalizedRoomTypeKey] || [] : [];
 
     // --- Render Logic ---
     if (!isOpen || !project) {
         return null;
     }
 
-    const getIconForObject = (name: string | null): string => {
-        if (!name) return 'ri-question-line';
-        const lowerName = name.toLowerCase();
-        if (lowerName.includes('lamp')) return 'ri-lamp-line';
-        if (lowerName.includes('sofa') || lowerName.includes('couch')) return 'ri-sofa-line';
-        if (lowerName.includes('table')) return 'ri-table-line';
-        if (lowerName.includes('shelf') || lowerName.includes('shelves')) return 'ri-install-line';
-        if (lowerName.includes('cushion') || lowerName.includes('pillow')) return 'ri-layout-grid-line';
-        return 'ri-box-3-line';
+    // Updated getIconForObject to accept object type string
+    const getIconForObject = (type: string | null): string => {
+        if (!type) return 'ri-question-line';
+        const lowerType = type.toLowerCase();
+        if (lowerType.includes('lamp')) return 'ri-lamp-line';
+        if (lowerType.includes('sofa') || lowerType.includes('couch') || lowerType.includes('armchair')) return 'ri-sofa-line'; // Grouped sofa/armchair
+        if (lowerType.includes('table') || lowerType.includes('desk') || lowerType.includes('nightstand') || lowerType.includes('counter')) return 'ri-table-line'; // Grouped table-like
+        if (lowerType.includes('shelf') || lowerType.includes('shelves') || lowerType.includes('cabinet') || lowerType.includes('bookshelf') || lowerType.includes('dresser')) return 'ri-install-line'; // Grouped storage
+        if (lowerType.includes('chair')) return 'ri-armchair-line'; // Specific chair icon
+        if (lowerType.includes('bed')) return 'ri-hotel-bed-line';
+        if (lowerType.includes('toilet')) return 'ri-women-line'; // Placeholder icon
+        if (lowerType.includes('sink')) return 'ri-washbasin-line'; // Placeholder icon
+        if (lowerType.includes('shower') || lowerType.includes('bathtub')) return 'ri-shower-line'; // Placeholder icon
+        if (lowerType.includes('stove') || lowerType.includes('fridge')) return 'ri-fridge-line'; // Placeholder icon
+        return 'ri-box-3-line'; // Default box
     };
 
     // Determine if generate button should be enabled
@@ -321,7 +283,8 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
 
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4">
+        <> {/* Wrap in fragment to allow sibling InfoModal */}
+        <div className={`fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 ${!isOpen ? 'hidden' : ''}`}> {/* Hide main modal if not open */}
             {/* Modal container */}
             <div className="bg-white rounded-lg shadow-xl w-full max-w-full md:max-w-[95vw] lg:max-w-[90vw] h-[95vh] flex flex-col overflow-hidden">
                 {/* Header: Close button back in flow */}
@@ -366,27 +329,28 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
                         {/* Replaceable Objects List */}
                         <div className="border border-gray-200 rounded-lg overflow-hidden flex-grow flex flex-col min-h-[200px] md:min-h-0">
                             <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex-shrink-0 flex justify-between items-center">
-                                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">REPLACEABLE OBJECTS</h2>
-                                <span className="text-xs text-gray-400">({recognizedObjects.length} found)</span>
+                                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">OBJECT TYPES</h2>
+                                <span className="text-xs text-gray-400">({currentFixedObjects.length} available)</span>
                             </div>
                             <div className="divide-y divide-gray-200 overflow-y-auto flex-grow">
-                                {/* Display error message if fetch failed */}
+                                {/* Display error message if fetch failed (though fetching is removed) */}
                                 {error && <p className="p-4 text-sm text-red-600 font-medium bg-red-50 border border-red-200 rounded m-2">{error}</p>}
-                                {/* Display message if no objects and no error */}
-                                {recognizedObjects.length === 0 && !error && (
-                                    <p className="p-4 text-sm text-gray-500 italic">No replaceable objects identified.</p>
+                                {/* Display message if no fixed objects for the room type */}
+                                {currentFixedObjects.length === 0 && !error && (
+                                    <p className="p-4 text-sm text-gray-500 italic">No standard objects defined for this room type.</p>
                                 )}
-                                {/* Map objects if available */}
-                                {recognizedObjects.length > 0 && recognizedObjects.map((obj) => (
+                                {/* Map fixed object types */}
+                                {currentFixedObjects.length > 0 && currentFixedObjects.map((objectType) => (
                                     <div
-                                        key={obj.id}
-                                        onClick={() => handleSelectObject(obj.object_name)}
-                                        className={`object-item flex items-center px-4 py-3 cursor-pointer transition-colors duration-150 ${selectedObjectName === obj.object_name ? 'active bg-blue-100 border-l-4 border-blue-500' : 'hover:bg-gray-50 border-l-4 border-transparent'}`}
+                                        key={objectType} // Use object type string as key
+                                        onClick={() => handleSelectObject(objectType)} // Pass object type string
+                                        className={`object-item flex items-center px-4 py-3 cursor-pointer transition-colors duration-150 ${selectedObjectType === objectType ? 'active bg-blue-100 border-l-4 border-blue-500' : 'hover:bg-gray-50 border-l-4 border-transparent'}`} // Check against selectedObjectType
                                     >
                                         <div className="w-6 h-6 flex items-center justify-center mr-3 text-gray-500">
-                                            <i className={getIconForObject(obj.object_name)}></i>
+                                            <i className={getIconForObject(objectType)}></i> {/* Get icon based on type */}
                                         </div>
-                                        <span className="text-gray-700 text-sm">{obj.object_name}</span>
+                                        {/* Capitalize first letter for display */}
+                                        <span className="text-gray-700 text-sm">{objectType.charAt(0).toUpperCase() + objectType.slice(1)}</span>
                                     </div>
                                 ))}
                             </div>
@@ -399,10 +363,11 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
                                  <p className="text-xs text-gray-500 italic">No replacements selected yet.</p>
                              ) : (
                                 <div className="space-y-2 max-h-48 overflow-y-auto">
-                                    {Object.entries(selectedReplacementsMap).map(([originalName, replacement]) => {
+                                    {Object.entries(selectedReplacementsMap).map(([objectType, replacement]) => { // Key is now objectType
                                         if (!replacement) return null;
+                                        const displayObjectType = objectType.charAt(0).toUpperCase() + objectType.slice(1); // Capitalize
                                         return (
-                                            <div key={originalName} className="flex items-center justify-between bg-white p-2 rounded border border-gray-200 text-xs">
+                                            <div key={objectType} className="flex items-center justify-between bg-white p-2 rounded border border-gray-200 text-xs">
                                                 <div className="flex items-center gap-2 overflow-hidden">
                                                      <img
                                                          src={replacement.thumbnail_url || replacement.asset_url}
@@ -410,12 +375,12 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
                                                          className="w-8 h-8 object-contain rounded flex-shrink-0"
                                                      />
                                                      <div className="overflow-hidden">
-                                                         <p className="font-medium truncate text-gray-700" title={originalName}>Replace: {originalName}</p>
+                                                         <p className="font-medium truncate text-gray-700" title={displayObjectType}>Replace: {displayObjectType}</p>
                                                          <p className="text-gray-500 truncate" title={replacement.object_name}>With: {replacement.object_name}</p>
                                                      </div>
                                                 </div>
                                                 <button
-                                                    onClick={() => handleRemoveReplacement(originalName)}
+                                                    onClick={() => handleRemoveReplacement(objectType)} // Pass objectType
                                                     className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 flex-shrink-0 ml-1"
                                                     aria-label={`Remove ${replacement.object_name}`}
                                                 >
@@ -451,19 +416,20 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
 
                         {/* Replacement Options Area */}
                         <div className="flex-shrink-0">
-                             {selectedObjectName ? (
+                             {selectedObjectType ? ( // Check selectedObjectType
                                  <>
-                                     <h3 className="text-sm font-medium text-gray-700 mb-2">Replace '{selectedObjectName}' with:</h3>
+                                     {/* Capitalize first letter for display */}
+                                     <h3 className="text-sm font-medium text-gray-700 mb-2">Replace '{selectedObjectType.charAt(0).toUpperCase() + selectedObjectType.slice(1)}' with:</h3>
                                      {compatibleObjects.length === 0 && (
-                                         <p className="text-xs text-gray-500 bg-gray-50 p-3 rounded-md">No compatible objects found in your library for '{selectedObjectName}'. Upload objects from the main dashboard.</p>
+                                         <p className="text-xs text-gray-500 bg-gray-50 p-3 rounded-md">No compatible objects of type '{selectedObjectType}' found in your library. Upload objects from the main dashboard.</p>
                                      )}
                                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                                          {compatibleObjects.map((obj) => {
-                                             const isSelectedReplacement = selectedReplacementsMap[selectedObjectName]?.id === obj.id;
+                                             const isSelectedReplacement = selectedReplacementsMap[selectedObjectType]?.id === obj.id; // Check against selectedObjectType
                                              return (
                                                  <div
-                                                     key={obj.id}
-                                                     onClick={() => handleSelectReplacement(obj)}
+                                                     key={obj.id} // Keep using obj.id as key for user objects
+                                                     onClick={() => handleSelectReplacement(obj)} // Pass the full user object
                                                      className={`border rounded-lg overflow-hidden cursor-pointer transition-all duration-150 flex flex-col items-center p-2 ${isSelectedReplacement ? 'border-primary ring-2 ring-primary/30 shadow-md' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}`}
                                                  >
                                                      <div className="w-full h-24 flex items-center justify-center mb-1 bg-gray-50 rounded">
@@ -514,6 +480,20 @@ const ImageModificationModal: React.FC<ImageModificationModalProps> = ({ isOpen,
                 </footer>
             </div>
         </div>
+
+        {/* Info Modal for Success */}
+        <InfoModal
+            isOpen={isInfoModalOpen}
+            onClose={() => {
+                setIsInfoModalOpen(false); // Close this info modal
+                onClose(); // Close the main modification modal
+                onGenerationComplete?.(); // Trigger refresh in parent
+            }}
+            title="Generation Started"
+            message="Your new design variant is being generated. You can see the progress in your projects list. This might take a minute or two."
+            // Removed buttonText prop as it's not accepted by InfoModal
+        />
+        </> // Close fragment
     );
 };
 
