@@ -35,12 +35,20 @@ export default function HeroSection({
               </button>
             </div>
           </div>
-          <div className="relative">
-            <img
-              src="/images/before_after.jpg"
-              alt="DreamCasa AI Transform"
-              className="rounded-lg shadow-lg"
-            />
+          {/* Added relative positioning and play button overlay */}
+          <div className="relative"> 
+            <a data-fancybox href="/video/dreamcasa2.mp4" className="block relative group"> {/* Added block, relative, group */}
+              <img 
+                src="/images/poster.jpg" 
+                alt="Watch the DreamCasa AI video" 
+                style={{ borderRadius: '12px', maxWidth: '100%' }} // Removed cursor style here
+                className="rounded-lg shadow-lg block" // Added block
+              />
+              {/* Play button overlay */}
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"> {/* Added overlay div */}
+                <i className="fas fa-play text-white text-6xl"></i> {/* Font Awesome play icon */}
+              </div>
+            </a>
           </div>
         </div>
       </div>
