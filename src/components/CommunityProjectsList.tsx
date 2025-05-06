@@ -134,16 +134,6 @@ export function CommunityProjectsList({ refreshKey, newProjectId }: CommunityPro
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setSelectedProject(project);
-                            }}
-                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                            aria-label="View project description"
-                          >
-                            <DocumentTextIcon className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
                               handleDownloadImage(
                                 project.generated_image_url || '',
                                 `${project.room_type || 'project'}_generated.jpg`
