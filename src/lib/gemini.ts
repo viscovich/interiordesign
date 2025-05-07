@@ -67,7 +67,7 @@ Then, describe the layout and positioning of these elements in the ${roomType}.`
 Finally, generate an image that represents the design in a ${renderingType} format.`;
 
   const objectsInstruction = includeObjectsInstruction
-    ? "\nBe sure to include the attached object(s) in the final image, integrating them naturally into the scene, but keeping their color."
+    ? "\nMANDATORY: Include the attached object(s) exactly as they appear in the provided images (same model, same color, same proportions). Do not replace them with similar objects. Integrate them naturally into the redesigned space. Do not include any of the old furniture of the same type of the attached object visible in the input photo. Only include the attached objects"
     : "";
 
   switch (renderingType.toLowerCase()) {
@@ -95,7 +95,7 @@ ${listAndDescriptionPrompt}${imagePrompt}${objectsInstruction}`;
 *   **Rendering Type:** ${renderingType}
 *   **Input Analysis:** 
     - Carefully analyze the input image to detect and respect architectural elements such as walls, doors, windows, and overall layout.
-    - If the input room is already furnished, treat it as a **complete redesign**: ignore existing furniture and interpret only the structural layout.
+    - If the input room is already furnished, REMOVE all existing furniture. Use the image only to understand the structural layout.
     - The final design should be based on the **actual spatial proportions** visible in the image or plan.
 
 **Required Outputs:**

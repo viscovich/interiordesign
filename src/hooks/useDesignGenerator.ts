@@ -88,7 +88,10 @@ export default function useDesignGenerator({
     _setSelectedStyle(style);
   };
   const [selectedRoomType, setSelectedRoomType] = useState<any | null>(userId ? null : defaultRoomType);
-  const [selectedColorTone, setSelectedColorTone] = useState<string | null>(userId ? null : 'palette:neutrals');
+  const [selectedColorTone, setSelectedColorTone] = useState<string>(() => {
+    // Initialize with empty string for logged-in users, default palette for others
+    return userId ? '' : 'palette:neutrals';
+  });
   const [selectedView, setSelectedView] = useState<string | null>(userId ? null : 'frontal');
   const [_selectedRenderingType, _setSelectedRenderingType] = useState<string | null>(userId ? null : '3d'); // Renamed state and setter
 
@@ -221,6 +224,42 @@ export default function useDesignGenerator({
 
     } catch (error) {
       console.error('Initiation error:', error);
+      
+      // First, check if this might be a transient network error
+      const isNetworkError = error instanceof Error && (
+        error.message.includes('Network') || 
+        error.message.includes('Failed to fetch') ||
+        error.message.includes('timeout')
+      );
+
+      if (isNetworkError) {
+        // Wait 2 seconds before showing error to allow for network recovery
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Try one automatic retry before showing error
+        try {
+          console.log('Attempting automatic retry...');
+          const projectId = await createProjectForAsyncGeneration({
+            userId,
+            originalImageUrl: uploadedImage,
+            style: selectedStyle.name,
+            roomType: selectedRoomType.name,
+            renderingType: _selectedRenderingType,
+            colorTone: selectedColorTone,
+            view: selectedView,
+            prompt,
+            inputUserObjectIds: selectedObjects.map(obj => obj.id),
+            model: 'gpt-image-1',
+            size: '1536x1024',
+            quality: 'low'
+          });
+          return projectId;
+        } catch (retryError) {
+          console.error('Retry failed:', retryError);
+          error = retryError; // Fall through to show error
+        }
+      }
+
       setErrorModal({
         isOpen: true,
         title: 'Errore',
@@ -234,7 +273,7 @@ export default function useDesignGenerator({
       } catch (refundError) {
         console.error('Refund failed:', refundError);
       }
-      return undefined; // Return undefined on error
+      return undefined;
     }
   }, [
     uploadedImage,

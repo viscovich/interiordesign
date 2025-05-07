@@ -8,12 +8,12 @@ import ImageFullscreenModal from './ImageFullscreenModal';
 import { ImageComparison } from './ImageComparison';
 
 interface CommunityProjectsListProps {
-  // Removed user and onModifyProject props
+  currentUserId: string;
   refreshKey: number;
-  newProjectId?: string | null; // Keep this for potential highlighting? Or remove? Let's keep for now.
+  newProjectId?: string | null;
 }
 
-export function CommunityProjectsList({ refreshKey, newProjectId }: CommunityProjectsListProps) {
+export function CommunityProjectsList({ currentUserId, refreshKey, newProjectId }: CommunityProjectsListProps) {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [fullscreenImageUrl, setFullscreenImageUrl] = useState<string | null>(null);
   const [showComparison, setShowComparison] = useState(false);
@@ -27,35 +27,25 @@ export function CommunityProjectsList({ refreshKey, newProjectId }: CommunityPro
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Removed user check
     setLoading(true);
-    getAllProjects(paginatedProjects.page, paginatedProjects.perPage) // Call getAllProjects
-      .then(projects => {
-        setPaginatedProjects(projects);
-        // Keep auto-open logic for potential future use or highlighting
-        if (newProjectId && projects.projects.some(p => p.id === newProjectId)) {
-          const project = projects.projects.find(p => p.id === newProjectId);
+    getAllProjects(paginatedProjects.page, paginatedProjects.perPage, currentUserId)
+      .then((data: PaginatedProjects) => {
+        setPaginatedProjects(data);
+        if (newProjectId && data.projects.some(p => p.id === newProjectId)) {
+          const project = data.projects.find(p => p.id === newProjectId);
           if (project) setSelectedProject(project);
         }
       })
       .catch((error: Error) => {
-        toast.error('Failed to load community projects'); // Updated error message
+        toast.error('Failed to load community projects');
         console.error(error);
       })
       .finally(() => setLoading(false));
-    // Removed user dependency
-  }, [paginatedProjects.page, refreshKey, newProjectId]);
-
-  // Removed user check for rendering
-  // if (!user) {
-  //   return <p>Please sign in to view your projects</p>;
-  // }
+  }, [paginatedProjects.page, refreshKey, newProjectId, currentUserId]);
 
   if (loading) {
-    return <p>Loading community projects...</p>; // Updated loading message
+    return <p>Loading community projects...</p>;
   }
-
-  // Removed handleDeleteProject function
 
   const handlePageChange = (newPage: number) => {
     setPaginatedProjects(prev => ({ ...prev, page: newPage }));
@@ -84,14 +74,14 @@ export function CommunityProjectsList({ refreshKey, newProjectId }: CommunityPro
   };
 
   return (
-    <div className="projects-list p-8"> {/* Added padding like UserObjectsManager */}
-      <h2 className="text-2xl font-bold mb-6">Community Projects</h2> {/* Changed title */}
+    <div className="projects-list p-8">
+      <h2 className="text-2xl font-bold mb-6">Community Projects</h2>
       {paginatedProjects.projects.length === 0 ? (
-        <p>No community projects found</p> // Updated empty message
+        <p>No community projects found</p>
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {paginatedProjects.projects.map((project) => (
+            {paginatedProjects.projects.map((project: Project) => (
               <div
                 key={project.id}
                 className="relative p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
@@ -159,7 +149,6 @@ export function CommunityProjectsList({ refreshKey, newProjectId }: CommunityPro
               </div>
             ))}
           </div>
-          {/* Pagination */}
           {paginatedProjects.total > paginatedProjects.perPage && (
              <div className="flex justify-center mt-6 gap-2">
                {Array.from({ length: Math.ceil(paginatedProjects.total / paginatedProjects.perPage) }, (_, i) => (
@@ -175,7 +164,6 @@ export function CommunityProjectsList({ refreshKey, newProjectId }: CommunityPro
           )}
         </>
       )}
-      {/* Project Modal remains the same */}
       <ProjectModal
         project={selectedProject}
         onClose={() => setSelectedProject(null)}

@@ -1,19 +1,24 @@
 import React, { useState } from 'react';
-import { CommunityProjectsList } from '../components/CommunityProjectsList'; // Import the new list component
+import { CommunityProjectsList } from '../components/CommunityProjectsList';
+import { useAuth } from '../lib/auth'; // Import useAuth
 
 const CommunityProjectsSection: React.FC = () => {
-  // refreshKey might be needed if there are actions outside the list that should trigger a refresh
+  const { user } = useAuth(); // Get user from auth context
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // In a real app, you might pass down a function to trigger refresh, e.g., after liking a project
   // const triggerRefresh = () => setRefreshKey(prev => prev + 1);
+
+  if (!user) {
+    // Optionally, handle the case where there's no user (e.g., show a message or redirect)
+    return <p>Please log in to view community projects.</p>; 
+  }
 
   return (
     <div>
-      {/* You can add filters or other controls specific to the community view here if needed */}
       <CommunityProjectsList
+        currentUserId={user.id} // Pass the user's ID
         refreshKey={refreshKey}
-        // newProjectId={null} // Pass if needed for highlighting specific projects
+        // newProjectId={null} 
       />
     </div>
   );
