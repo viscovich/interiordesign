@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Project, UserObject, ImageObject } from '../lib/projectsService.d'; // Re-added ImageObject import for type safety
 import {
-    getUserObjects,
     // Removed regenerateImageWithSubstitution, createProject, saveDetectedObjects
     createProjectForAsyncGeneration // Added async function import
 } from '../lib/projectsService';
+import { getUserObjects } from '../lib/userObjectsService';
 // import { uploadImage } from '../lib/storage'; // Removed uploadImage import
 import { supabase } from '../lib/supabase'; // Added Supabase client import
 import { useAuth } from '../lib/auth';

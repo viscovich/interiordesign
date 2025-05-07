@@ -1,9 +1,20 @@
 import { supabase } from './supabase';
 // Import the shared type definition
-import type { UserObject } from './projectsService.d'; 
+import type { UserObject } from './projectsService.d';
 // Re-export the type so components can import it from here
-export type { UserObject }; 
+export type { UserObject };
+import { uploadImage } from './storage';
+import { generateObjectDescription } from './gemini';
 
+// Helper function to convert File to Base64
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
+};
 
 export const getUserObjects = async (userId: string): Promise<UserObject[]> => {
   const { data, error } = await supabase
@@ -65,10 +76,65 @@ export const searchObjects = async (
   return { data: (data as UserObject[]) || [], count: count || 0 };
 };
 
-// REMOVED the duplicate addUserObject function definition from this file.
-// The correct version (handling file upload and description generation) is in projectsService.ts
-// and is imported by UploadObjectModal.tsx.
+// Add a new object to the user's library
+export async function addUserObject(
+  userId: string,
+  objectName: string,
+  objectType: string,
+  file: File,
+  dimensions?: string
+): Promise<UserObject> {
+  // Validate file format - only PNG allowed
+  if (file.type !== 'image/png') {
+    throw new Error(`Unsupported file format: ${file.type}. Only PNG files are accepted.`);
+  }
 
+  // 1. Convert file to base64
+  const base64Data = await fileToBase64(file);
+
+  // 2. Generate a unique path for the object in storage
+  const fileExtension = file.name.split('.').pop() || 'png';
+  const uniqueFileName = `${Date.now()}-${file.name}`;
+  const storagePath = `user_objects/${userId}/${uniqueFileName}`;
+
+  // 3. Upload image using storage service
+  const assetUrl = await uploadImage(base64Data, storagePath);
+
+  // 3.5 Generate description from the uploaded image URL
+  let description = 'Description generation failed or skipped';
+  try {
+    console.log(`[addUserObject] Attempting to generate description for asset: ${assetUrl}`);
+    description = await generateObjectDescription(assetUrl);
+    console.log(`[addUserObject] generateObjectDescription returned: "${description}"`);
+  } catch (descError) {
+    console.error(`[addUserObject] Error caught calling generateObjectDescription for ${objectName} at ${assetUrl}`, descError);
+  }
+
+  // 4. Insert metadata into the user_objects table
+  const { data, error } = await supabase
+    .from('user_objects')
+    .insert({
+      user_id: userId,
+      object_name: objectName,
+      object_type: objectType,
+      asset_url: assetUrl,
+      description: description,
+      dimensions: dimensions,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error inserting user object metadata:', error);
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error('Failed to create user object: No data returned.');
+  }
+
+  return data;
+}
 
 export const deleteUserObject = async (id: string): Promise<void> => {
   const { error } = await supabase

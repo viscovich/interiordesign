@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Project, PaginatedProjects } from '../lib/projectsService.d';
-import { getAllProjects } from '../lib/projectsService';
+import { getCommunityProjects } from '../lib/projectsService'; // Changed from getAllProjects
 import toast from 'react-hot-toast';
 import { ProjectModal } from './ProjectModal';
 import { DocumentTextIcon, PhotoIcon, ArrowDownTrayIcon, EyeIcon } from '@heroicons/react/24/outline';
@@ -28,7 +28,8 @@ export function CommunityProjectsList({ currentUserId, refreshKey, newProjectId 
 
   useEffect(() => {
     setLoading(true);
-    getAllProjects(paginatedProjects.page, paginatedProjects.perPage, currentUserId)
+    // Use getCommunityProjects and pass currentUserId
+    getCommunityProjects(currentUserId, paginatedProjects.page, paginatedProjects.perPage) 
       .then((data: PaginatedProjects) => {
         setPaginatedProjects(data);
         if (newProjectId && data.projects.some(p => p.id === newProjectId)) {

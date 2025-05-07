@@ -88,10 +88,24 @@ export default function useDesignGenerator({
     _setSelectedStyle(style);
   };
   const [selectedRoomType, setSelectedRoomType] = useState<any | null>(userId ? null : defaultRoomType);
-  const [selectedColorTone, setSelectedColorTone] = useState<string>(() => {
+  const [selectedColorToneState, _setSelectedColorToneState] = useState<string>(() => {
     // Initialize with empty string for logged-in users, default palette for others
     return userId ? '' : 'palette:neutrals';
   });
+
+  const setSelectedColorTone = useCallback((tone: string | ((prevState: string) => string)) => {
+    if (typeof tone === 'function') {
+      // If a function is passed, it's likely a state updater function.
+      // We should call it to get the actual string value.
+      // However, our state expects a direct string.
+      // This scenario indicates a potential misuse from the calling component.
+      // For now, we'll log an error and set to empty string or handle as appropriate.
+      console.error("setSelectedColorTone received a function. It should receive a string value. Setting to empty string.");
+      _setSelectedColorToneState(''); // Or handle more gracefully depending on desired behavior
+    } else {
+      _setSelectedColorToneState(tone);
+    }
+  }, []);
   const [selectedView, setSelectedView] = useState<string | null>(userId ? null : 'frontal');
   const [_selectedRenderingType, _setSelectedRenderingType] = useState<string | null>(userId ? null : '3d'); // Renamed state and setter
 
@@ -147,7 +161,7 @@ export default function useDesignGenerator({
   const handleGenerate = useCallback(async (selectedObjects: UserObject[] = []): Promise<string | undefined> => { // Add return type
     // --- 1. Input Validation ---
     if (!uploadedImage || !selectedStyle || !selectedRoomType ||
-        !selectedColorTone || !selectedView || !_selectedRenderingType) {
+        !selectedColorToneState || !selectedView || !_selectedRenderingType) { // Use selectedColorToneState
       toast.error('Completa tutte le selezioni del design', {
         position: 'top-center',
         duration: 4000
@@ -163,7 +177,7 @@ export default function useDesignGenerator({
         uploadedImage,
         selectedStyle,
         selectedRoomType,
-        selectedColorTone,
+        selectedColorTone: selectedColorToneState, // Use selectedColorToneState
         selectedView,
         selectedRenderingType: _selectedRenderingType,
         // Consider if lastUsedImageFile needs saving/restoring
@@ -198,7 +212,7 @@ export default function useDesignGenerator({
         _selectedRenderingType,
         selectedStyle.name,
         selectedRoomType.name,
-        selectedColorTone,
+        selectedColorToneState, // Use selectedColorToneState
         selectedView,
         selectedObjects.length > 0
       );
@@ -209,9 +223,9 @@ export default function useDesignGenerator({
         originalImageUrl: uploadedImage,
         style: selectedStyle.name,
         roomType: selectedRoomType.name,
-        renderingType: _selectedRenderingType,
-        colorTone: selectedColorTone,
-        view: selectedView,
+            renderingType: _selectedRenderingType,
+            colorTone: typeof selectedColorToneState === 'function' ? '' : selectedColorToneState, // Use selectedColorToneState
+            view: selectedView,
         prompt,
         inputUserObjectIds: selectedObjects.map(obj => obj.id),
         model: 'gpt-image-1', // Updated to correct model name
@@ -245,7 +259,7 @@ export default function useDesignGenerator({
             style: selectedStyle.name,
             roomType: selectedRoomType.name,
             renderingType: _selectedRenderingType,
-            colorTone: selectedColorTone,
+            colorTone: typeof selectedColorToneState === 'function' ? '' : selectedColorToneState, // Use selectedColorToneState
             view: selectedView,
             prompt,
             inputUserObjectIds: selectedObjects.map(obj => obj.id),
@@ -260,18 +274,60 @@ export default function useDesignGenerator({
         }
       }
 
-      setErrorModal({
-        isOpen: true,
-        title: 'Errore',
-        message: error instanceof Error ? error.message : 'Errore sconosciuto',
-        retryHandler: () => handleGenerate(selectedObjects)
-      });
-      
-      // Attempt refund if error occurred after credit deduction
-      try {
-        await useCredit(userId, -5);
-      } catch (refundError) {
-        console.error('Refund failed:', refundError);
+      let errorMessage = 'Errore sconosciuto';
+      if (error instanceof Error) {
+        if (typeof error.message === 'string') {
+          errorMessage = error.message;
+        } else if (typeof error.message === 'function') {
+          // If error.message is a function, it might be an i18n-style t() function.
+          // Try to call it, or fall back to a generic message.
+          try {
+            const potentialMessage = (error.message as any)(); // Call the function
+            if (typeof potentialMessage === 'string') {
+              errorMessage = potentialMessage;
+            } else {
+              console.warn('error.message function did not return a string:', potentialMessage);
+            }
+          } catch (e) {
+            console.warn('Failed to execute error.message function:', e);
+          }
+        } else {
+          // If error.message is neither string nor function, log it and use default
+          console.warn('error.message was not a string or function:', error.message);
+        }
+      }
+
+      // Check if this is the specific error we want to handle differently
+      if (typeof errorMessage === 'string' && errorMessage.includes('Failed to invoke generation function')) {
+        console.error('Function invocation failed (logged only):', errorMessage);
+        // Optionally, still attempt refund if applicable, but don't show modal for this specific error
+        if (userId) { // Ensure userId is available for credit refund
+          try {
+            await useCredit(userId, -5); // Attempt refund
+            console.log('Credit refunded due to function invocation failure.');
+          } catch (refundError) {
+            console.error('Refund failed after function invocation error:', refundError);
+          }
+        }
+        // Do not set error modal for this specific case, allow the async process to potentially recover
+        // or fail more definitively later (e.g., project status remains 'pending' or becomes 'failed' by edge function)
+      } else {
+        // For all other errors, show the modal
+        setErrorModal({
+          isOpen: true,
+          title: 'Errore',
+          message: errorMessage,
+          retryHandler: () => handleGenerate(selectedObjects)
+        });
+        
+        // Attempt refund if error occurred after credit deduction
+        if (userId) { // Ensure userId is available
+          try {
+            await useCredit(userId, -5);
+          } catch (refundError) {
+            console.error('Refund failed:', refundError);
+          }
+        }
       }
       return undefined;
     }
@@ -279,7 +335,7 @@ export default function useDesignGenerator({
     uploadedImage,
     selectedStyle, // Keep dependencies
     selectedRoomType, // Keep dependencies
-    selectedColorTone, // Keep dependencies
+    selectedColorToneState, 
     selectedView, // Keep dependencies
     _selectedRenderingType, // Keep dependencies
     userId, // Keep dependencies
@@ -319,7 +375,7 @@ export default function useDesignGenerator({
     isGenerating, // Keep
     selectedStyle, // Keep
     selectedRoomType, // Keep
-    selectedColorTone, // Keep
+    selectedColorTone: selectedColorToneState, // Return the state variable
     selectedView, // Keep
     selectedRenderingType: _selectedRenderingType, // Keep
     isInfoModalOpen, // Add info modal state
@@ -327,7 +383,7 @@ export default function useDesignGenerator({
     resetUpload, // Keep
     handleGenerate, // Keep (updated version)
     setSelectedRoomType, // Keep
-    setSelectedColorTone, // Keep
+    setSelectedColorTone, // Keep, now it's the wrapped version
     setSelectedView, // Keep
     setSelectedStyle, // Keep
     setSelectedRenderingType: updateRenderingType, // Keep
