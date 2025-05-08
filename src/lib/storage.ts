@@ -12,60 +12,40 @@ const s3 = new S3Client({
 });
 
 /**
- * Uploads an image to S3/MinIO storage
- * @param imageData Base64 image data or data URL
+ * Uploads an image File object to S3/MinIO storage
+ * @param imageFile The File object to upload
  * @param path Path within the bucket (e.g. 'user123/filename.jpg')
  * @returns Public URL of the uploaded image
  */
 export async function uploadImage(
-  imageData: string, 
+  imageFile: File, 
   path: string
 ): Promise<string> {
   try {
-    // Extract base64 data if it's a data URL
-    let base64Data = imageData;
-    if (imageData.startsWith('data:')) {
-      base64Data = imageData.split(',')[1];
-    }
-
-    // Calculate and log sizes
-    const base64SizeKB = (base64Data.length * 3/4) / 1024; // Approximate base64 size
-    const binarySize = base64Data.length * 3/4; // Approximate binary size
-    const binarySizeKB = binarySize / 1024;
-    const binarySizeMB = binarySizeKB / 1024;
-    
-    console.log('[Image Upload] Size metrics:', {
-      'Base64 (KB)': base64SizeKB.toFixed(2),
-      'Binary (KB)': binarySizeKB.toFixed(2), 
-      'Binary (MB)': binarySizeMB.toFixed(2)
-    });
-
-    // Convert base64 to ArrayBuffer
-    const binaryString = atob(base64Data);
-    const len = binaryString.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-
-    // Determine content type
-    const contentType = imageData.startsWith('data:image/png') ? 'image/png' : 
-                       imageData.startsWith('data:image/jpeg') ? 'image/jpeg' : 
-                       'image/jpeg';
+    // Log file size
+    const fileSizeKB = imageFile.size / 1024;
+    const fileSizeMB = fileSizeKB / 1024;
+    console.log(`[Image Upload] Uploading file: ${imageFile.name}, Size: ${fileSizeKB.toFixed(2)} KB (${fileSizeMB.toFixed(2)} MB), Type: ${imageFile.type}`);
 
     // Upload to S3
+    const arrayBuffer = await imageFile.arrayBuffer(); // Convert File to ArrayBuffer
+    const uint8Array = new Uint8Array(arrayBuffer); // Convert ArrayBuffer to Uint8Array
+
     const command = new PutObjectCommand({
       Bucket: import.meta.env.VITE_S3_BUCKET,
       Key: path,
-      Body: bytes,
-      ContentType: contentType,
-      ACL: 'public-read' // Make uploaded files publicly accessible
+      Body: uint8Array, // Pass Uint8Array
+      ContentType: imageFile.type,
+      ContentLength: uint8Array.byteLength, // Explicitly set ContentLength
+      ACL: 'public-read'
     });
 
     await s3.send(command);
 
     // Return public URL
-    return `${import.meta.env.VITE_S3_ENDPOINT}/${import.meta.env.VITE_S3_BUCKET}/${path}`;
+    const publicUrl = `${import.meta.env.VITE_S3_ENDPOINT}/${import.meta.env.VITE_S3_BUCKET}/${path}`;
+    console.log(`[Image Upload] Successfully uploaded to: ${publicUrl}`);
+    return publicUrl;
   } catch (error) {
     console.error('Error uploading image:', error);
     throw error;

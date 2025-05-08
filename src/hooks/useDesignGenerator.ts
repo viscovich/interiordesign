@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import imageCompression from 'browser-image-compression'; // Import compression library
 import { getGenerationPrompt } from '../lib/gemini'; // Import prompt generator
 import { uploadImage } from '../lib/storage';
 // Import the NEW service function
@@ -40,6 +41,14 @@ const generateThumbnail = (
 };
 */
 
+// Define interface for error modal state
+interface ErrorModalState {
+  isOpen: boolean;
+  title: string;
+  message: string; // Explicitly type message as string
+  retryHandler?: () => void;
+}
+
 interface UseDesignGeneratorProps {
   userId: string | undefined;
   onAuthRequired: () => void; // Changed prop name
@@ -59,11 +68,12 @@ export default function useDesignGenerator({
   // const [designDescription, setDesignDescription] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false); // Still useful for button state
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false); // State for the info modal
-  const [errorModal, setErrorModal] = useState({
-    isOpen: false, // Keep for immediate errors (credits, initial DB insert)
+  // Use the interface for the state
+  const [errorModal, setErrorModal] = useState<ErrorModalState>({
+    isOpen: false,
     title: '',
-    message: '',
-    retryHandler: undefined as (() => void) | undefined
+    message: '', // Initial value is string
+    retryHandler: undefined
   });
 
   // Default style object for Modern
@@ -122,34 +132,60 @@ export default function useDesignGenerator({
     // setGeneratedImage(null); // REMOVED - State no longer exists
     // setDesignDescription(null); // REMOVED - State no longer exists
 
-    // 1. Generate local data URL for immediate preview
+    // 1. Generate local data URL for immediate preview (using original file)
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = () => {
       const dataUrl = reader.result as string;
-      // 2. Set state immediately with data URL to show selectors
-      setUploadedImage(dataUrl);
-
-      // 3. Upload to storage in the background (no need to await here for UI update)
-      uploadImage(dataUrl, `original/${Date.now()}_${file.name}`)
-        .then(storageUrl => {
-          // Update state with the final storage URL. This is crucial so that
-          // handleGenerate uses the correct URL.
-          setUploadedImage(storageUrl); // *** Uncommented this line ***
-          console.log('Image uploaded to storage and state updated:', storageUrl);
-        })
-        .catch(error => {
-          console.error('Error uploading image to storage:', error);
-          toast.error('Failed to save image to storage');
-          // Optionally revert uploadedImage state or handle error
-          // setUploadedImage(null); // Revert if upload fails?
-        });
+      setUploadedImage(dataUrl); // Show preview immediately
     };
     reader.onerror = (error) => {
-      console.error('Error reading file:', error);
-      toast.error('Failed to read image file');
+      console.error('Error reading file for preview:', error);
+      toast.error('Failed to read image file for preview');
       setUploadedImage(null); // Clear image state on read error
     };
+
+    // 2. Compress and upload in the background
+    const compressAndUpload = async () => {
+      console.log(`Original file size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+      const options = {
+        maxSizeMB: 0.3, // Target max size 300KB
+        maxWidthOrHeight: 1920, // Optional: resize if very large dimensions
+        useWebWorker: true,
+        // Explicitly set output fileType based on input to avoid WebP
+        fileType: file.type === 'image/png' ? 'image/png' : 'image/jpeg', 
+        initialQuality: 0.8 // Still relevant for JPEG output
+      };
+      try {
+        console.log(`Compressing image (Input type: ${file.type}, Output type: ${options.fileType})...`);
+        const compressedFile = await imageCompression(file, options);
+        // The compressedFile.type should now match options.fileType
+        console.log(`Compressed file size: ${(compressedFile.size / 1024 / 1024).toFixed(2)} MB, Type: ${compressedFile.type}`); 
+        
+        // Generate unique path using the INTENDED output extension
+        const fileExtension = options.fileType.split('/')[1]; // 'png' or 'jpeg'
+        const originalNameWithoutExt = file.name.split('.').slice(0, -1).join('.');
+        // Use 'jpg' extension for 'jpeg' mime type for consistency
+        const finalExtension = fileExtension === 'jpeg' ? 'jpg' : fileExtension; 
+        const uniqueFileName = `${Date.now()}_${originalNameWithoutExt}.${finalExtension}`;
+        const storagePath = `original/${uniqueFileName}`; // Store compressed file in 'original' path
+
+        // Upload the compressed file
+        const storageUrl = await uploadImage(compressedFile, storagePath); // Pass compressed File
+
+        // Update state with the final storage URL. This is crucial for handleGenerate.
+        setUploadedImage(storageUrl); 
+        console.log('Compressed image uploaded to storage and state updated:', storageUrl);
+
+      } catch (error) {
+        console.error('Error compressing or uploading image:', error);
+        toast.error('Failed to compress or save image to storage');
+        // Optionally revert uploadedImage state or handle error
+        // setUploadedImage(null); // Revert if compression/upload fails?
+      }
+    };
+
+    compressAndUpload(); // Start compression and upload
   };
 
 
@@ -274,32 +310,23 @@ export default function useDesignGenerator({
         }
       }
 
-      let errorMessage = 'Errore sconosciuto';
+      // --- Simplified Error Message Extraction ---
+      let finalErrorMessage = 'An unknown error occurred.'; // Default message
       if (error instanceof Error) {
-        if (typeof error.message === 'string') {
-          errorMessage = error.message;
-        } else if (typeof error.message === 'function') {
-          // If error.message is a function, it might be an i18n-style t() function.
-          // Try to call it, or fall back to a generic message.
-          try {
-            const potentialMessage = (error.message as any)(); // Call the function
-            if (typeof potentialMessage === 'string') {
-              errorMessage = potentialMessage;
-            } else {
-              console.warn('error.message function did not return a string:', potentialMessage);
-            }
-          } catch (e) {
-            console.warn('Failed to execute error.message function:', e);
-          }
-        } else {
-          // If error.message is neither string nor function, log it and use default
-          console.warn('error.message was not a string or function:', error.message);
-        }
+          // Prioritize string message, otherwise stringify the error object for details
+          finalErrorMessage = typeof error.message === 'string' ? error.message : JSON.stringify(error);
+      } else {
+          // If the caught item is not an Error object, stringify it
+          finalErrorMessage = JSON.stringify(error);
       }
+      // Ensure it's definitely a string for the next step
+      finalErrorMessage = String(finalErrorMessage); 
+      // --- End Simplified Extraction ---
+
 
       // Check if this is the specific error we want to handle differently
-      if (typeof errorMessage === 'string' && errorMessage.includes('Failed to invoke generation function')) {
-        console.error('Function invocation failed (logged only):', errorMessage);
+      if (finalErrorMessage.includes('Failed to invoke generation function')) {
+        console.error('Function invocation failed (logged only):', finalErrorMessage); // Use finalErrorMessage
         // Optionally, still attempt refund if applicable, but don't show modal for this specific error
         if (userId) { // Ensure userId is available for credit refund
           try {
@@ -314,9 +341,9 @@ export default function useDesignGenerator({
       } else {
         // For all other errors, show the modal
         setErrorModal({
+          message: finalErrorMessage, // Use the guaranteed string message
           isOpen: true,
           title: 'Errore',
-          message: errorMessage,
           retryHandler: () => handleGenerate(selectedObjects)
         });
         

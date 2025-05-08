@@ -120,11 +120,9 @@ const UserObjectsManager: React.FC = () => {
       <h2 className="text-lg font-semibold mb-4">My Objects</h2>
       <div className="space-y-4 mb-4">
         <div className="flex justify-between items-center">
-          <p className="text-sm text-gray-500">
-            {userPlan === 'Free' 
-              ? 'Upload not available with Free plan' 
-              : 'Upload your objects to include in your design'}
-          </p>
+        <p className="text-sm text-gray-500">
+  Upload your objects to include in your design. <strong>Use Transparent PNGs</strong> for best results.
+</p>
         <button
           onClick={() => setIsModalOpen(true)}
           disabled={userPlan === 'Free'}
